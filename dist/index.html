@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Lumina Dashboard V2</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], },
+                    colors: { glass: { 100: 'rgba(255, 255, 255, 0.1)', 200: 'rgba(255, 255, 255, 0.2)', 300: 'rgba(255, 255, 255, 0.3)', dark: 'rgba(0, 0, 0, 0.6)', } },
+                    backdropBlur: { xs: '2px', }
+                }
+            }
+        }
+    </script>
+
+    <!-- React Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Lucide Icons (Stable Version) -->
+    <script src="https://unpkg.com/lucide@0.292.0/dist/umd/lucide.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body { background-color: #000; color: #fff; overflow-x: hidden; touch-action: manipulation; font-family: 'Inter', sans-serif; }
+        .error-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #330000; color: #ffcccc; padding: 20px; border: 1px solid red; border-radius: 8px; z-index: 9999; max-width: 90%; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // ERROR BOUNDARY PARA DEBUG
+        class ErrorBoundary extends React.Component {
+            constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+            static getDerivedStateFromError(error) { return { hasError: true, error }; }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="error-box">
+                            <h2>⚠️ Algo deu errado</h2>
+                            <p>{this.state.error.toString()}</p>
+                            <button onClick={() => window.location.reload()} style={{marginTop: 10, padding: 10}}>Recarregar</button>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
+        try {
+            const { useState, useEffect, useMemo, useCallback, useRef } = React;
+            
+            // Ícones Seguros (Lucide Wrapper corrigido para UMD)
+            const Icon = ({ name, size = 24, className }) => {
+                // Tenta pegar o ícone do global window.lucide.icons
+                const iconNode = window.lucide && window.lucide.icons ? window.lucide.icons[name] : null;
+                
+                if (!iconNode) return <span className="text-xs">{name}</span>;
+
+                // Se o ícone for um componente React válido (função/classe), renderiza direto
+                if (typeof iconNode === 'function' || typeof iconNode === 'object') {
+                    return React.createElement(iconNode, { size, className });
+                }
+                
+                // Fallback: Se for apenas a definição SVG (array), precisamos criar o elemento
+                return <i data-lucide={name} className={className} style={{ width: size, height: size, display: 'inline-block' }}></i>;
+            };
+
+            // Hook para processar ícones Lucide após renderização (global)
+            // useEffect(() => {
+            //     if (window.lucide && window.lucide.createIcons) {
+            //         window.lucide.createIcons();
+            //     }
+            // }); // ERRO: Hook fora do componente! Removido.
+
+            // --- CONSTANTS ---
+            const MOCK_DEVICES = {
+                'd1': { id: 'd1', hubitatId: '101', name: 'Lustre Principal', type: 'DIMMER', roomId: 'living', state: { isOn: true, level: 80 } },
+                'd2': { id: 'd2', hubitatId: '102', name: 'Abajur Canto', type: 'LIGHT', roomId: 'living', state: { isOn: false } },
+                'ac1': { id: 'ac1', hubitatId: '103', name: 'Ar Condicionado', type: 'AC', roomId: 'living', state: { isOn: true, temperature: 24, setpoint: 22, mode: 'cool', fanMode: 'auto' } },
+            };
+            const MOCK_ROOMS = [
+                { id: 'living', name: 'Sala de Estar', image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1920&q=80' },
+                { id: 'kitchen', name: 'Cozinha', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80' }
+            ];
+
+
+            // --- HUBITAT SERVICE ---
+            const STORAGE_KEY = 'lumina_hubitat_config';
+            const getConfig = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            const saveConfig = (c) => localStorage.setItem(STORAGE_KEY, JSON.stringify(c));
+            
+            const getBaseUrl = (config) => {
+                if(!config.hubIp) return '';
+                let ip = config.hubIp.replace(/\/$/, '');
+                if (!ip.startsWith('http')) ip = 'http://' + ip;
+                return `${ip}/apps/api/${config.appId}`;
+            };
+
+            const fetchHubitatDevices = async () => {
+                const config = getConfig();
+                if (!config.hubIp || !config.appId || !config.accessToken) return null;
+                try {
+                    const url = `${getBaseUrl(config)}/devices?access_token=${config.accessToken}`;
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const raw = await res.json();
+                    
+                    const mapped = {};
+                    raw.forEach(d => {
+                        const caps = (d.capabilities || []).map(c => c.toLowerCase());
+                        let type = 'SWITCH';
+                        if(caps.includes('switchlevel')) type = 'DIMMER';
+                        if(caps.includes('thermostat')) type = 'THERMOSTAT';
+                        if(d.name.toLowerCase().includes('ac')) type = 'AC';
+                        
+                        mapped[d.id] = {
+                            id: d.id,
+                            hubitatId: d.id,
+                            name: d.label || d.name,
+                            type: type,
+                            roomId: 'living', // Default room
+                            state: { 
+                                isOn: d.attributes?.find(a=>a.name==='switch')?.currentValue === 'on',
+                                level: parseInt(d.attributes?.find(a=>a.name==='level')?.currentValue || 0),
+                                temperature: d.attributes?.find(a=>a.name==='temperature')?.currentValue
+                            }
+                        };
+                    });
+                    return mapped;
+                } catch (e) {
+                    console.warn("API Error:", e);
+                    return null;
+                }
+            };
+
+            const sendCommand = async (devId, cmd, args = []) => {
+                const config = getConfig();
+                if (!config.hubIp) return;
+                const argStr = args.length ? `/${args.join(',')}` : '';
+                const url = `${getBaseUrl(config)}/devices/${devId}/${cmd}${argStr}?access_token=${config.accessToken}`;
+                await fetch(url).catch(e => console.error(e));
+            };
+
+            // --- COMPONENTS ---
+            const GlassCard = ({ children, className = '', onClick, active = false }) => (
+                <div onClick={onClick} className={`relative overflow-hidden rounded-2xl border transition-all duration-300 ${active ? 'bg-white/20 border-white/50 shadow-[0_0_20px_rgba(255,255,255,0.1)]' : 'bg-black/30 border-white/10 hover:bg-white/10'} backdrop-blur-xl ${className} ${onClick ? 'cursor-pointer' : ''}`}>
+                    <div className="relative z-10 h-full w-full">{children}</div>
+                </div>
+            );
+
+            const DeviceControl = ({ device, onUpdate }) => {
+                const handleToggle = (e) => {
+                    e.stopPropagation();
+                    const newVal = !device.state.isOn;
+                    onUpdate(device.id, { isOn: newVal });
+                    sendCommand(device.hubitatId, newVal ? 'on' : 'off');
+                };
+
+                return (
+                    <div className="flex flex-col h-full justify-between pt-2">
+                        <div className="flex justify-between items-start pr-4">
+                            <Icon name={device.type === 'DIMMER' ? 'Lightbulb' : 'Power'} className={device.state.isOn ? 'text-white' : 'text-white/40'} />
+                            <div onClick={handleToggle} className={`w-10 h-6 rounded-full p-1 transition-colors duration-300 cursor-pointer ${device.state.isOn ? 'bg-green-500/80' : 'bg-white/10'}`}>
+                                <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${device.state.isOn ? 'translate-x-4' : 'translate-x-0'}`} />
+                            </div>
+                        </div>
+                        <div className="mt-4">
+                            <h3 className="font-medium text-white text-base leading-tight pr-6 truncate">{device.name}</h3>
+                            <p className="text-white/50 text-[10px] mt-1">{device.state.isOn ? 'Ligado' : 'Desligado'}</p>
+                        </div>
+                    </div>
+                );
+            };
+
+            const App = () => {
+                const [activeTab, setActiveTab] = useState('home');
+                const [rooms, setRooms] = useState(MOCK_ROOMS);
+                const [devices, setDevices] = useState(MOCK_DEVICES);
+                const [currentRoomId, setCurrentRoomId] = useState(null);
+                const [config, setConfig] = useState(getConfig() || { hubIp: '', appId: '', accessToken: '' });
+
+                useEffect(() => {
+                    const load = async () => {
+                        const real = await fetchHubitatDevices();
+                        if(real) setDevices(real);
+                    };
+                    
+                    let socket = null;
+                    if(config.hubIp) {
+                        load();
+                        
+                        // WebSocket Connection
+                        try {
+                            const wsUrl = `ws://${config.hubIp.replace('http://', '').replace('https://', '')}/eventsocket`;
+                            console.log('Connecting to WebSocket:', wsUrl);
+                            socket = new WebSocket(wsUrl);
+                            
+                            socket.onopen = () => console.log('WebSocket Connected');
+                            socket.onmessage = (event) => {
+                                try {
+                                    const data = JSON.parse(event.data);
+                                    // Filter events only for devices we know about
+                                    if (data.source === 'DEVICE' && devices[data.deviceId]) {
+                                        const devId = data.deviceId;
+                                        const attr = data.name;
+                                        const val = data.value;
+                                        
+                                        setDevices(prev => {
+                                            const dev = prev[devId];
+                                            if (!dev) return prev;
+                                            
+                                            let newState = { ...dev.state };
+                                            if (attr === 'switch') newState.isOn = val === 'on';
+                                            if (attr === 'level') newState.level = parseInt(val);
+                                            if (attr === 'temperature') newState.temperature = val;
+                                            
+                                            return {
+                                                ...prev,
+                                                [devId]: { ...dev, state: newState }
+                                            };
+                                        });
+                                    }
+                                } catch (e) { console.warn('WS Parse Error', e); }
+                            };
+                            socket.onerror = (e) => console.warn('WebSocket Error', e);
+                            
+                        } catch (e) { console.error('Socket Setup Failed', e); }
+                    }
+
+                    // Fallback polling (every 30s instead of 5s)
+                    const interval = setInterval(() => config.hubIp && load(), 30000);
+                    
+                    return () => {
+                        clearInterval(interval);
+                        if (socket) socket.close();
+                    };
+                }, [config, devices]); // Re-run if config changes (devices dependency might cause re-connect loops, careful)
+
+                const handleUpdate = (id, newState) => {
+                    setDevices(prev => ({
+                        ...prev,
+                        [id]: { ...prev[id], state: { ...prev[id].state, ...newState } }
+                    }));
+                };
+
+                const renderHome = () => (
+                    <div className="flex flex-col items-center justify-center h-full gap-8 animate-in fade-in">
+                        <h1 className="text-6xl font-thin tracking-tighter text-white drop-shadow-2xl">
+                            {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </h1>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-4xl px-4">
+                            {rooms.map(room => (
+                                <div key={room.id} onClick={() => { setCurrentRoomId(room.id); setActiveTab('room'); }} 
+                                     className="h-40 rounded-3xl overflow-hidden relative cursor-pointer group border border-white/20 hover:scale-[1.02] transition-transform shadow-2xl">
+                                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${room.image})` }} />
+                                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
+                                    <div className="absolute bottom-4 left-4">
+                                        <h3 className="text-xl font-medium text-white">{room.name}</h3>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+
+                const renderRoom = () => {
+                    const roomDevices = Object.values(devices).filter(d => d.roomId === currentRoomId || d.roomId === 'living'); // Fallback to living for mock
+                    return (
+                        <div className="p-6 h-full overflow-y-auto">
+                            <button onClick={() => setActiveTab('home')} className="flex items-center gap-2 text-white/70 mb-6 hover:text-white">
+                                <Icon name="ArrowLeft" size={20} /> Voltar
+                            </button>
+                            <h2 className="text-3xl font-light mb-8">Controles</h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-24">
+                                {roomDevices.map(dev => (
+                                    <GlassCard key={dev.id} className="p-4 h-40">
+                                        <DeviceControl device={dev} onUpdate={handleUpdate} />
+                                    </GlassCard>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                };
+
+                const renderSettings = () => (
+                    <div className="flex justify-center p-8 h-full items-center">
+                        <GlassCard className="max-w-md w-full p-8 bg-black/60">
+                            <h2 className="text-2xl font-light mb-6 flex items-center gap-2"><Icon name="Settings" /> Configuração</h2>
+                            <div className="space-y-4">
+                                <div><label className="text-xs text-white/50 block">IP</label><input className="w-full bg-white/10 rounded p-2 text-white" value={config.hubIp || ''} onChange={e => setConfig({...config, hubIp: e.target.value})} placeholder="192.168.x.x" /></div>
+                                <div><label className="text-xs text-white/50 block">App ID</label><input className="w-full bg-white/10 rounded p-2 text-white" value={config.appId || ''} onChange={e => setConfig({...config, appId: e.target.value})} /></div>
+                                <div><label className="text-xs text-white/50 block">Token</label><input className="w-full bg-white/10 rounded p-2 text-white" type="password" value={config.accessToken || ''} onChange={e => setConfig({...config, accessToken: e.target.value})} /></div>
+                                <button onClick={() => { saveConfig(config); alert('Salvo!'); }} className="w-full bg-blue-600 p-2 rounded font-bold">SALVAR</button>
+                            </div>
+                        </GlassCard>
+                    </div>
+                );
+
+                return (
+                    <div className="min-h-screen bg-black text-white font-sans selection:bg-blue-500/30 overflow-hidden relative">
+                        <div className="fixed inset-0 bg-[url('https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-20 z-0 pointer-events-none" />
+                        <div className="relative z-10 h-screen flex flex-col">
+                            <div className="flex-1 overflow-hidden">
+                                {activeTab === 'home' && renderHome()}
+                                {activeTab === 'room' && renderRoom()}
+                                {activeTab === 'settings' && renderSettings()}
+                            </div>
+                            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full px-6 py-4 flex gap-8 shadow-2xl z-50">
+                                <button onClick={() => setActiveTab('home')} className="text-white/60 hover:text-white"><Icon name="Home" /></button>
+                                <button onClick={() => setActiveTab('settings')} className="text-white/60 hover:text-white"><Icon name="Settings" /></button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<ErrorBoundary><App /></ErrorBoundary>);
+        
+        } catch (err) {
+            document.body.innerHTML = `<div class="error-box"><h2>Erro Crítico de Inicialização</h2><p>${err.message}</p></div>`;
+        }
+    </script>
+</body>
+</html>
