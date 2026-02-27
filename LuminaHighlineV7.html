@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Lumina Highline V7</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], },
+                    colors: { glass: { 100: 'rgba(255, 255, 255, 0.1)', 200: 'rgba(255, 255, 255, 0.2)', 300: 'rgba(255, 255, 255, 0.3)', dark: 'rgba(0, 0, 0, 0.6)', } },
+                    backdropBlur: { xs: '2px', }
+                }
+            }
+        }
+    </script>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.292.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.3.4/react-grid-layout.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.3.4/css/styles.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/react-resizable/3.0.4/css/styles.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body { background-color: #000; color: #fff; overflow-x: hidden; touch-action: pan-y; font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+        .react-grid-item.react-grid-placeholder { background: rgba(255, 255, 255, 0.1) !important; border-radius: 16px; opacity: 0.5; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef, useCallback } = React;
+        const { Responsive, WidthProvider } = window.ReactGridLayout;
+        const ResponsiveGridLayout = WidthProvider(Responsive);
+
+        const Icon = ({ name, size = 24, className, strokeWidth = 2, fill = "none", ...props }) => {
+            const lucide = window.lucide;
+            if (!lucide || !lucide.icons) return null;
+            const map = { 
+                'DragHandle': 'GripVertical', 'Settings': 'Settings', 'Power': 'Power',
+                'Volume2': 'Volume2', 'VolumeX': 'VolumeX', 'Plus': 'Plus', 'Minus': 'Minus',
+                'ChevronUp': 'ChevronUp', 'ChevronDown': 'ChevronDown', 'ChevronLeft': 'ChevronLeft', 'ChevronRight': 'ChevronRight',
+                'Home': 'Home', 'Reply': 'Reply', 'Menu': 'Menu', 'Play': 'Play', 'Pause': 'Pause', 'Square': 'Square',
+                'Link': 'Link', 'Save': 'Save', 'PenLine': 'PenLine', 'ArrowRightLeft': 'ArrowRightLeft', 'Trash2': 'Trash2',
+                'Monitor': 'Monitor', 'Copy': 'Copy', 'Music': 'Music', 'SkipBack': 'SkipBack', 'SkipForward': 'SkipForward',
+                'LogIn': 'LogIn', 'LogOut': 'LogOut', 'Layout': 'Layout', 'EyeOff': 'EyeOff', 'ArrowLeft': 'ArrowLeft',
+                'LayoutDashboard': 'Grid', 'Tv': 'Tv', 'Upload': 'Upload', 'RefreshCcw': 'RefreshCcw', 'Image': 'Image',
+                'Snowflake': 'Snowflake', 'Sun': 'Sun', 'Gauge': 'Gauge', 'Droplets': 'Droplets', 'Fan': 'Fan',
+                'RefreshCw': 'RefreshCw', 'Zap': 'Zap', 'Lightbulb': 'Lightbulb', 'Clock': 'Clock', 'Thermometer': 'Thermometer',
+                'Disc': 'Disc', 'Radio': 'Radio', 'Gamepad2': 'Gamepad2', 'Wifi': 'Wifi', 'Cable': 'Cable', 'Film': 'Film', 'Headphones': 'Headphones',
+                'Lock': 'Lock', 'Unlock': 'Unlock', 'AlertCircle': 'AlertCircle', 'MoreVertical': 'MoreVertical',
+                'Cloud': 'Cloud', 'CloudDrizzle': 'CloudDrizzle', 'CloudFog': 'CloudFog', 'CloudLightning': 'CloudLightning', 'CloudRain': 'CloudRain', 'CloudSnow': 'CloudSnow',
+                'MapPin': 'MapPin', 'Search': 'Search', 'Ban': 'Ban', 'Blinds': 'Blinds', 'Layers': 'Layers', 'CheckCircle': 'CheckCircle', 'AlertTriangle': 'AlertTriangle', 
+                'Globe': 'Globe', 'Footprints': 'Footprints', 'RadioReceiver': 'RadioReceiver', 'Grid': 'Grid'
+            };
+            const iconName = map[name] || name;
+            return <i data-lucide={iconName.toLowerCase()} className={className} style={{fontSize: size, width: size, height: size, strokeWidth: strokeWidth, display: 'inline-block'}} fill={fill} {...props}></i>;
+        };
+
+        const DeviceType = {
+            LIGHT: 'LIGHT', DIMMER: 'DIMMER', SWITCH: 'SWITCH', THERMOSTAT: 'THERMOSTAT', 
+            AC: 'AC', BLIND: 'BLIND', LOCK: 'LOCK', MEDIA: 'MEDIA', TV: 'TV', 
+            AVR: 'AVR', SCENE: 'SCENE', MOTION: 'MOTION', PRESENCE: 'PRESENCE'
+        };
+
+        const MOCK_ROOMS = [{ id: 'living', name: 'Sala de Estar', image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0', deviceIds: [] }];
+        const MOCK_DEVICES = {};
+
+        const LS_PREFIX = 'lumina_v7_';
+        const ls = {
+            get: (k, d) => { try { return JSON.parse(localStorage.getItem(LS_PREFIX + k)) || d; } catch { return d; } },
+            set: (k, v) => localStorage.setItem(LS_PREFIX + k, JSON.stringify(v))
+        };
+
+        const hubitatService = {
+            getConfig: () => ls.get('config', { hubIp: '', appId: '', accessToken: '', useCloud: false }),
+            saveConfig: (c) => ls.set('config', c),
+            getSavedRooms: () => ls.get('rooms', MOCK_ROOMS),
+            saveRooms: (r) => ls.set('rooms', r),
+            getLayouts: () => ls.get('layouts', {}),
+            saveLayouts: (l) => ls.set('layouts', l),
+            getCustomDevices: () => ls.get('custom_devices', {}),
+            saveCustomDevice: (d) => { const all = ls.get('custom_devices', {}); all[d.id] = d; ls.set('custom_devices', all); },
+            removeCustomDevice: (id) => { const all = ls.get('custom_devices', {}); delete all[id]; ls.set('custom_devices', all); },
+            getDeviceMapping: () => ls.get('dev_mapping', {}),
+            saveDeviceMapping: (m) => ls.set('dev_mapping', m),
+            getButtonMapping: () => ls.get('btn_mapping', {}),
+            saveButtonMapping: (m) => ls.set('btn_mapping', m),
+            getBackgroundMapping: () => ls.get('bg_mapping', {}),
+            saveBackgroundMapping: (m) => ls.set('bg_mapping', m),
+            getRoomImageMapping: () => ls.get('room_img_mapping', {}),
+            saveRoomImageMapping: (m) => ls.set('room_img_mapping', m),
+            getLogo: () => ls.get('logo', null),
+            saveLogo: (l) => ls.set('logo', l),
+
+            fetchHubitatDevices: async () => {
+                const config = hubitatService.getConfig();
+                if(!config.hubIp) return null;
+                try {
+                    const protocol = config.hubIp.startsWith('http') ? '' : 'http://';
+                    const url = config.useCloud 
+                        ? `https://cloud.hubitat.com/api/${config.hubUuid}/apps/${config.appId}/devices/all?access_token=${config.accessToken}`
+                        : `${protocol}${config.hubIp}/apps/api/${config.appId}/devices/all?access_token=${config.accessToken}`;
+                    
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    
+                    const mapped = {};
+                    const mapping = ls.get('dev_mapping', {});
+                    
+                    data.forEach(d => {
+                        let type = DeviceType.SWITCH;
+                        const caps = (d.capabilities || []).map(c => typeof c==='string'?c.toLowerCase():c.name.toLowerCase());
+                        const label = (d.label || d.name).toLowerCase();
+
+                        if (caps.includes('switchlevel')) type = DeviceType.DIMMER;
+                        if (caps.includes('thermostat') || label.includes('ac ')) type = DeviceType.AC;
+                        if (caps.includes('windowshade') || label.includes('cortina') || label.includes('persiana')) type = DeviceType.BLIND;
+                        if (caps.includes('lock')) type = DeviceType.LOCK;
+                        if (label.includes('tv') || caps.includes('tv')) type = DeviceType.TV;
+                        if (label.includes('receiver') || label.includes('denon')) type = DeviceType.AVR;
+                        if (caps.includes('motionsensor')) type = DeviceType.MOTION;
+                        if (caps.includes('presencesensor')) type = DeviceType.PRESENCE;
+
+                        mapped[d.id] = {
+                            id: d.id, hubitatId: d.id, name: d.label || d.name, type,
+                            roomId: mapping[d.id] || 'living',
+                            state: { 
+                                isOn: d.attributes.switch==='on', 
+                                level: parseInt(d.attributes.level||0), 
+                                temperature: parseFloat(d.attributes.temperature||0),
+                                mode: d.attributes.thermostatMode,
+                                fanMode: d.attributes.thermostatFanMode,
+                                setpoint: parseFloat(d.attributes.coolingSetpoint || d.attributes.thermostatSetpoint || 24),
+                                input: d.attributes.Input,
+                                mute: d.attributes.mute === 'muted',
+                                currentApp: d.attributes.currentActivity,
+                                windowShade: d.attributes.windowShade,
+                                motion: d.attributes.motion,
+                                presence: d.attributes.presence,
+                                illuminance: parseInt(d.attributes.illuminance||0),
+                                battery: parseInt(d.attributes.battery||0)
+                            }
+                        };
+                    });
+                    return mapped;
+                } catch { return null; }
+            },
+            
+            sendHubitatCommand: async ({ deviceId, command, arguments: args }) => {
+                const config = hubitatService.getConfig();
+                if(!config.hubIp) return;
+                const protocol = config.hubIp.startsWith('http') ? '' : 'http://';
+                const baseUrl = config.useCloud 
+                    ? `https://cloud.hubitat.com/api/${config.hubUuid}/apps/${config.appId}`
+                    : `${protocol}${config.hubIp}/apps/api/${config.appId}`;
+                const argStr = args && args.length ? `/${args.join(',')}` : '';
+                try { await fetch(`${baseUrl}/devices/${deviceId}/${command}${argStr}?access_token=${config.accessToken}`); } catch(e) { console.error(e); }
+            }
+        };
+
+        const weatherService = {
+            getSavedWeatherConfig: () => ls.get('weather_cfg', null),
+            saveWeatherConfig: (cfg) => ls.set('weather_cfg', cfg),
+            getWeather: async (lat, lon) => {
+                try {
+                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
+                    const data = await res.json();
+                    if (!data || !data.current_weather) return null;
+                    return {
+                        current: { temperature: Math.round(data.current_weather.temperature), code: data.current_weather.weathercode },
+                        daily: data.daily.time.map((t, i) => ({
+                            date: t, code: data.daily.weathercode[i], 
+                            min: Math.round(data.daily.temperature_2m_min[i]), 
+                            max: Math.round(data.daily.temperature_2m_max[i])
+                        })).slice(0, 5)
+                    };
+                } catch { return null; }
+            },
+            getWeatherInfo: (code) => {
+                if (code === 0) return { iconName: 'Sun', color: 'text-yellow-400' };
+                if (code >= 1 && code <= 3) return { iconName: 'Cloud', color: 'text-white' };
+                if (code >= 51) return { iconName: 'CloudRain', color: 'text-blue-400' };
+                return { iconName: 'Sun', color: 'text-white' };
+            }
+        };
+
+        const GlassCard = ({ children, className = '', onClick, style, ...props }) => (
+            <div onClick={onClick} style={style} className={`relative overflow-hidden rounded-2xl border transition-colors duration-300 ease-out bg-black/30 border-white/10 hover:bg-white/10 hover:border-white/30 backdrop-blur-xl ${className} ${onClick?'cursor-pointer':''}`} {...props}>
+                <div className="relative z-10 h-full w-full">{children}</div>
+            </div>
+        );
+
+        const GenericDeviceControl = ({ device, onUpdate, allDevices }) => {
+            const [showBind, setShowBind] = useState(false);
+            const toggle = (e) => { e.stopPropagation(); const n = !device.state.isOn; onUpdate(device.id, {isOn: n}); hubitatService.sendHubitatCommand({deviceId: device.hubitatId, command: n?'on':'off'}); };
+            const icon = device.type === DeviceType.BLIND ? 'Blinds' : device.type === DeviceType.DIMMER ? 'Lightbulb' : device.type === DeviceType.LOCK ? 'Lock' : device.type === DeviceType.MOTION ? 'Footprints' : device.type === DeviceType.PRESENCE ? 'RadioReceiver' : 'Power';
+            
+            // Binding Logic
+            const handleBind = (targetId) => {
+                // We update the 'hubitatId' of this virtual device to match the target
+                const target = allDevices.find(d => d.id === targetId);
+                if(target) {
+                    const newDev = {...device, hubitatId: target.hubitatId, targetDeviceId: target.id}; // Save target ID for UI reference
+                    hubitatService.saveCustomDevice(newDev);
+                    window.location.reload(); // Refresh to apply
+                }
+                setShowBind(false);
+            };
+
+            return (
+                <GlassCard className="h-full flex flex-col justify-between p-4 relative">
+                    <button onClick={(e)=>{e.stopPropagation(); setShowBind(!showBind)}} className="absolute top-2 right-2 text-white/20 hover:text-white z-20"><Icon name="Settings" size={14}/></button>
+                    {showBind && (
+                        <div className="absolute inset-0 bg-black/90 z-30 flex flex-col p-2 overflow-y-auto" onClick={e=>e.stopPropagation()}>
+                            <h3 className="text-xs font-bold mb-2">Vincular a:</h3>
+                            {allDevices.map(d => <button key={d.id} onClick={()=>handleBind(d.id)} className="text-[10px] text-left py-1 border-b border-white/10 hover:text-blue-300">{d.name}</button>)}
+                            <button onClick={()=>setShowBind(false)} className="text-xs text-red-400 mt-2">Cancelar</button>
+                        </div>
+                    )}
+                    <div className="flex justify-between items-start">
+                        <Icon name={icon} className={device.state.isOn?'text-white':'text-white/40'} />
+                        {device.type !== DeviceType.MOTION && device.type !== DeviceType.PRESENCE && (
+                            <div onClick={toggle} className={`w-8 h-5 rounded-full p-1 cursor-pointer transition-colors ${device.state.isOn?'bg-green-500':'bg-white/10'}`}><div className={`w-3 h-3 bg-white rounded-full transition-transform ${device.state.isOn?'translate-x-3':'translate-x-0'}`} /></div>
+                        )}
+                    </div>
+                    <div>
+                        <span className="text-sm font-medium block truncate">{device.name}</span>
+                        <span className="text-[10px] text-white/50">{device.type === DeviceType.MOTION || device.type === DeviceType.PRESENCE ? (device.state.isOn ? 'Detectado' : 'Sem Movimento') : (device.state.isOn?'Ligado':'Desligado')}</span>
+                    </div>
+                </GlassCard>
+            );
+        };
+
+        const ACRemote = ({ device, onUpdate }) => {
+            const send = (cmd, args=[]) => hubitatService.sendHubitatCommand({ deviceId: device.hubitatId, command: cmd, arguments: args });
+            const handleTemp = (d) => { const n=(device.state.setpoint||24)+d; onUpdate(device.id,{setpoint:n}); send('setCoolingSetpoint',[n]); };
+            return (
+                <GlassCard className="h-full flex flex-col p-4">
+                    <div className="flex justify-between items-center mb-2"><span className="text-sm font-bold">{device.name}</span><button onClick={()=>{onUpdate(device.id,{isOn:!device.state.isOn});send(device.state.isOn?'poweroff':'poweron')}}><Icon name="Power" className={device.state.isOn?'text-green-400':'text-white/30'}/></button></div>
+                    <div className="flex-1 flex items-center justify-center gap-4"><button onClick={()=>handleTemp(-1)}><Icon name="Minus"/></button><span className="text-3xl font-light">{device.state.setpoint}°</span><button onClick={()=>handleTemp(1)}><Icon name="Plus"/></button></div>
+                    <div className="grid grid-cols-3 gap-1 mt-2 text-[9px] uppercase"><button onClick={()=>send('cool')} className="bg-white/10 rounded py-1">Cool</button><button onClick={()=>send('heat')} className="bg-white/10 rounded py-1">Heat</button><button onClick={()=>send('fan')} className="bg-white/10 rounded py-1">Fan</button></div>
+                </GlassCard>
+            );
+        };
+
+        const LGRemote = ({ device, onUpdate }) => {
+            const send = (cmd, args=[]) => hubitatService.sendHubitatCommand({ deviceId: device.hubitatId, command: cmd, arguments: args });
+            return (
+                <GlassCard className="h-full flex flex-col p-4 bg-black/40"><div className="flex justify-between items-center mb-2"><span className="text-sm font-bold">{device.name}</span><button onClick={()=>{onUpdate(device.id,{isOn:!device.state.isOn});send(device.state.isOn?'off':'on')}}><Icon name="Power" className={device.state.isOn?'text-red-500':'text-white/30'}/></button></div><div className="flex-1 flex items-center justify-center"><div className="relative w-24 h-24 bg-white/5 rounded-full"><button className="absolute top-1 left-1/2 -translate-x-1/2" onClick={()=>send('arrowUp')}><Icon name="ChevronUp" size={16}/></button><button className="absolute bottom-1 left-1/2 -translate-x-1/2" onClick={()=>send('arrowDown')}><Icon name="ChevronDown" size={16}/></button><button className="absolute left-1 top-1/2 -translate-y-1/2" onClick={()=>send('arrowLeft')}><Icon name="ChevronLeft" size={16}/></button><button className="absolute right-1 top-1/2 -translate-y-1/2" onClick={()=>send('arrowRight')}><Icon name="ChevronRight" size={16}/></button><button className="absolute inset-7 bg-white/10 rounded-full flex items-center justify-center text-[8px]" onClick={()=>send('enter')}>OK</button></div></div></GlassCard>
+            );
+        };
+
+        // --- APP MAIN ---
+        const App = () => {
+            useEffect(() => { window.lucide && window.lucide.createIcons(); }, []);
+            
+            const [state, setState] = useState({ currentRoomId: null, rooms: hubitatService.getSavedRooms(), devices: MOCK_DEVICES });
+            const [activeTab, setActiveTab] = useState('home');
+            const [layouts, setLayouts] = useState(hubitatService.getLayouts());
+            const [isEditMode, setIsEditMode] = useState(false);
+            const [configForm, setConfigForm] = useState(hubitatService.getConfig());
+            const [currentTime, setCurrentTime] = useState(new Date());
+            const [logo, setLogo] = useState(hubitatService.getLogo());
+            const [showRoomInput, setShowRoomInput] = useState(false);
+            const [newRoomName, setNewRoomName] = useState('');
+            const [showAddDevice, setShowAddDevice] = useState(false);
+            
+            const [weatherData, setWeatherData] = useState(null);
+            const weatherConfig = weatherService.getSavedWeatherConfig();
+
+            useEffect(() => {
+                const timer = setInterval(() => { setCurrentTime(new Date()); window.lucide && window.lucide.createIcons(); }, 1000);
+                const load = async () => {
+                    const real = await hubitatService.fetchHubitatDevices();
+                    if(real) {
+                        const merged = {...real, ...hubitatService.getCustomDevices()};
+                        const mapping = hubitatService.getDeviceMapping();
+                        Object.keys(merged).forEach(id => { if(mapping[id]) merged[id].roomId = mapping[id]; });
+                        setState(p => ({...p, devices: merged}));
+                    }
+                    if(weatherConfig) setWeatherData(await weatherService.getWeather(weatherConfig.lat, weatherConfig.lon));
+                };
+                load();
+                return () => clearInterval(timer);
+            }, []);
+
+            const handleAddRoom = () => {
+                if(newRoomName) {
+                    const newRooms = [...state.rooms, {id: `room_${Date.now()}`, name: newRoomName, image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f'}];
+                    setState(p => ({...p, rooms: newRooms}));
+                    hubitatService.saveRooms(newRooms);
+                    setNewRoomName(''); setShowRoomInput(false);
+                }
+            };
+
+            const handleDeleteRoom = (id) => {
+                if(confirm('Excluir ambiente?')) {
+                    const newRooms = state.rooms.filter(r => r.id !== id);
+                    setState(p => ({...p, rooms: newRooms}));
+                    hubitatService.saveRooms(newRooms);
+                }
+            };
+
+            const handleAddVirtual = (type) => {
+                const id = `virt_${Date.now()}`;
+                const dev = { id, hubitatId: id, name: `Novo ${type}`, type, roomId: 'living', state: {isOn:false} };
+                hubitatService.saveCustomDevice(dev);
+                window.location.reload();
+            };
+
+            const handleLogoUpload = (e) => {
+                const file = e.target.files[0];
+                if(file) {
+                    const r = new FileReader();
+                    r.onload = () => { setLogo(r.result); hubitatService.saveLogo(r.result); };
+                    r.readAsDataURL(file);
+                }
+            };
+
+            const renderGrid = (devs, key) => {
+                const layout = layouts[key] || devs.map((d,i)=>({i:d.id,x:i%4,y:Math.floor(i/4),w:1,h:d.type===DeviceType.TV||d.type===DeviceType.AC||d.type===DeviceType.AVR?2:1}));
+                return (
+                    <ResponsiveGridLayout className="layout" layouts={{lg:layout}} breakpoints={{lg:1200}} cols={{lg:4}} rowHeight={160} isDraggable={isEditMode} isResizable={isEditMode} onLayoutChange={l=>{const u={...layouts,[key]:l};setLayouts(u);hubitatService.saveLayouts(u)}} margin={[16,16]}>
+                        {devs.map(d => (
+                            <div key={d.id}>
+                                {d.type === DeviceType.AC ? <ACRemote device={d} onUpdate={(id,s)=>setState(p=>({...p,devices:{...p.devices,[id]:{...p.devices[id],state:{...p.devices[id].state,...s}}}}))} /> :
+                                 d.type === DeviceType.TV || d.type === DeviceType.AVR ? <LGRemote device={d} onUpdate={(id,s)=>setState(p=>({...p,devices:{...p.devices,[id]:{...p.devices[id],state:{...p.devices[id].state,...s}}}}))} /> :
+                                 <GenericDeviceControl device={d} onUpdate={(id,s)=>setState(p=>({...p,devices:{...p.devices,[id]:{...p.devices[id],state:{...p.devices[id].state,...s}}}}))} allDevices={Object.values(state.devices)} />}
+                            </div>
+                        ))}
+                    </ResponsiveGridLayout>
+                );
+            };
+
+            const room = state.rooms.find(r => r.id === state.currentRoomId);
+            const wInfo = weatherData ? weatherService.getWeatherInfo(weatherData.current.code) : {iconName:'Sun',color:'text-white'};
+
+            return (
+                <div className="relative min-h-screen w-full bg-black text-white font-sans overflow-hidden select-none">
+                    <div className="fixed inset-0 bg-cover bg-center z-0 transition-all duration-1000" style={{ backgroundImage: `url(${room ? room.image : 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1920&q=80'})`, filter: activeTab==='home'?'blur(2px)':'none' }} />
+                    <div className="fixed inset-0 bg-black/40 z-0" />
+                    
+                    {logo && <img src={logo} className="fixed bottom-4 right-4 z-50 w-24 opacity-50 pointer-events-none" />}
+
+                    <div className="relative z-10 h-screen flex flex-col p-6">
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-6">
+                            {state.currentRoomId ? <button onClick={()=>setState(p=>({...p,currentRoomId:null}))} className="flex items-center gap-2 text-white/80 hover:text-white"><div className="p-2 rounded-full bg-white/10 backdrop-blur"><Icon name="ArrowLeft"/></div> Voltar</button> : <h1 className="text-2xl font-light">Lumina</h1>}
+                            <div className="flex gap-2">
+                                {activeTab !== 'home' && <button onClick={()=>setIsEditMode(!isEditMode)} className={`p-2 rounded-full backdrop-blur border ${isEditMode?'bg-yellow-500':'bg-black/30 border-white/10'}`}><Icon name="Layout"/></button>}
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto pb-32">
+                            {/* HOME */}
+                            {activeTab==='home' && !state.currentRoomId && (
+                                <div className="flex flex-col items-center justify-center h-full animate-in fade-in">
+                                    <h1 className="text-8xl font-thin">{currentTime.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</h1>
+                                    <div className="flex items-center gap-2 mt-4"><Icon name={wInfo.iconName} className={wInfo.color} size={24}/> <span className="text-xl">{weatherData?.current.temperature}°</span></div>
+                                </div>
+                            )}
+
+                            {/* ROOMS */}
+                            {activeTab==='rooms' && !state.currentRoomId && (
+                                <div>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-xl">Ambientes</h2>
+                                        <button onClick={()=>setShowRoomInput(!showRoomInput)} className="p-2 bg-white/10 rounded-full"><Icon name="Plus" size={16}/></button>
+                                    </div>
+                                    {showRoomInput && <div className="flex gap-2 mb-4"><input className="bg-black/40 border border-white/10 p-2 rounded text-sm w-full" placeholder="Nome do ambiente" value={newRoomName} onChange={e=>setNewRoomName(e.target.value)} /><button onClick={handleAddRoom} className="bg-green-600 px-4 rounded text-xs font-bold">OK</button></div>}
+                                    <div className="grid grid-cols-3 gap-6">
+                                        {state.rooms.map(r => (
+                                            <div key={r.id} onClick={()=>setState(p=>({...p,currentRoomId:r.id}))} className="h-40 bg-white/10 rounded-2xl flex items-end p-4 cursor-pointer relative group overflow-hidden border border-white/5">
+                                                <div className="absolute inset-0 bg-cover bg-center opacity-50 group-hover:scale-110 transition-transform" style={{backgroundImage:`url(${r.image})`}}/>
+                                                <div className="absolute inset-0 bg-black/20"/>
+                                                <span className="relative z-10 font-bold text-lg">{r.name}</span>
+                                                <button onClick={(e)=>{e.stopPropagation();handleDeleteRoom(r.id)}} className="absolute top-2 right-2 p-2 text-white/30 hover:text-red-400 z-20"><Icon name="Trash2" size={16}/></button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* DEVICES TAB */}
+                            {activeTab==='devices' && !state.currentRoomId && (
+                                <div>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-xl">Dispositivos</h2>
+                                        <button onClick={()=>setShowAddDevice(!showAddDevice)} className="p-2 bg-white/10 rounded-full"><Icon name="Plus" size={16}/></button>
+                                    </div>
+                                    {showAddDevice && (
+                                        <div className="bg-black/60 p-4 rounded-xl mb-4 grid grid-cols-2 gap-2 text-xs">
+                                            <button onClick={()=>handleAddVirtual(DeviceType.AC)} className="bg-white/10 p-2 rounded flex items-center gap-2"><Icon name="Wind"/> AC</button>
+                                            <button onClick={()=>handleAddVirtual(DeviceType.BLIND)} className="bg-white/10 p-2 rounded flex items-center gap-2"><Icon name="Blinds"/> Persiana</button>
+                                            <button onClick={()=>handleAddVirtual(DeviceType.TV)} className="bg-white/10 p-2 rounded flex items-center gap-2"><Icon name="Tv"/> TV</button>
+                                            <button onClick={()=>handleAddVirtual(DeviceType.AVR)} className="bg-white/10 p-2 rounded flex items-center gap-2"><Icon name="Tv"/> Receiver</button>
+                                            <button onClick={()=>handleAddVirtual(DeviceType.MOTION)} className="bg-white/10 p-2 rounded flex items-center gap-2"><Icon name="Footprints"/> Sensor Mov</button>
+                                            <button onClick={()=>handleAddVirtual(DeviceType.PRESENCE)} className="bg-white/10 p-2 rounded flex items-center gap-2"><Icon name="RadioReceiver"/> Sensor Pres</button>
+                                        </div>
+                                    )}
+                                    <div className="space-y-8">
+                                        {[
+                                            {title:'Climatização', types:[DeviceType.AC, DeviceType.THERMOSTAT]},
+                                            {title:'Persianas', types:[DeviceType.BLIND]},
+                                            {title:'Segurança', types:[DeviceType.LOCK, DeviceType.MOTION, DeviceType.PRESENCE]},
+                                            {title:'Outros', types:[DeviceType.SWITCH, DeviceType.DIMMER, DeviceType.TV, DeviceType.AVR]}
+                                        ].map(cat => {
+                                            const devs = Object.values(state.devices).filter(d => cat.types.includes(d.type));
+                                            if(!devs.length) return null;
+                                            return (
+                                                <div key={cat.title}>
+                                                    <h3 className="text-sm font-bold uppercase opacity-50 mb-2">{cat.title}</h3>
+                                                    {renderGrid(devs, `cat_${cat.title}`)}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ROOM DETAIL */}
+                            {state.currentRoomId && room && renderGrid(Object.values(state.devices).filter(d => d.roomId === state.currentRoomId), `room_${state.currentRoomId}`)}
+
+                            {/* SETTINGS */}
+                            {activeTab==='settings' && (
+                                <div className="flex justify-center"><GlassCard className="p-8 w-full max-w-md bg-black/60">
+                                    <h2 className="text-xl mb-6">Ajustes</h2>
+                                    <div className="space-y-4">
+                                        <div className="flex bg-black/30 p-1 rounded-lg"><button onClick={()=>setConfigForm(p=>({...p,useCloud:false}))} className={`flex-1 py-2 text-xs font-bold uppercase rounded ${!configForm.useCloud?'bg-white text-black':'text-white/50'}`}>Local</button><button onClick={()=>setConfigForm(p=>({...p,useCloud:true}))} className={`flex-1 py-2 text-xs font-bold uppercase rounded ${configForm.useCloud?'bg-blue-600 text-white':'text-white/50'}`}>Cloud</button></div>
+                                        {configForm.useCloud ? <input className="w-full bg-white/10 p-2 rounded text-sm" placeholder="UUID" value={configForm.hubUuid||''} onChange={e=>setConfigForm(p=>({...p,hubUuid:e.target.value}))}/> : <input className="w-full bg-white/10 p-2 rounded text-sm" placeholder="IP" value={configForm.hubIp} onChange={e=>setConfigForm(p=>({...p,hubIp:e.target.value}))}/>}
+                                        <input className="w-full bg-white/10 p-2 rounded text-sm" placeholder="App ID" value={configForm.appId} onChange={e=>setConfigForm(p=>({...p,appId:e.target.value}))}/>
+                                        <input className="w-full bg-white/10 p-2 rounded text-sm" type="password" placeholder="Token" value={configForm.accessToken} onChange={e=>setConfigForm(p=>({...p,accessToken:e.target.value}))}/>
+                                        <div className="pt-4 border-t border-white/10">
+                                            <label className="text-xs uppercase opacity-50 mb-1 block">Logo (PNG)</label>
+                                            <input type="file" accept="image/png" onChange={handleLogoUpload} className="text-xs text-white/50" />
+                                        </div>
+                                        <button onClick={()=>{hubitatService.saveConfig(configForm); alert('Salvo!'); window.location.reload()}} className="w-full bg-green-600 py-3 rounded font-bold mt-4">SALVAR</button>
+                                    </div>
+                                </GlassCard></div>
+                            )}
+                        </div>
+
+                        {/* NAV */}
+                        {!state.currentRoomId && (
+                            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-xl rounded-full px-8 py-4 flex gap-8 border border-white/10 shadow-2xl z-50">
+                                <button onClick={()=>setActiveTab('home')} className={activeTab==='home'?'text-white scale-110':'text-white/50 hover:text-white'}><Icon name="Home" size={24}/></button>
+                                <button onClick={()=>setActiveTab('rooms')} className={activeTab==='rooms'?'text-white scale-110':'text-white/50 hover:text-white'}><Icon name="Grid" size={24}/></button>
+                                <button onClick={()=>setActiveTab('devices')} className={activeTab==='devices'?'text-white scale-110':'text-white/50 hover:text-white'}><Icon name="Layers" size={24}/></button>
+                                <button onClick={()=>setActiveTab('media')} className={activeTab==='media'?'text-white scale-110':'text-white/50 hover:text-white'}><Icon name="Tv" size={24}/></button>
+                                <button onClick={()=>setActiveTab('settings')} className={activeTab==='settings'?'text-white scale-110':'text-white/50 hover:text-white'}><Icon name="Settings" size={24}/></button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
