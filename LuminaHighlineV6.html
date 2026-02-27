@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Lumina Highline</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], },
+                    colors: { glass: { 100: 'rgba(255, 255, 255, 0.1)', 200: 'rgba(255, 255, 255, 0.2)', 300: 'rgba(255, 255, 255, 0.3)', dark: 'rgba(0, 0, 0, 0.6)', } },
+                    backdropBlur: { xs: '2px', }
+                }
+            }
+        }
+    </script>
+
+    <!-- React & Libraries -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.292.0/dist/umd/lucide.min.js"></script>
+    
+    <!-- React Grid Layout -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.3.4/react-grid-layout.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.3.4/css/styles.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/react-resizable/3.0.4/css/styles.min.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body { background-color: #000; color: #fff; overflow-x: hidden; touch-action: pan-y; font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+        .react-grid-item.react-grid-placeholder { background: rgba(255, 255, 255, 0.1) !important; border-radius: 16px; opacity: 0.5; }
+        .custom-scrollbar { -webkit-overflow-scrolling: touch; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef, useCallback } = React;
+        const { Responsive, WidthProvider } = window.ReactGridLayout;
+        const ResponsiveGridLayout = WidthProvider(Responsive);
+
+        // --- ICONS ENGINE ---
+        // Helper to render icons dynamically
+        const Icon = ({ name, size = 24, className, strokeWidth = 2, fill = "none", ...props }) => {
+            const lucide = window.lucide;
+            if (!lucide || !lucide.icons) return null;
+            
+            // Map common aliases from your code to Lucide names
+            const map = { 
+                'DragHandle': 'GripVertical', 'Settings': 'Settings', 'Power': 'Power',
+                'Volume2': 'Volume2', 'VolumeX': 'VolumeX', 'Plus': 'Plus', 'Minus': 'Minus',
+                'ChevronUp': 'ChevronUp', 'ChevronDown': 'ChevronDown', 'ChevronLeft': 'ChevronLeft', 'ChevronRight': 'ChevronRight',
+                'Home': 'Home', 'Reply': 'Reply', 'Menu': 'Menu', 'Play': 'Play', 'Pause': 'Pause', 'Square': 'Square',
+                'Link': 'Link', 'Save': 'Save', 'PenLine': 'PenLine', 'ArrowRightLeft': 'ArrowRightLeft', 'Trash2': 'Trash2',
+                'Monitor': 'Monitor', 'Copy': 'Copy', 'Music': 'Music', 'SkipBack': 'SkipBack', 'SkipForward': 'SkipForward',
+                'LogIn': 'LogIn', 'LogOut': 'LogOut', 'Layout': 'Layout', 'EyeOff': 'EyeOff', 'ArrowLeft': 'ArrowLeft',
+                'LayoutDashboard': 'LayoutDashboard', 'Tv': 'Tv', 'Upload': 'Upload', 'RefreshCcw': 'RefreshCcw', 'Image': 'Image',
+                'Snowflake': 'Snowflake', 'Sun': 'Sun', 'Gauge': 'Gauge', 'Droplets': 'Droplets', 'Fan': 'Fan',
+                'RefreshCw': 'RefreshCw', 'Zap': 'Zap', 'Lightbulb': 'Lightbulb', 'Clock': 'Clock', 'Thermometer': 'Thermometer',
+                'Disc': 'Disc', 'Radio': 'Radio', 'Gamepad2': 'Gamepad2', 'Wifi': 'Wifi', 'Cable': 'Cable', 'Film': 'Film', 'Headphones': 'Headphones',
+                'Lock': 'Lock', 'Unlock': 'Unlock', 'AlertCircle': 'AlertCircle', 'MoreVertical': 'MoreVertical',
+                'Cloud': 'Cloud', 'CloudDrizzle': 'CloudDrizzle', 'CloudFog': 'CloudFog', 'CloudLightning': 'CloudLightning', 'CloudRain': 'CloudRain', 'CloudSnow': 'CloudSnow',
+                'MapPin': 'MapPin', 'Search': 'Search', 'Ban': 'Ban', 'Blinds': 'Blinds', 'Layers': 'Layers', 'CheckCircle': 'CheckCircle', 'AlertTriangle': 'AlertTriangle', 'Globe': 'Globe'
+            };
+            
+            const iconName = map[name] || name;
+            
+            // Simple render for UMD build
+            return <i data-lucide={iconName.toLowerCase()} className={className} style={{fontSize: size, width: size, height: size, strokeWidth: strokeWidth, display: 'inline-block'}} fill={fill} {...props}></i>;
+        };
+
+        // --- CONSTANTS ---
+        const DeviceType = {
+            LIGHT: 'LIGHT', DIMMER: 'DIMMER', SWITCH: 'SWITCH', THERMOSTAT: 'THERMOSTAT', 
+            AC: 'AC', BLIND: 'BLIND', LOCK: 'LOCK', MEDIA: 'MEDIA', TV: 'TV', 
+            AVR: 'AVR', SCENE: 'SCENE', MOTION: 'MOTION', PRESENCE: 'PRESENCE'
+        };
+
+        const MOCK_ROOMS = [
+            { id: 'living', name: 'Sala de Estar', image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1920&q=80', deviceIds: [] },
+            { id: 'master', name: 'Suíte Master', image: 'https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?auto=format&fit=crop&w=1920&q=80', deviceIds: [] },
+            { id: 'kitchen', name: 'Cozinha', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80', deviceIds: [] }
+        ];
+
+        const MOCK_DEVICES = {
+            'd1': { id: 'd1', hubitatId: '101', name: 'Lustre', type: DeviceType.DIMMER, roomId: 'living', state: { isOn: true, level: 80 } },
+            'ac1': { id: 'ac1', hubitatId: '103', name: 'AC Sala', type: DeviceType.AC, roomId: 'living', state: { isOn: true, temperature: 23, mode: 'cool' } }
+        };
+
+        // --- LOCAL STORAGE WRAPPER ---
+        const LS_PREFIX = 'lumina_v6_';
+        const ls = {
+            get: (k, d) => { try { return JSON.parse(localStorage.getItem(LS_PREFIX + k)) || d; } catch { return d; } },
+            set: (k, v) => localStorage.setItem(LS_PREFIX + k, JSON.stringify(v))
+        };
+
+        // --- SERVICES ---
+
+        // WEATHER SERVICE
+        const weatherService = {
+            getSavedWeatherConfig: () => ls.get('weather_cfg', null),
+            saveWeatherConfig: (cfg) => ls.set('weather_cfg', cfg),
+            getWeather: async (lat, lon) => {
+                try {
+                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
+                    const data = await res.json();
+                    if (!data || !data.current_weather || !data.daily) return null;
+                    return {
+                        current: { temperature: Math.round(data.current_weather.temperature), code: data.current_weather.weathercode, isDay: data.current_weather.is_day === 1 },
+                        daily: data.daily.time.map((t, i) => ({
+                            date: t, code: data.daily.weathercode[i], 
+                            min: Math.round(data.daily.temperature_2m_min[i]), 
+                            max: Math.round(data.daily.temperature_2m_max[i])
+                        })).slice(0, 5)
+                    };
+                } catch(e) { return null; }
+            },
+            searchCity: async (query) => {
+                if (!query || query.length < 3) return [];
+                try {
+                    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=pt&format=json`);
+                    const data = await res.json();
+                    return data.results || [];
+                } catch { return []; }
+            },
+            getWeatherInfo: (code) => {
+                // WMO Codes
+                if (code === 0) return { iconName: 'Sun', label: 'Limpo', color: 'text-yellow-400' };
+                if (code >= 1 && code <= 3) return { iconName: 'Cloud', label: 'Nublado', color: 'text-white' };
+                if (code === 45 || code === 48) return { iconName: 'CloudFog', label: 'Neblina', color: 'text-gray-400' };
+                if (code >= 51 && code <= 57) return { iconName: 'CloudDrizzle', label: 'Garoa', color: 'text-blue-300' };
+                if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return { iconName: 'CloudRain', label: 'Chuva', color: 'text-blue-400' };
+                if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return { iconName: 'CloudSnow', label: 'Neve', color: 'text-white' };
+                if (code >= 95) return { iconName: 'CloudLightning', label: 'Tempestade', color: 'text-purple-400' };
+                return { iconName: 'Sun', label: '--', color: 'text-white' };
+            },
+            getDayName: (dateStr) => {
+                const d = new Date(dateStr + 'T00:00:00'); // Fix TZ issues
+                return d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+            }
+        };
+
+        // HUBITAT SERVICE
+        const hubitatService = {
+            getConfig: () => ls.get('config', { hubIp: '', appId: '', accessToken: '', useCloud: false }),
+            saveConfig: (c) => ls.set('config', c),
+            getSavedRooms: () => ls.get('rooms', MOCK_ROOMS),
+            saveRooms: (r) => ls.set('rooms', r),
+            getLayouts: () => ls.get('layouts', {}),
+            saveLayouts: (l) => ls.set('layouts', l),
+            getCustomDevices: () => ls.get('custom_devices', {}),
+            saveCustomDevice: (d) => { const all = ls.get('custom_devices', {}); all[d.id] = d; ls.set('custom_devices', all); },
+            removeCustomDevice: (id) => { const all = ls.get('custom_devices', {}); delete all[id]; ls.set('custom_devices', all); },
+            getDeviceMapping: () => ls.get('dev_mapping', {}),
+            saveDeviceMapping: (m) => ls.set('dev_mapping', m),
+            getButtonMapping: () => ls.get('btn_mapping', {}),
+            saveButtonMapping: (m) => ls.set('btn_mapping', m),
+            getBackgroundMapping: () => ls.get('bg_mapping', {}),
+            saveBackgroundMapping: (m) => ls.set('bg_mapping', m),
+            getRoomImageMapping: () => ls.get('room_img_mapping', {}),
+            saveRoomImageMapping: (m) => ls.set('room_img_mapping', m),
+            getNameMapping: () => ls.get('name_mapping', {}),
+            saveNameMapping: (m) => ls.set('name_mapping', m),
+            getActionMapping: () => ls.get('action_mapping', {}),
+            saveActionMapping: (m) => ls.set('action_mapping', m),
+
+            getBaseUrl: (config) => {
+                if (config.useCloud && config.hubUuid) {
+                    const appId = config.useLegacyApi ? config.customAppId : config.appId;
+                    return `https://cloud.hubitat.com/api/${config.hubUuid}/apps/${appId}`;
+                }
+                const protocol = config.hubIp.startsWith('http') ? '' : 'http://';
+                const appId = config.useLegacyApi ? config.customAppId : config.appId;
+                return `${protocol}${config.hubIp}/apps/api/${appId}`;
+            },
+
+            fetchHubitatDevices: async () => {
+                const config = hubitatService.getConfig();
+                if(!config.hubIp) return null;
+                try {
+                    const endpoint = config.useLegacyApi ? 'data' : 'devices';
+                    // Force 'all' for standard Maker API
+                    const urlBase = hubitatService.getBaseUrl(config);
+                    const url = `${urlBase}/${endpoint === 'devices' ? 'devices/all' : endpoint}?access_token=${config.accessToken}`;
+                    
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 15000);
+                    const res = await fetch(url, { signal: controller.signal });
+                    clearTimeout(timeout);
+                    
+                    if(!res.ok) throw new Error('Err');
+                    const data = await res.json();
+                    
+                    const mapped = {};
+                    const mapping = ls.get('dev_mapping', {});
+                    const names = ls.get('name_mapping', {});
+                    const actions = ls.get('action_mapping', {});
+
+                    data.forEach(d => {
+                        let type = DeviceType.SWITCH;
+                        const caps = (d.capabilities || []).map(c => typeof c==='string'?c.toLowerCase():c.name.toLowerCase());
+                        const label = (d.label || d.name).toLowerCase();
+
+                        // Type Inference
+                        if (caps.includes('switchlevel')) type = DeviceType.DIMMER;
+                        if (caps.includes('thermostat') || label.includes('ac ') || label.includes('ar condicionado')) type = DeviceType.AC;
+                        if (caps.includes('windowshade') || label.includes('cortina') || label.includes('persiana')) type = DeviceType.BLIND;
+                        if (caps.includes('lock')) type = DeviceType.LOCK;
+                        if (label.includes('tv') || caps.includes('tv')) type = DeviceType.TV;
+                        if (label.includes('receiver') || label.includes('denon') || caps.includes('audiovolume')) type = DeviceType.AVR;
+                        if (caps.includes('motionsensor')) type = DeviceType.MOTION;
+                        if (caps.includes('presencesensor')) type = DeviceType.PRESENCE;
+
+                        const devId = d.id;
+                        mapped[devId] = {
+                            id: devId, hubitatId: devId, name: names[devId] || d.label || d.name, type,
+                            roomId: mapping[devId] || 'living',
+                            targetDeviceId: actions[devId],
+                            state: { 
+                                isOn: d.attributes.switch==='on', 
+                                level: parseInt(d.attributes.level||0), 
+                                temperature: parseFloat(d.attributes.temperature||0),
+                                mode: d.attributes.thermostatMode,
+                                fanMode: d.attributes.thermostatFanMode,
+                                setpoint: parseFloat(d.attributes.coolingSetpoint || d.attributes.thermostatSetpoint || 24),
+                                input: d.attributes.Input,
+                                mute: d.attributes.mute === 'muted',
+                                currentApp: d.attributes.currentActivity,
+                                windowShade: d.attributes.windowShade,
+                                motion: d.attributes.motion,
+                                presence: d.attributes.presence,
+                                illuminance: parseInt(d.attributes.illuminance||0),
+                                battery: parseInt(d.attributes.battery||0)
+                            }
+                        };
+                    });
+                    return mapped;
+                } catch(e) { console.error(e); return null; }
+            },
+            
+            sendHubitatCommand: async ({ deviceId, command, arguments: args }) => {
+                const config = hubitatService.getConfig();
+                if(!config.hubIp) return;
+                const baseUrl = hubitatService.getBaseUrl(config);
+                const argStr = args && args.length ? `/${args.join(',')}` : '';
+                const url = config.useLegacyApi 
+                    ? `${baseUrl}/command/${deviceId}/${command}${argStr}?access_token=${config.accessToken}`
+                    : `${baseUrl}/devices/${deviceId}/${command}${argStr}?access_token=${config.accessToken}`;
+                try { await fetch(url); } catch(e) { console.error(e); }
+            }
+        };
+
+        // SPOTIFY SERVICE
+        const spotifyService = {
+            getClientId: () => ls.get('spotify_client_id', ''),
+            saveClientId: (id) => ls.set('spotify_client_id', id),
+            getToken: () => {
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
+                const token = params.get('access_token');
+                if(token) {
+                    ls.set('spotify_token', token);
+                    window.location.hash = '';
+                    return token;
+                }
+                return ls.get('spotify_token', null);
+            },
+            logoutSpotify: () => ls.set('spotify_token', null),
+            getAuthUrl: (clientId) => {
+                const redirect = window.location.origin + window.location.pathname;
+                const scopes = 'user-read-playback-state user-modify-playback-state user-read-currently-playing';
+                return `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirect)}&scope=${encodeURIComponent(scopes)}`;
+            },
+            getPlayerState: async () => {
+                const token = spotifyService.getToken();
+                if(!token) return null;
+                try {
+                    const res = await fetch('https://api.spotify.com/v1/me/player', { headers: { 'Authorization': `Bearer ${token}` } });
+                    if(res.status === 204) return null;
+                    return await res.json();
+                } catch { return null; }
+            },
+            control: async (cmd, method='POST') => {
+                const token = spotifyService.getToken();
+                if(!token) return;
+                await fetch(`https://api.spotify.com/v1/me/player/${cmd}`, { method, headers: { 'Authorization': `Bearer ${token}` } });
+            }
+        };
+
+        // --- COMPONENTS ---
+
+        const GlassCard = ({ children, className = '', onClick, style, ...props }) => (
+            <div onClick={onClick} style={style} className={`relative overflow-hidden rounded-2xl border transition-colors duration-300 ease-out bg-black/30 border-white/10 hover:bg-white/10 hover:border-white/30 backdrop-blur-xl ${className} ${onClick?'cursor-pointer':''}`} {...props}>
+                <div className="relative z-10 h-full w-full">{children}</div>
+            </div>
+        );
+
+        // AUTH LOCK
+        const AuthLock = ({ onUnlock }) => {
+            const [pin, setPin] = useState('');
+            const [error, setError] = useState(false);
+            const [storedPin, setStoredPin] = useState(localStorage.getItem('lumina_auth_pin'));
+            
+            const handleNum = (n) => { if(pin.length < 6) { setPin(pin + n); setError(false); } };
+            const submit = () => {
+                if(!storedPin) { if(pin.length<4) return setError(true); localStorage.setItem('lumina_auth_pin', pin); setStoredPin(pin); onUnlock(); }
+                else { if(pin === storedPin) onUnlock(); else { setError(true); setPin(''); } }
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 bg-black flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-cover bg-center opacity-40 blur-sm" style={{backgroundImage: "url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80')"}} />
+                    <div className="absolute inset-0 bg-black/60" />
+                    <GlassCard className="w-full max-w-sm p-8 flex flex-col items-center gap-6 relative z-10 bg-black/40">
+                        <div className="flex flex-col items-center gap-2">
+                            <div className={`p-4 rounded-full border ${error?'border-red-500/50 bg-red-500/10 text-red-200':'border-white/10 bg-white/5'}`}><Icon name={error?'AlertCircle':(storedPin?'Lock':'Unlock')} size={32}/></div>
+                            <h2 className="text-xl font-light uppercase">{storedPin ? 'Lumina Lock' : 'Criar Senha'}</h2>
+                        </div>
+                        <div className="flex gap-3 h-4">{[...Array(6)].map((_,i) => <div key={i} className={`w-3 h-3 rounded-full transition-all ${i<pin.length?'bg-blue-400 scale-110':'bg-white/10'}`}/>)}</div>
+                        <div className="grid grid-cols-3 gap-4 w-full max-w-[240px]">
+                            {[1,2,3,4,5,6,7,8,9].map(n => <button key={n} onClick={()=>handleNum(n)} className="h-16 w-16 rounded-full bg-white/5 hover:bg-white/10 text-xl font-light">{n}</button>)}
+                            <button onClick={()=>{setPin('');setError(false);}} className="h-16 w-16 text-xs text-white/40">CLR</button>
+                            <button onClick={()=>handleNum(0)} className="h-16 w-16 rounded-full bg-white/5 hover:bg-white/10 text-xl font-light">0</button>
+                            <button onClick={submit} className="h-16 w-16 rounded-full bg-blue-500/20 text-blue-200 flex items-center justify-center"><Icon name="ChevronRight"/></button>
+                        </div>
+                    </GlassCard>
+                </div>
+            );
+        };
+
+        // IMAGE EDITOR
+        const ImageEditorModal = ({ isOpen, onClose, onSave, currentImage, defaultImage, title }) => {
+            const [mode, setMode] = useState('url');
+            const [urlInput, setUrlInput] = useState('');
+            const [preview, setPreview] = useState(null);
+
+            useEffect(() => { if(isOpen) { setPreview(currentImage||defaultImage); setUrlInput(currentImage?.startsWith('http')?currentImage:''); } }, [isOpen, currentImage, defaultImage]);
+            if(!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+                    <GlassCard className="w-full max-w-md bg-zinc-900/90 border-white/10 flex flex-col p-0">
+                        <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
+                            <h3 className="text-sm font-medium uppercase tracking-widest text-white flex gap-2"><Icon name="Image" size={16}/> {title}</h3>
+                            <button onClick={onClose}><Icon name="X" size={20}/></button>
+                        </div>
+                        <div className="p-6 flex flex-col gap-6">
+                            <div className="aspect-video w-full rounded-lg overflow-hidden border border-white/10 bg-black"><img src={preview||defaultImage} className="w-full h-full object-cover"/></div>
+                            <div className="flex flex-col gap-4">
+                                <div className="flex gap-2 p-1 bg-white/5 rounded-lg border border-white/10">
+                                    <button onClick={()=>setMode('url')} className={`flex-1 py-2 text-xs rounded ${mode==='url'?'bg-white/20 text-white':'text-white/40'}`}>Link</button>
+                                    <button onClick={()=>setMode('upload')} className={`flex-1 py-2 text-xs rounded ${mode==='upload'?'bg-white/20 text-white':'text-white/40'}`}>Upload</button>
+                                </div>
+                                {mode==='url' ? <input type="text" value={urlInput} onChange={e=>{setUrlInput(e.target.value); if(e.target.value.match(/^https?:\/\//)) setPreview(e.target.value);}} className="w-full bg-black/40 border border-white/10 rounded p-3 text-white text-xs"/> : 
+                                <label className="w-full border border-dashed border-white/20 rounded h-20 flex items-center justify-center cursor-pointer bg-black/20 hover:bg-black/30"><span className="text-[10px] uppercase text-white/50">Arquivo</span><input type="file" accept="image/*" onChange={e=>{const f=e.target.files?.[0]; if(f){const r=new FileReader(); r.onloadend=()=>setPreview(r.result); r.readAsDataURL(f);}}} className="hidden"/></label>}
+                            </div>
+                        </div>
+                        <div className="p-4 bg-black/20 border-t border-white/10 flex justify-between">
+                            <button onClick={()=>{onSave(null);onClose();}} className="text-[10px] text-red-300 flex gap-1 items-center"><Icon name="RefreshCcw" size={12}/> Restaurar</button>
+                            <button onClick={()=>{onSave(preview===defaultImage?null:preview);onClose();}} className="bg-white text-black text-xs font-bold uppercase px-6 py-2.5 rounded-lg flex gap-2 items-center"><Icon name="Save" size={14}/> Salvar</button>
+                        </div>
+                    </GlassCard>
+                </div>
+            );
+        };
+
+        // REMOTE CONTROLS
+        const ACRemote = ({ device, onUpdate }) => {
+            const send = (cmd, args=[]) => hubitatService.sendHubitatCommand({ deviceId: device.hubitatId, command: cmd, arguments: args });
+            const handleMode = (m) => { onUpdate(device.id, {mode: m.value, isOn: true}); send(m.cmd); };
+            const handleFan = (f) => { onUpdate(device.id, {fanMode: f.value}); send(f.cmd); };
+            const handleTemp = (delta) => {
+                const next = (device.state.setpoint || 24) + delta;
+                onUpdate(device.id, {setpoint: next});
+                send(device.state.mode==='heat'?'setHeatingSetpoint':'setCoolingSetpoint', [next]);
+            };
+            const MODES = [{label:'Cool',value:'cool',icon:'Snowflake',color:'text-cyan-400',cmd:'cool'},{label:'Heat',value:'heat',icon:'Sun',color:'text-orange-400',cmd:'heat'},{label:'Auto',value:'auto',icon:'Gauge',color:'text-green-400',cmd:'auto'},{label:'Dry',value:'dry',icon:'Droplets',color:'text-blue-300',cmd:'dry'},{label:'Fan',value:'fan',icon:'Fan',color:'text-white/70',cmd:'fan'}];
+            return (
+                <GlassCard className="h-full flex flex-col p-4">
+                    <div className="flex justify-between items-center mb-4"><h2 className="text-xl font-medium">{device.name}</h2><button onClick={()=>{onUpdate(device.id,{isOn:!device.state.isOn}); send(device.state.isOn?'poweroff':'poweron');}} className={`p-3 rounded-full ${device.state.isOn?'bg-green-500/20 text-green-400':'bg-white/10'}`}><Icon name="Power" size={24}/></button></div>
+                    <div className="flex items-center justify-center py-4 gap-4"><button onClick={()=>handleTemp(-1)} className="p-4 bg-white/5 rounded-full"><Icon name="Minus"/></button><div className="flex flex-col items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br from-white/10 to-transparent border border-white/10"><span className="text-4xl font-light">{device.state.setpoint}°</span><span className="text-[10px] uppercase text-white/40 flex gap-1"><Icon name="Thermometer" size={10}/> {device.state.temperature}°</span></div><button onClick={()=>handleTemp(1)} className="p-4 bg-white/5 rounded-full"><Icon name="Plus"/></button></div>
+                    <div className="grid grid-cols-5 gap-2 mb-4">{MODES.map(m=><button key={m.value} onClick={()=>handleMode(m)} className={`flex flex-col items-center gap-1 py-2 rounded-lg ${device.state.mode===m.value?'bg-white/10 text-white':'text-white/30'}`}><Icon name={m.icon} size={18} className={device.state.mode===m.value?m.color:''}/><span className="text-[8px]">{m.label}</span></button>)}</div>
+                    <div className="grid grid-cols-4 gap-2">{['Auto','Low','Mid','High'].map(f=><button key={f} onClick={()=>handleFan({value:f.toLowerCase(),cmd:`fan${f}`})} className={`py-2 rounded text-[9px] uppercase font-bold border ${device.state.fanMode?.includes(f.toLowerCase())?'bg-blue-500/20 border-blue-500/40 text-blue-200':'border-transparent bg-white/5 text-white/40'}`}>{f}</button>)}</div>
+                </GlassCard>
+            );
+        };
+
+        const DenonRemote = ({ device, onUpdate }) => {
+            const send = (cmd, args=[]) => hubitatService.sendHubitatCommand({ deviceId: device.hubitatId, command: cmd, arguments: args });
+            const INPUTS = [{label:'CBL',icon:'Cable',value:'Satellite/Cable'},{label:'TV',icon:'Tv',value:'TV'},{label:'Game',icon:'Gamepad2',value:'Game'},{label:'Net',icon:'Wifi',value:'Network'},{label:'Aux',icon:'Headphones',value:'Auxilary'}];
+            return (
+                <GlassCard className="h-full flex flex-col p-4 bg-black/40"><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-medium">{device.name}</h2><button onClick={()=>{onUpdate(device.id,{isOn:!device.state.isOn}); send(device.state.isOn?'off':'on');}} className={`p-3 rounded-full ${device.state.isOn?'bg-green-500':'bg-white/10'}`}><Icon name="Power"/></button></div><div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl mb-4"><button onClick={()=>{onUpdate(device.id,{mute:!device.state.mute}); send(device.state.mute?'unmute':'mute');}} className={`p-2 rounded ${device.state.mute?'text-red-400 bg-red-500/10':'text-white'}`}><Icon name={device.state.mute?'VolumeX':'Volume2'}/></button><input type="range" min="0" max="98" value={device.state.level||0} onChange={(e)=>{onUpdate(device.id,{level:parseInt(e.target.value)}); send('setLevel',[e.target.value]);}} className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"/><span className="text-sm font-bold w-8">{device.state.level}</span></div><h3 className="text-[10px] font-bold uppercase text-white/40 mb-2">Entradas</h3><div className="grid grid-cols-5 gap-2">{INPUTS.map(inp=><button key={inp.value} onClick={()=>{onUpdate(device.id,{input:inp.value}); send('SetInput',[inp.value]);}} className={`flex flex-col items-center justify-center py-2 rounded border ${device.state.input===inp.value?'bg-blue-600/30 border-blue-500':'bg-white/5 border-transparent text-white/50'}`}><Icon name={inp.icon} size={16}/><span className="text-[8px] mt-1">{inp.label}</span></button>)}</div></GlassCard>
+            );
+        };
+
+        const GenericDeviceControl = ({ device, onUpdate, allDevices }) => {
+            const toggle = (e) => { e.stopPropagation(); const n = !device.state.isOn; onUpdate(device.id, {isOn: n}); hubitatService.sendHubitatCommand({deviceId: device.hubitatId, command: n?'on':'off'}); };
+            const isActive = device.state.isOn;
+            const icon = device.type === DeviceType.BLIND ? 'Blinds' : device.type === DeviceType.DIMMER ? 'Lightbulb' : device.type === DeviceType.LOCK ? 'Lock' : 'Power';
+            return (
+                <div className="h-full flex flex-col justify-between p-4">
+                    <div className="flex justify-between">
+                        <Icon name={icon} className={isActive?'text-white':'text-white/40'} />
+                        <div onClick={toggle} className={`w-8 h-5 rounded-full p-1 cursor-pointer transition-colors ${isActive?'bg-green-500':'bg-white/10'}`}><div className={`w-3 h-3 bg-white rounded-full transition-transform ${isActive?'translate-x-3':'translate-x-0'}`} /></div>
+                    </div>
+                    <div><span className="text-sm font-medium block truncate">{device.name}</span><span className="text-[10px] text-white/50">{isActive?'Ligado':'Desligado'}</span></div>
+                </div>
+            );
+        };
+
+        const LGRemote = ({ device, onUpdate }) => {
+            const send = (cmd, args=[]) => hubitatService.sendHubitatCommand({ deviceId: device.hubitatId, command: cmd, arguments: args });
+            return (
+                <GlassCard className="h-full flex flex-col p-4 bg-black/40"><div className="flex justify-between items-center mb-4"><h3 className="font-medium">{device.name}</h3><button className={`p-2 rounded-full ${device.state.isOn?'bg-red-500/20 text-red-500':'bg-white/10'}`} onClick={()=>{onUpdate(device.id,{isOn:!device.state.isOn}); send(device.state.isOn?'off':'on');}}><Icon name="Power" size={18}/></button></div><div className="flex-1 flex items-center justify-center"><div className="relative w-32 h-32 bg-white/5 rounded-full"><button className="absolute top-2 left-1/2 -translate-x-1/2" onClick={()=>send('arrowUp')}><Icon name="ChevronUp"/></button><button className="absolute bottom-2 left-1/2 -translate-x-1/2" onClick={()=>send('arrowDown')}><Icon name="ChevronDown"/></button><button className="absolute left-2 top-1/2 -translate-y-1/2" onClick={()=>send('arrowLeft')}><Icon name="ChevronLeft"/></button><button className="absolute right-2 top-1/2 -translate-y-1/2" onClick={()=>send('arrowRight')}><Icon name="ChevronRight"/></button><button className="absolute inset-8 bg-white/10 rounded-full flex items-center justify-center font-bold text-[10px]" onClick={()=>send('enter')}>OK</button></div></div><div className="grid grid-cols-3 gap-2 mt-4">{['Netflix','YouTube','Spotify'].map(app=><button key={app} className="bg-white/5 hover:bg-white/10 py-2 rounded text-[9px] uppercase" onClick={()=>send('launchApp',[app])}>{app}</button>)}</div></GlassCard>
+            );
+        };
+
+        const SpotifyWidget = () => {
+            const [token, setToken] = useState(spotifyService.getToken());
+            const [state, setState] = useState(null);
+            const [showSettings, setShowSettings] = useState(false);
+            const [clientId, setClientId] = useState(spotifyService.getClientId());
+            useEffect(() => { if(!token) return; const p = setInterval(async()=>{setState(await spotifyService.getPlayerState());},5000); return ()=>clearInterval(p); }, [token]);
+            if(showSettings) return <GlassCard className="w-full h-full p-6 flex flex-col gap-4"><div className="flex justify-between"><h3 className="text-sm font-bold flex gap-2"><Icon name="Music"/> Spotify</h3><button onClick={()=>setShowSettings(false)}><Icon name="X"/></button></div><input className="bg-black/40 border border-white/10 p-2 rounded text-white text-xs" placeholder="Client ID" value={clientId} onChange={e=>setClientId(e.target.value)} /><button className="bg-green-600 p-2 rounded text-xs font-bold" onClick={()=>{spotifyService.saveClientId(clientId);setShowSettings(false);}}>SALVAR</button></GlassCard>;
+            if(!token) return <GlassCard className="w-full h-full p-6 flex flex-col items-center justify-center gap-4"><div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center"><Icon name="Music" className="text-black"/></div><button className="bg-white text-black px-4 py-2 rounded-full font-bold text-xs uppercase" onClick={()=>{if(!clientId)setShowSettings(true);else window.location.href=spotifyService.getAuthUrl(clientId);}}>Conectar</button><button className="text-white/30" onClick={()=>setShowSettings(true)}><Icon name="Settings" size={14}/></button></GlassCard>;
+            const track = state?.item, playing = state?.is_playing, img = track?.album.images[0]?.url;
+            return <GlassCard className="w-full h-full relative group overflow-hidden">{img&&<div className="absolute inset-0 bg-cover bg-center opacity-40 blur-md scale-110" style={{backgroundImage:`url(${img})`}}/>}<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"/><div className="relative z-10 p-4 h-full flex flex-col justify-end"><div className="flex gap-3 items-center mb-4">{img&&<img src={img} className="w-12 h-12 rounded shadow-lg"/>}<div className="flex-1 min-w-0"><h3 className="text-sm font-bold truncate">{track?.name||'Pausado'}</h3><p className="text-xs text-white/60 truncate">{track?.artists[0]?.name}</p></div></div><div className="flex justify-center gap-6"><button onClick={()=>spotifyService.control('previous')}><Icon name="SkipBack" size={20}/></button><button className="bg-white text-black rounded-full p-2 hover:scale-105 transition-transform" onClick={()=>spotifyService.control(playing?'pause':'play','PUT')}><Icon name={playing?'Pause':'Play'} fill="black" size={20}/></button><button onClick={()=>spotifyService.control('next')}><Icon name="SkipForward" size={20}/></button></div><button onClick={()=>{spotifyService.logoutSpotify();setToken(null);}} className="absolute top-2 right-2 p-1 text-white/20 hover:text-red-400"><Icon name="LogOut" size={12}/></button></div></GlassCard>;
+        };
+
+        // --- APP MAIN ---
+        const App = () => {
+            useEffect(() => { window.lucide && window.lucide.createIcons(); }, []);
+            
+            const [isLocked, setIsLocked] = useState(true);
+            const [state, setState] = useState({ currentRoomId: null, rooms: hubitatService.getSavedRooms(), devices: MOCK_DEVICES });
+            const [activeTab, setActiveTab] = useState('home');
+            const [layouts, setLayouts] = useState(hubitatService.getLayouts());
+            const [isEditMode, setIsEditMode] = useState(false);
+            const [configForm, setConfigForm] = useState(hubitatService.getConfig());
+            const [currentTime, setCurrentTime] = useState(new Date());
+            
+            // Weather
+            const [weatherData, setWeatherData] = useState(null);
+            const [weatherConfig, setWeatherConfig] = useState(weatherService.getSavedWeatherConfig());
+            const [editingTarget, setEditingTarget] = useState(null);
+            const [customBgs, setCustomBgs] = useState(hubitatService.getBackgroundMapping());
+            const [customRoomImgs, setCustomRoomImgs] = useState(hubitatService.getRoomImageMapping());
+
+            useEffect(() => {
+                const timer = setInterval(() => { setCurrentTime(new Date()); window.lucide && window.lucide.createIcons(); }, 1000);
+                const load = async () => {
+                    const real = await hubitatService.fetchHubitatDevices();
+                    if(real) {
+                        const merged = {...real, ...hubitatService.getCustomDevices()};
+                        // Apply stored room mappings
+                        const mapping = hubitatService.getDeviceMapping();
+                        Object.keys(merged).forEach(id => { if(mapping[id]) merged[id].roomId = mapping[id]; });
+                        setState(p => ({...p, devices: merged}));
+                    }
+                    if(weatherConfig) {
+                        const w = await weatherService.getWeather(weatherConfig.lat, weatherConfig.lon);
+                        setWeatherData(w);
+                    }
+                };
+                load();
+                return () => clearInterval(timer);
+            }, []);
+
+            const handleLayoutChange = (l, k) => { const u={...layouts,[k]:l}; setLayouts(u); hubitatService.saveLayouts(u); };
+            const renderGrid = (devs, key) => {
+                let layout = layouts[key] || devs.map((d,i)=>({i:d.id,x:i%4,y:Math.floor(i/4),w:1,h:d.type===DeviceType.TV||d.type===DeviceType.AC||d.type===DeviceType.AVR?2:1}));
+                return (
+                    <ResponsiveGridLayout className="layout" layouts={{lg:layout,md:layout,sm:layout}} breakpoints={{lg:1200,md:996,sm:768}} cols={{lg:4,md:3,sm:2}} rowHeight={160} isDraggable={isEditMode} isResizable={isEditMode} onLayoutChange={l=>handleLayoutChange(l,key)} margin={[16,16]}>
+                        {devs.map(d => (
+                            <div key={d.id} className="relative">
+                                <GlassCard className="h-full">
+                                    {d.type === DeviceType.AC ? <ACRemote device={d} onUpdate={(id,s)=>setState(p=>({...p,devices:{...p.devices,[id]:{...p.devices[id],state:{...p.devices[id].state,...s}}}}))} /> :
+                                     d.type === DeviceType.TV ? <LGRemote device={d} onUpdate={(id,s)=>setState(p=>({...p,devices:{...p.devices,[id]:{...p.devices[id],state:{...p.devices[id].state,...s}}}}))} /> :
+                                     d.type === DeviceType.AVR ? <DenonRemote device={d} onUpdate={(id,s)=>setState(p=>({...p,devices:{...p.devices,[id]:{...p.devices[id],state:{...p.devices[id].state,...s}}}}))} /> :
+                                     <GenericDeviceControl device={d} onUpdate={(id,s)=>setState(p=>({...p,devices:{...p.devices,[id]:{...p.devices[id],state:{...p.devices[id].state,...s}}}}))} />}
+                                </GlassCard>
+                            </div>
+                        ))}
+                        {key==='media' && <div key="spotify" data-grid={{x:0,y:0,w:2,h:1}}><SpotifyWidget/></div>}
+                    </ResponsiveGridLayout>
+                );
+            };
+
+            const room = state.rooms.find(r => r.id === state.currentRoomId);
+            const bg = state.currentRoomId ? (customRoomImgs[room?.id] || room?.image) : (customBgs[activeTab] || 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1920&q=80');
+            const weatherInfo = weatherData ? weatherService.getWeatherInfo(weatherData.current.code) : {iconName:'Sun',label:'--',color:'text-white'};
+
+            if(isLocked) return <AuthLock onUnlock={()=>setIsLocked(false)} />;
+
+            return (
+                <div className="relative min-h-screen w-full bg-black text-white font-sans overflow-hidden select-none">
+                    <div className="fixed inset-0 bg-cover bg-center z-0 transition-all duration-1000" style={{ backgroundImage: `url(${bg})`, filter: activeTab==='home'?'blur(2px)':'none' }} />
+                    <div className="fixed inset-0 bg-black/40 z-0" />
+                    
+                    <ImageEditorModal isOpen={!!editingTarget} onClose={()=>setEditingTarget(null)} title="Editar Fundo" currentImage={bg} defaultImage="" onSave={(img)=>{
+                        if(editingTarget.type==='tab') { const n={...customBgs,[editingTarget.id]:img}; setCustomBgs(n); hubitatService.saveBackgroundMapping(n); }
+                        else { const n={...customRoomImgs,[editingTarget.id]:img}; setCustomRoomImgs(n); hubitatService.saveRoomImageMapping(n); }
+                    }} />
+
+                    <div className="relative z-10 h-screen flex flex-col p-6">
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-6">
+                            {state.currentRoomId ? <button onClick={()=>setState(p=>({...p,currentRoomId:null}))} className="flex items-center gap-2 text-white/80 hover:text-white"><div className="p-2 rounded-full bg-white/10 backdrop-blur"><Icon name="ArrowLeft" size={20}/></div><span className="text-xs font-bold uppercase">Voltar</span></button> : <h1 className="text-2xl font-light">Lumina</h1>}
+                            <div className="flex gap-2">
+                                <button onClick={()=>setEditingTarget({type:state.currentRoomId?'room':'tab',id:state.currentRoomId||activeTab})} className="p-2 rounded-full bg-black/30 hover:bg-white/20"><Icon name="Image"/></button>
+                                {activeTab!=='home' && activeTab!=='settings' && <button onClick={()=>setIsEditMode(!isEditMode)} className={`p-2 rounded-full ${isEditMode?'bg-yellow-500':'bg-black/30'}`}><Icon name="Layout"/></button>}
+                                <button onClick={()=>setIsLocked(true)} className="p-2 rounded-full bg-red-500/20 text-red-200"><Icon name="Lock"/></button>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto pb-32">
+                            {activeTab==='home' && !state.currentRoomId && (
+                                <div className="flex flex-col items-center justify-center h-full animate-in fade-in">
+                                    <h1 className="text-8xl font-thin tracking-tighter drop-shadow-2xl">{currentTime.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</h1>
+                                    <div className="flex items-center gap-4 mt-4">
+                                        <div className="flex items-center gap-2">
+                                            <Icon name={weatherInfo.iconName} className={weatherInfo.color} size={32} />
+                                            <span className="text-2xl font-light">{weatherData?.current.temperature}°</span>
+                                        </div>
+                                        <div className="h-8 w-px bg-white/20"/>
+                                        <p className="text-sm uppercase tracking-widest opacity-70">{weatherConfig?.city || 'São Paulo'}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab==='rooms' && !state.currentRoomId && (
+                                <div className="grid grid-cols-3 gap-6">
+                                    {state.rooms.map(r => (
+                                        <div key={r.id} onClick={()=>setState(p=>({...p,currentRoomId:r.id}))} className="h-40 bg-white/10 rounded-2xl flex items-end p-4 cursor-pointer hover:scale-[1.02] transition-transform border border-white/5 relative overflow-hidden group">
+                                            <div className="absolute inset-0 bg-cover bg-center opacity-50 group-hover:scale-110 transition-transform duration-700" style={{backgroundImage:`url(${customRoomImgs[r.id] || r.image})`}}/>
+                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"/>
+                                            <span className="relative z-10 font-bold text-lg shadow-black drop-shadow-md">{r.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {(state.currentRoomId || activeTab === 'media' || activeTab === 'scenes') && (
+                                renderGrid(
+                                    activeTab === 'media' ? Object.values(state.devices).filter(d => d.type === DeviceType.TV || d.type === DeviceType.AVR) :
+                                    activeTab === 'scenes' ? Object.values(state.devices).filter(d => d.type === DeviceType.SCENE) :
+                                    Object.values(state.devices).filter(d => d.roomId === state.currentRoomId),
+                                    state.currentRoomId ? `room_${state.currentRoomId}` : activeTab
+                                )
+                            )}
+
+                            {activeTab==='settings' && (
+                                <div className="flex justify-center"><GlassCard className="p-8 w-full max-w-md bg-black/60">
+                                    <h2 className="text-xl mb-6 flex gap-2"><Icon name="Settings"/> Ajustes</h2>
+                                    <div className="space-y-4">
+                                        <div className="flex bg-black/30 p-1 rounded-lg"><button onClick={()=>setConfigForm(p=>({...p,useCloud:false}))} className={`flex-1 py-2 text-xs font-bold uppercase rounded ${!configForm.useCloud?'bg-white text-black':'text-white/50'}`}>Local</button><button onClick={()=>setConfigForm(p=>({...p,useCloud:true}))} className={`flex-1 py-2 text-xs font-bold uppercase rounded ${configForm.useCloud?'bg-blue-600 text-white':'text-white/50'}`}>Cloud</button></div>
+                                        {configForm.useCloud ? <div><label className="text-[10px] uppercase opacity-50">Hub UUID</label><input className="w-full bg-white/10 p-2 rounded text-sm" value={configForm.hubUuid||''} onChange={e=>setConfigForm(p=>({...p,hubUuid:e.target.value}))}/></div> : <div><label className="text-[10px] uppercase opacity-50">IP Local</label><input className="w-full bg-white/10 p-2 rounded text-sm" value={configForm.hubIp} onChange={e=>setConfigForm(p=>({...p,hubIp:e.target.value}))}/></div>}
+                                        <div><label className="text-[10px] uppercase opacity-50">App ID</label><input className="w-full bg-white/10 p-2 rounded text-sm" value={configForm.appId} onChange={e=>setConfigForm(p=>({...p,appId:e.target.value}))}/></div>
+                                        <div><label className="text-[10px] uppercase opacity-50">Token</label><input className="w-full bg-white/10 p-2 rounded text-sm" type="password" value={configForm.accessToken} onChange={e=>setConfigForm(p=>({...p,accessToken:e.target.value}))}/></div>
+                                        <div className="pt-4 border-t border-white/10"><label className="text-[10px] uppercase opacity-50">Clima (Latitude/Longitude)</label><div className="flex gap-2"><input className="w-full bg-white/10 p-2 rounded text-sm" placeholder="Lat" value={weatherConfig?.lat||''} onChange={e=>setWeatherConfig(p=>({...p,lat:e.target.value}))} /><input className="w-full bg-white/10 p-2 rounded text-sm" placeholder="Lon" value={weatherConfig?.lon||''} onChange={e=>setWeatherConfig(p=>({...p,lon:e.target.value}))} /></div><button onClick={()=>{weatherService.saveWeatherConfig(weatherConfig); alert('Salvo!');}} className="text-xs text-blue-300 mt-1">Salvar Clima</button></div>
+                                        <button onClick={()=>{hubitatService.saveConfig(configForm); alert('Salvo!'); window.location.reload()}} className="w-full bg-green-600 py-3 rounded font-bold mt-4">SALVAR TUDO</button>
+                                    </div>
+                                </GlassCard></div>
+                            )}
+                        </div>
+
+                        {/* Nav */}
+                        {!state.currentRoomId && (
+                            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-xl rounded-full px-8 py-4 flex gap-8 border border-white/10 shadow-2xl z-50">
+                                <button onClick={()=>setActiveTab('home')} className={activeTab==='home'?'text-white scale-110':'text-white/50 hover:text-white'}><Icon name="Home" size={24}/></button>
+                                <button onClick={()=>setActiveTab('rooms')} className={activeTab==='rooms'?'text-white scale-110':'text-white/50 hover:text-white'}><Icon name="LayoutDashboard" size={24}/></button>
+                                <button onClick={()=>setActiveTab('media')} className={activeTab==='media'?'text-white scale-110':'text-white/50 hover:text-white'}><Icon name="Tv" size={24}/></button>
+                                <button onClick={()=>setActiveTab('scenes')} className={activeTab==='scenes'?'text-white scale-110':'text-white/50 hover:text-white'}><Icon name="Layers" size={24}/></button>
+                                <button onClick={()=>setActiveTab('settings')} className={activeTab==='settings'?'text-white scale-110':'text-white/50 hover:text-white'}><Icon name="Settings" size={24}/></button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
