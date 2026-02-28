@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lumina Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              glass: {
+                100: 'rgba(255, 255, 255, 0.1)',
+                200: 'rgba(255, 255, 255, 0.2)',
+                300: 'rgba(255, 255, 255, 0.3)',
+                dark: 'rgba(0, 0, 0, 0.6)',
+              }
+            },
+            backdropBlur: {
+              xs: '2px',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #000;
+        color: #fff;
+        overflow-x: hidden;
+      }
+      /* Custom Scrollbar for Glass look */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      /* React Grid Layout Styles */
+      .react-grid-layout {
+        position: relative;
+        transition: height 200ms ease;
+      }
+      .react-grid-item {
+        transition: all 200ms ease;
+        transition-property: left, top;
+      }
+      .react-grid-item.cssTransforms {
+        transition-property: transform;
+      }
+      .react-grid-item.resizing {
+        z-index: 100;
+        box-shadow: 0 0 10px rgba(255,255,255,0.5);
+      }
+      .react-grid-item.react-grid-placeholder {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-radius: 16px;
+        opacity: 0.5;
+        z-index: 2;
+      }
+      /* Resize Handle */
+      .react-resizable-handle {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        bottom: 0;
+        right: 0;
+        cursor: se-resize;
+        z-index: 100;
+      }
+      .react-resizable-handle::after {
+        content: "";
+        position: absolute;
+        right: 5px;
+        bottom: 5px;
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid rgba(255,255,255,0.5);
+        border-bottom: 2px solid rgba(255,255,255,0.5);
+      }
+    </style>
+
+<link rel="stylesheet" href="/index.css">
+  <script type="module" crossorigin src="./index.js"></script>
+</head>
+  <body>
+    <div id="root"></div>
+</body>
+</html>
