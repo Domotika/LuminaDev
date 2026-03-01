@@ -1,35 +1,75 @@
 # Lumina Dashboard
 
-Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que roda diretamente no File Manager.
+<div align="center">
 
-![Version](https://img.shields.io/badge/version-1.5.3-blue)
-![Platform](https://img.shields.io/badge/platform-Hubitat-green)
-![License](https://img.shields.io/badge/license-MIT-yellow)
+![Lumina Banner](https://luminadashboards.dev.br/assets/banner.png)
 
-## ✨ Features
+**Professional Glassmorphism Dashboard for Hubitat Elevation**
 
-- 🎨 **UI Glassmorphism** - Design moderno com efeitos de vidro
-- ⚡ **Zero Latência** - Execução 100% local no hub
-- 📱 **Responsivo** - Funciona em tablets, celulares e painéis de parede
-- 🔌 **Maker API** - Integração nativa via Hubitat Maker API
-- 🏠 **Multi-room** - Organize dispositivos por cômodos
-- 🎛️ **Controles Avançados** - TV remotes, AC, persianas, dimmers
+*Single-file HTML that runs directly on your hub — zero external servers required.*
 
-## 📦 Instalação
+[![Version](https://img.shields.io/badge/version-1.5.3-blue?style=for-the-badge)](https://github.com/Domotika/LuminaDev/releases)
+[![Platform](https://img.shields.io/badge/platform-Hubitat-00A4EF?style=for-the-badge)](https://hubitat.com)
+[![License](https://img.shields.io/badge/license-Commercial-yellow?style=for-the-badge)](#)
 
-1. Faça upload do arquivo `LuminaHighline_vX.X.html` para o **File Manager** do Hubitat
-2. Configure o **Maker API** no Hubitat (Apps → Maker API)
-3. Acesse: `http://[IP-HUBITAT]/local/LuminaHighline_vX.X.html`
-4. Configure IP, App ID e Access Token na tela de Settings
+🌐 **Website:** [luminadashboards.dev.br](https://luminadashboards.dev.br)
+
+</div>
 
 ---
 
-## ✅ Lista de Compatibilidade
+## ✨ Features
+
+<div align="center">
+
+| | | |
+|:---:|:---:|:---:|
+| 🎨 **Glassmorphism UI** | ⚡ **Zero Latency** | 📱 **Responsive** |
+| Modern glass effects | 100% local execution | Tablets, phones, wall panels |
+| 🔌 **Maker API** | 🏠 **Multi-room** | 🎛️ **Advanced Controls** |
+| Native Hubitat integration | Organize by rooms | TV remotes, AC, blinds |
+
+</div>
+
+![Lumina Screenshot](https://luminadashboards.dev.br/assets/screenshot-main.png)
+
+---
+
+## 🚀 Quick Start
+
+### Installation
+
+1. **Upload** `LuminaHighline_vX.X.html` to Hubitat **File Manager**
+2. **Configure** the **Maker API** app in Hubitat (Apps → Maker API)
+3. **Access**: `http://[YOUR-HUB-IP]/local/LuminaHighline_vX.X.html`
+4. **Setup**: Enter Hub IP, App ID and Access Token in Settings
+
+### Requirements
+
+- Hubitat Elevation (C-5, C-7, or C-8)
+- Maker API app installed and configured
+- Modern web browser (Chrome, Safari, Firefox, Edge)
+
+---
+
+## 📱 Screenshots
+
+<div align="center">
+
+| Room View | Device Control | Settings |
+|:---:|:---:|:---:|
+| ![Room](https://luminadashboards.dev.br/assets/screenshot-room.png) | ![Control](https://luminadashboards.dev.br/assets/screenshot-control.png) | ![Settings](https://luminadashboards.dev.br/assets/screenshot-settings.png) |
+
+</div>
+
+---
+
+## ✅ Device Compatibility
 
 ### 🔌 Switches & Relays
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | Generic Switch | Hubitat Built-in | SWITCH | ✅ |
 | Generic Dimmer | Hubitat Built-in | DIMMER | ✅ |
 | Zigbee Switch | Hubitat Built-in | SWITCH | ✅ |
@@ -39,10 +79,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | Shelly Relay | Shelly | SWITCH | ✅ |
 | Sonoff Basic | Sonoff | SWITCH | ✅ |
 
-### 💡 Iluminação
+### 💡 Lighting
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | Generic Dimmer | Hubitat Built-in | DIMMER | ✅ |
 | Zigbee Dimmer | Hubitat Built-in | DIMMER | ✅ |
 | Z-Wave Dimmer | Hubitat Built-in | DIMMER | ✅ |
@@ -52,10 +92,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | RGB/RGBW Controllers | Various | LIGHT | ✅ |
 | Tuya Zigbee Bulbs | Hubitat Built-in | DIMMER | ✅ |
 
-### 🌡️ Climatização (AC / Thermostat)
+### 🌡️ Climate Control (AC / Thermostat)
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | Generic Thermostat | Hubitat Built-in | AC | ✅ |
 | **Molsmart GW8 IR AC** | TRATO (irweb) | IR_REMOTE | ✅ |
 | Sensibo | Community Driver | AC | ✅ |
@@ -65,10 +105,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | Ecobee | Hubitat Built-in | AC | ✅ |
 | Nest Thermostat | Community Driver | AC | ✅ |
 
-### 📺 TVs & Mídia
+### 📺 TVs & Media
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | **Samsung TV** | Dave Gutheinz | TV | ✅ |
 | **LG webOS TV** | Community Driver | TV | ✅ |
 | **Molsmart GW8 IR TV** | TRATO (irweb) | IR_REMOTE | ✅ |
@@ -78,10 +118,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | Fire TV | Community Driver | TV | ✅ |
 | Chromecast | Community Driver | MEDIA | ✅ |
 
-### 🔊 Áudio / AVR / Multiroom
+### 🔊 Audio / AVR / Multiroom
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | **Molsmart SoundSmart** | TRATO | AVR | ✅ |
 | Denon AVR | Community Driver | AVR | ✅ |
 | Marantz AVR | Community Driver | AVR | ✅ |
@@ -90,10 +130,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | Google Home/Nest Audio | Community Driver | AVR | ✅ |
 | Echo/Alexa | Community Driver | AVR | ✅ |
 
-### 🪟 Persianas & Cortinas
+### 🪟 Blinds & Shades
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | Generic Window Shade | Hubitat Built-in | BLIND | ✅ |
 | **Molsmart GW8 RF** | TRATO | BLIND | ✅ |
 | **Molsmart Curtains HTTP/TCP** | TRATO | BLIND | ✅ |
@@ -103,10 +143,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | Zemismart Blinds | Community Driver | BLIND | ✅ |
 | Aqara Roller Shade | Hubitat Built-in | BLIND | ✅ |
 
-### 🚪 Fechaduras
+### 🚪 Locks
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | Generic Z-Wave Lock | Hubitat Built-in | LOCK | ✅ |
 | Yale Assure | Hubitat Built-in | LOCK | ✅ |
 | Schlage | Hubitat Built-in | LOCK | ✅ |
@@ -114,10 +154,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | Kwikset | Hubitat Built-in | LOCK | ✅ |
 | Zigbee Lock | Hubitat Built-in | LOCK | ✅ |
 
-### 👁️ Sensores de Movimento
+### 👁️ Motion Sensors
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | **Philips Hue Indoor (SML001)** | Hubitat Built-in | MOTION | ✅ |
 | **Philips Hue Outdoor (SML002)** | Hubitat Built-in | MOTION | ✅ |
 | Zigbee Motion Sensor | Hubitat Built-in | MOTION | ✅ |
@@ -125,10 +165,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | Aqara Motion Sensor | Hubitat Built-in | MOTION | ✅ |
 | SmartThings Motion | Hubitat Built-in | MOTION | ✅ |
 
-### 📡 Sensores de Presença (Radar/Mmwave)
+### 📡 Presence Sensors (Radar/Mmwave)
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | **Mmwave MEROS MS600** | Community Driver | PRESENCE | ✅ |
 | **Tuya Mmwave (TS0601)** | Hubitat Built-in | PRESENCE | ✅ |
 | **MOES Mmwave (TS0225)** | Hubitat Built-in | PRESENCE | ✅ |
@@ -136,10 +176,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | Everything Presence One | Community Driver | PRESENCE | ✅ |
 | Life Control Occupancy | Community Driver | PRESENCE | ✅ |
 
-### 💧 Sensores de Segurança
+### 💧 Safety Sensors
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | Water Leak Sensor | Hubitat Built-in | WATER | ✅ |
 | Smoke Detector | Hubitat Built-in | SMOKE | ✅ |
 | CO Detector | Hubitat Built-in | SMOKE | ✅ |
@@ -147,10 +187,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | First Alert Smoke/CO | Hubitat Built-in | SMOKE | ✅ |
 | Zigbee Water Sensor | Hubitat Built-in | WATER | ✅ |
 
-### 🎬 Cenas & Botões
+### 🎬 Scenes & Buttons
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | Hubitat Scenes | Hubitat Built-in | SCENE | ✅ |
 | Pushable Button | Various | SCENE | ✅ |
 | Pico Remote | Lutron | SCENE | ✅ |
@@ -158,10 +198,10 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 | IKEA Tradfri Remote | Hubitat Built-in | SCENE | ✅ |
 | Aqara Cube/Button | Hubitat Built-in | SCENE | ✅ |
 
-### 📲 Controles IR/RF (Molsmart)
+### 📲 IR/RF Controls (Molsmart Ecosystem)
 
-| Dispositivo | Driver/Fabricante | Tipo Lumina | Status |
-|-------------|-------------------|-------------|--------|
+| Device | Driver/Manufacturer | Lumina Type | Status |
+|--------|---------------------|-------------|--------|
 | **Molsmart GW8 IR TV** | TRATO (irweb) | IR_REMOTE | ✅ |
 | **Molsmart GW8 IR AC** | TRATO (irweb) | IR_REMOTE | ✅ |
 | **Molsmart GW8 RF Blinds** | TRATO | BLIND | ✅ |
@@ -170,9 +210,9 @@ Dashboard local glassmorphism para **Hubitat Elevation** - Single File HTML que 
 
 ---
 
-## 🔧 Capabilities Suportadas
+## 🔧 Supported Hubitat Capabilities
 
-O Lumina detecta automaticamente dispositivos pelas seguintes capabilities do Hubitat:
+Lumina automatically detects devices by these Hubitat capabilities:
 
 ```
 Switch, SwitchLevel, ColorControl, ColorTemperature
@@ -185,38 +225,62 @@ WaterSensor, SmokeDetector, CarbonMonoxideDetector
 PushableButton, HoldableButton
 ```
 
-## 📁 Estrutura do Repositório
+---
+
+## 📁 Repository Structure
 
 ```
 /
-├── LuminaHighline_v1.X.html   # Single File builds (prontos para uso)
-├── hubitat-drivers/           # Drivers Groovy auxiliares
+├── LuminaHighline_v1.X.html   # Single-file builds (ready to use)
+├── hubitat-drivers/           # Auxiliary Groovy drivers
 └── README.md
 ```
+
+---
 
 ## 🚀 Changelog
 
 ### v1.5.3 (2026-03-01)
-- ✅ Suporte completo Molsmart (GW8 IR/RF, SoundSmart, Relays)
-- ✅ Detecção de child buttons (TV -, Cortina -, AC -)
-- ✅ UI de controle remoto IR para TV e AC
-- ✅ Detecção de sensores mmwave (TS0601, TS0225)
-- ✅ Correção na ordem de detecção (BLIND antes de SCENE)
-- ✅ Fix sendHubitatCommand (parâmetros posicionais)
+- ✅ Full Molsmart ecosystem support (GW8 IR/RF, SoundSmart, Relays)
+- ✅ Child button detection (TV -, Cortina -, AC -)
+- ✅ IR Remote UI for TV and AC control
+- ✅ Mmwave sensor detection (TS0601, TS0225)
+- ✅ Fixed detection order (BLIND before SCENE)
+- ✅ Fixed sendHubitatCommand (positional parameters)
 
 ### v1.4 (2026-03-01)
-- ✅ Fix na detecção de dispositivos (TV antes de AC)
-- ✅ Suporte a Water/Smoke sensors
-- ✅ TV Remote UI completa
+- ✅ Fixed device detection (TV before AC)
+- ✅ Water/Smoke sensor support
+- ✅ Complete TV Remote UI
 
 ---
 
-## 📞 Suporte
+## 🌐 Links
 
-- **Desenvolvido por:** Domótika
-- **GitHub:** [Domotika/LuminaDev](https://github.com/Domotika/LuminaDev)
-- **Compatível com:** Hubitat Elevation C-5, C-7, C-8
+<div align="center">
+
+| | |
+|:---:|:---:|
+| 🌐 **Website** | [luminadashboards.dev.br](https://luminadashboards.dev.br) |
+| 📦 **GitHub** | [Domotika/LuminaDev](https://github.com/Domotika/LuminaDev) |
+| 🏢 **Company** | [Domótika](https://domotika.com.br) |
+
+</div>
 
 ---
 
-*Lumina Dashboard - Transformando sua casa em uma experiência visual.*
+## 📞 Support
+
+- **Developed by:** Domótika
+- **Compatible with:** Hubitat Elevation C-5, C-7, C-8
+- **Contact:** [luminadashboards.dev.br](https://luminadashboards.dev.br)
+
+---
+
+<div align="center">
+
+**Lumina Dashboard** — *Transform your home into a visual experience.*
+
+![Lumina Footer](https://luminadashboards.dev.br/assets/footer-devices.png)
+
+</div>
