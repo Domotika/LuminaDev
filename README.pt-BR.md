@@ -49,7 +49,7 @@ Seu **ID de Instalação** único (ex: `LUM-5855-9E9C`) será exibido.
 
 Após concluir sua compra, envie seu **ID de Instalação** via WhatsApp para nossa equipe:
 
-📱 **WhatsApp:** [Clique aqui para contatar o suporte](https://wa.me/5547999999999?text=Olá!%20Comprei%20o%20Lumina%20Dashboard.%20Meu%20ID%20de%20Instalação%20é:%20)
+📱 **WhatsApp:** [Clique aqui para contatar o suporte](https://wa.me/5547996357469?text=Olá!%20Comprei%20o%20Lumina%20Dashboard.%20Meu%20ID%20de%20Instalação%20é:%20)
 
 > Inclua seu ID de Instalação e comprovante de pagamento.
 
