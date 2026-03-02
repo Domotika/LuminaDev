@@ -20,6 +20,53 @@
 
 ---
 
+## 💳 Licenciamento
+
+**Lumina Dashboard é um software comercial.** É necessária uma licença para cada hub Hubitat.
+
+### Como Adquirir
+
+1. Acesse [luminadashboards.dev.br](https://luminadashboards.dev.br)
+2. Escolha seu plano de licença
+3. Realize o pagamento
+4. Siga os passos de ativação abaixo
+
+---
+
+## 🔐 Guia de Ativação
+
+Após instalar o Lumina no seu Hubitat, você precisará ativá-lo:
+
+### Passo 1: Obtenha seu ID de Instalação
+
+Ao abrir o Lumina pela primeira vez, uma tela de ativação será exibida:
+
+![Tela de Ativação](https://i.ibb.co/QFGspHqY/ativa-o-lumina.png)
+
+Seu **ID de Instalação** único (ex: `LUM-5855-9E9C`) será exibido.
+
+### Passo 2: Envie para o Suporte
+
+Após concluir sua compra, envie seu **ID de Instalação** via WhatsApp para nossa equipe:
+
+📱 **WhatsApp:** [Clique aqui para contatar o suporte](https://wa.me/5547999999999?text=Olá!%20Comprei%20o%20Lumina%20Dashboard.%20Meu%20ID%20de%20Instalação%20é:%20)
+
+> Inclua seu ID de Instalação e comprovante de pagamento.
+
+### Passo 3: Receba sua Chave de Ativação
+
+Nossa equipe enviará uma **Chave de Ativação** no formato `XXXX-XXXX-XXXX-XXXX`.
+
+### Passo 4: Ative
+
+1. Digite sua Chave de Ativação no campo indicado
+2. Clique em **"ATIVAR SISTEMA"**
+3. Pronto! O Lumina está totalmente ativado ✅
+
+![Ajustes Após Ativação](https://i.ibb.co/k69pJjR8/ativa-o-lumina-inicio.png)
+
+---
+
 ## ✨ Recursos
 
 <div align="center">
