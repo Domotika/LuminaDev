@@ -23,7 +23,7 @@ definition(
     iconX2Url: "",
     iconX3Url: "",
     documentationLink: "https://luminadashboards.dev.br",
-    importUrl: "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller.groovy"
+    importUrl: "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller_EN.groovy"
 )
 
 preferences {

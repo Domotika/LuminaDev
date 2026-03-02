@@ -24,7 +24,7 @@ metadata {
         namespace: "domotika",
         author: "Domótika",
         description: "Displays Lumina Dashboard as an iframe tile in native Hubitat Dashboards",
-        importUrl: "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-drivers/LuminaDashboardTile.groovy"
+        importUrl: "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-drivers/LuminaDashboardTile_EN.groovy"
     ) {
         capability "Actuator"
         
