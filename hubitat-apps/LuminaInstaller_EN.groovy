@@ -4,7 +4,7 @@
  *  Professional Dashboard for Hubitat Elevation
  * ═══════════════════════════════════════════════════════════════════════════
  *  
- *  Copyright © 2024-2026 Domótika Automação Residencial LTDA
+ *  Copyright © 2024-2026 Domótika Ambientes Inteligentes LTDA
  *  https://luminadashboards.dev.br
  *  
  *  This installer downloads and manages the Lumina Dashboard HTML file.
@@ -475,7 +475,7 @@ def aboutPage() {
         section("🏢 Developer") {
             paragraph """
                 <div class="lumina-card">
-                    <strong>Domótika Automação Residencial LTDA</strong><br>
+                    <strong>Domótika Ambientes Inteligentes LTDA</strong><br>
                     Balneário Camboriú - SC, Brazil<br><br>
                     <a href="https://domotika.com.br" target="_blank">domotika.com.br</a>
                 </div>

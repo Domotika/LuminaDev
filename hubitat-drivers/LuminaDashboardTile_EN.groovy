@@ -4,7 +4,7 @@
  *  Embed Lumina Dashboard in native Hubitat Dashboard via iFrame
  * ═══════════════════════════════════════════════════════════════════════════
  *  
- *  Copyright © 2024-2026 Domótika Automação Residencial LTDA
+ *  Copyright © 2024-2026 Domótika Ambientes Inteligentes LTDA
  *  https://luminadashboards.dev.br
  *  
  *  This driver creates a virtual device that displays Lumina Dashboard
