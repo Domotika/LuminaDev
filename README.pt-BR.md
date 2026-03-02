@@ -10,7 +10,7 @@
 
 [![Versão](https://img.shields.io/badge/versão-1.5.3-blue?style=for-the-badge)](https://github.com/Domotika/LuminaDev/releases)
 [![Plataforma](https://img.shields.io/badge/plataforma-Hubitat-00A4EF?style=for-the-badge)](https://hubitat.com)
-[![Licença](https://img.shields.io/badge/licença-Comercial-yellow?style=for-the-badge)](#)
+[![Licença](https://img.shields.io/badge/licença-Comercial-yellow?style=for-the-badge)](LICENSE)
 
 🌐 **Website:** [luminadashboards.dev.br](https://luminadashboards.dev.br)
 

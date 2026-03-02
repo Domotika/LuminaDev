@@ -10,7 +10,7 @@
 
 [![Version](https://img.shields.io/badge/version-1.5.3-blue?style=for-the-badge)](https://github.com/Domotika/LuminaDev/releases)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-00A4EF?style=for-the-badge)](https://hubitat.com)
-[![License](https://img.shields.io/badge/license-Commercial-yellow?style=for-the-badge)](#)
+[![License](https://img.shields.io/badge/license-Commercial-yellow?style=for-the-badge)](LICENSE)
 
 🌐 **Website:** [luminadashboards.dev.br](https://luminadashboards.dev.br)
 
@@ -296,7 +296,9 @@ PushableButton, HoldableButton
 /
 ├── LuminaHighline_v1.X.html   # Single-file builds (ready to use)
 ├── hubitat-drivers/           # Auxiliary Groovy drivers
-└── README.md
+├── LICENSE                    # Commercial license terms
+├── README.md                  # Documentation (English)
+└── README.pt-BR.md            # Documentation (Portuguese)
 ```
 
 ---

@@ -1,0 +1,195 @@
+# LUMINA DASHBOARD - COMMERCIAL SOFTWARE LICENSE
+# LICENÇA DE SOFTWARE COMERCIAL
+
+**Copyright © 2024-2026 Domótika Automação Residencial LTDA. All Rights Reserved.**
+**Todos os Direitos Reservados.**
+
+---
+
+## ENGLISH VERSION
+
+### 1. LICENSE GRANT
+
+This software ("Lumina Dashboard") is proprietary commercial software owned by Domótika Automação Residencial LTDA ("Domótika"). By purchasing a license, you are granted a **non-exclusive, non-transferable, limited license** to use this software on a single Hubitat Elevation hub.
+
+### 2. RESTRICTIONS
+
+You MAY NOT:
+
+- **Copy, reproduce, or distribute** this software in any form
+- **Modify, decompile, reverse engineer, or disassemble** the software
+- **Remove, alter, or obscure** any copyright notices, license keys, activation mechanisms, or other proprietary markings
+- **Circumvent or bypass** any technical protection measures, including but not limited to license validation, activation systems, or access controls
+- **Sublicense, rent, lease, or lend** the software to third parties
+- **Use the software** on more than one Hubitat hub per license purchased
+- **Create derivative works** based on this software
+
+### 3. INTELLECTUAL PROPERTY
+
+This software, including but not limited to its source code, object code, user interface, design, architecture, and documentation, is protected by:
+
+- **Copyright laws** of Brazil (Lei nº 9.610/98 - Lei de Direitos Autorais)
+- **Software protection laws** (Lei nº 9.609/98 - Lei do Software)
+- **International copyright treaties** (Berne Convention, TRIPS Agreement)
+- **Trade secret laws**
+
+### 4. LEGAL CONSEQUENCES OF VIOLATION
+
+#### 4.1 Civil Liability
+
+Unauthorized copying, distribution, modification, or circumvention of protection mechanisms may result in:
+
+- **Compensatory damages** for actual losses suffered
+- **Lost profits** from unauthorized use or distribution
+- **Statutory damages** as provided by applicable law
+- **Legal fees and court costs**
+- **Injunctive relief** requiring immediate cessation of infringing activities
+
+#### 4.2 Criminal Liability (Brazilian Law)
+
+Under Brazilian law, software piracy and circumvention of technological protection measures constitute criminal offenses:
+
+**Lei nº 9.609/98, Art. 12:**
+> Violation of software copyright rights carries penalties of **6 months to 2 years of detention**, plus fines. If the violation is for commercial purposes, the penalty increases to **1 to 4 years of imprisonment**, plus fines.
+
+**Lei nº 9.610/98, Art. 184 (Código Penal):**
+> Copyright infringement carries penalties of **3 months to 1 year of detention**, or fines. Commercial-scale infringement carries **2 to 4 years of imprisonment**, plus fines.
+
+#### 4.3 International Jurisdiction
+
+For international users, violations may be prosecuted under:
+
+- **DMCA (Digital Millennium Copyright Act)** - United States
+- **EU Copyright Directive (2001/29/EC)** - European Union
+- **Local copyright and computer crime laws** of your jurisdiction
+
+### 5. CIRCUMVENTION OF PROTECTION MEASURES
+
+Any attempt to:
+
+- Remove or disable license validation
+- Generate unauthorized license keys
+- Modify the software to bypass activation requirements
+- Distribute tools or methods to circumvent protections
+- Share license keys with unauthorized parties
+
+...constitutes a **serious violation** of this license and applicable law, and will be pursued to the **maximum extent permitted by law**.
+
+### 6. AUDIT RIGHTS
+
+Domótika reserves the right to audit compliance with this license. License validation may be performed periodically through technical means.
+
+### 7. TERMINATION
+
+This license terminates automatically upon any violation of its terms. Upon termination, you must immediately cease all use of the software and destroy all copies in your possession.
+
+### 8. NO WARRANTY
+
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. DOMÓTIKA DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED.
+
+### 9. GOVERNING LAW
+
+This license is governed by the laws of Brazil. Any disputes shall be resolved in the courts of Balneário Camboriú, Santa Catarina, Brazil.
+
+---
+
+## VERSÃO EM PORTUGUÊS
+
+### 1. CONCESSÃO DE LICENÇA
+
+Este software ("Lumina Dashboard") é um software comercial proprietário de propriedade da Domótika Automação Residencial LTDA ("Domótika"). Ao adquirir uma licença, você recebe uma **licença limitada, não exclusiva e intransferível** para usar este software em um único hub Hubitat Elevation.
+
+### 2. RESTRIÇÕES
+
+Você NÃO PODE:
+
+- **Copiar, reproduzir ou distribuir** este software de qualquer forma
+- **Modificar, descompilar, fazer engenharia reversa ou desmontar** o software
+- **Remover, alterar ou ocultar** quaisquer avisos de direitos autorais, chaves de licença, mecanismos de ativação ou outras marcações proprietárias
+- **Burlar ou contornar** quaisquer medidas de proteção técnica, incluindo, mas não se limitando a, validação de licença, sistemas de ativação ou controles de acesso
+- **Sublicenciar, alugar, arrendar ou emprestar** o software a terceiros
+- **Usar o software** em mais de um hub Hubitat por licença adquirida
+- **Criar trabalhos derivados** baseados neste software
+
+### 3. PROPRIEDADE INTELECTUAL
+
+Este software, incluindo, mas não se limitando a, seu código-fonte, código-objeto, interface de usuário, design, arquitetura e documentação, é protegido por:
+
+- **Leis de Direitos Autorais do Brasil** (Lei nº 9.610/98)
+- **Leis de Proteção ao Software** (Lei nº 9.609/98)
+- **Tratados internacionais de direitos autorais** (Convenção de Berna, Acordo TRIPS)
+- **Leis de segredo comercial**
+
+### 4. CONSEQUÊNCIAS LEGAIS DA VIOLAÇÃO
+
+#### 4.1 Responsabilidade Civil
+
+A cópia, distribuição, modificação ou violação dos mecanismos de proteção não autorizados podem resultar em:
+
+- **Indenização por danos** pelas perdas efetivamente sofridas
+- **Lucros cessantes** pelo uso ou distribuição não autorizada
+- **Danos estatutários** conforme previsto em lei
+- **Honorários advocatícios e custas processuais**
+- **Tutela inibitória** exigindo a cessação imediata das atividades infratoras
+
+#### 4.2 Responsabilidade Criminal
+
+Nos termos da lei brasileira, a pirataria de software e a violação de medidas de proteção tecnológica constituem crimes:
+
+**Lei nº 9.609/98, Art. 12:**
+> A violação de direitos autorais de programa de computador é punível com **detenção de 6 meses a 2 anos**, além de multa. Se a violação for para fins comerciais, a pena aumenta para **reclusão de 1 a 4 anos**, além de multa.
+
+**Lei nº 9.610/98, Art. 184 (Código Penal):**
+> A violação de direitos autorais é punível com **detenção de 3 meses a 1 ano**, ou multa. A violação em escala comercial é punível com **reclusão de 2 a 4 anos**, além de multa.
+
+#### 4.3 Agravantes
+
+Considera-se **agravante** quando o infrator:
+
+- Obtém vantagem econômica com a violação
+- Distribui o software violado a terceiros
+- Disponibiliza ferramentas para burlar proteções
+- Atua de forma reiterada ou organizada
+
+### 5. VIOLAÇÃO DE MEDIDAS DE PROTEÇÃO
+
+Qualquer tentativa de:
+
+- Remover ou desabilitar a validação de licença
+- Gerar chaves de licença não autorizadas
+- Modificar o software para burlar requisitos de ativação
+- Distribuir ferramentas ou métodos para contornar proteções
+- Compartilhar chaves de licença com terceiros não autorizados
+
+...constitui uma **violação grave** desta licença e da lei aplicável, e será perseguida na **máxima extensão permitida por lei**.
+
+### 6. DIREITOS DE AUDITORIA
+
+A Domótika reserva-se o direito de auditar a conformidade com esta licença. A validação da licença pode ser realizada periodicamente por meios técnicos.
+
+### 7. RESCISÃO
+
+Esta licença é rescindida automaticamente em caso de qualquer violação de seus termos. Após a rescisão, você deve cessar imediatamente todo uso do software e destruir todas as cópias em sua posse.
+
+### 8. SEM GARANTIA
+
+ESTE SOFTWARE É FORNECIDO "COMO ESTÁ", SEM GARANTIA DE QUALQUER TIPO. A DOMÓTIKA ISENTA-SE DE TODAS AS GARANTIAS, EXPRESSAS OU IMPLÍCITAS.
+
+### 9. LEI APLICÁVEL E FORO
+
+Esta licença é regida pelas leis do Brasil. Quaisquer disputas serão resolvidas nos tribunais de Balneário Camboriú, Santa Catarina, Brasil.
+
+---
+
+## CONTACT / CONTATO
+
+**Domótika Automação Residencial LTDA**
+- Website: [domotika.com.br](https://domotika.com.br)
+- Lumina: [luminadashboards.dev.br](https://luminadashboards.dev.br)
+- WhatsApp: +55 47 99635-7469
+
+---
+
+**By using this software, you acknowledge that you have read, understood, and agree to be bound by the terms of this license.**
+
+**Ao usar este software, você reconhece que leu, entendeu e concorda em estar vinculado aos termos desta licença.**
