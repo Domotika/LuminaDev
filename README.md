@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Lumina Banner](https://luminadashboards.dev.br/assets/banner.png)
+![Lumina Banner](https://i.ibb.co/ks0bNVHs/1.png)
 
 **Professional Glassmorphism Dashboard for Hubitat Elevation**
 
@@ -31,7 +31,7 @@
 
 </div>
 
-![Lumina Screenshot](https://luminadashboards.dev.br/assets/screenshot-main.png)
+![Lumina Screenshot](https://i.ibb.co/ks0bNVHs/1.png)
 
 ---
 
@@ -56,9 +56,23 @@
 
 <div align="center">
 
-| Room View | Device Control | Settings |
+| Home | Ambientes | Cenas |
 |:---:|:---:|:---:|
-| ![Room](https://luminadashboards.dev.br/assets/screenshot-room.png) | ![Control](https://luminadashboards.dev.br/assets/screenshot-control.png) | ![Settings](https://luminadashboards.dev.br/assets/screenshot-settings.png) |
+| ![Home](https://i.ibb.co/ks0bNVHs/1.png) | ![Ambientes](https://i.ibb.co/TBGjTWvG/2.png) | ![Cenas](https://i.ibb.co/tpgcF3Z8/3.png) |
+
+| Configuração API | Ajustes |
+|:---:|:---:|
+| ![Config](https://i.ibb.co/RTqMtCM7/4.png) | ![Ajustes](https://i.ibb.co/v4q1KRCL/5.png) |
+
+</div>
+
+### 🎨 Backgrounds Inclusos
+
+Lumina inclui diversos wallpapers animados e estáticos:
+
+| Animated | | |
+|:---:|:---:|:---:|
+| ![Ocean](https://i.ibb.co/DP3PWBL0/ocean-3.gif) | ![Aurora](https://i.ibb.co/FbqRJsqC/aurora.gif) | ![Matrix](https://i.ibb.co/NnnPRhzH/matrix-3.gif) |
 
 </div>
 
@@ -281,6 +295,6 @@ PushableButton, HoldableButton
 
 **Lumina Dashboard** — *Transform your home into a visual experience.*
 
-![Lumina Footer](https://luminadashboards.dev.br/assets/footer-devices.png)
+*Made with ❤️ by Domótika*
 
 </div>
