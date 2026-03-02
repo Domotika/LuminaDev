@@ -30,6 +30,7 @@ preferences {
     page(name: "mainPage")
     page(name: "installPage")
     page(name: "updatePage")
+    page(name: "setupSyncPage")
     page(name: "aboutPage")
 }
 
@@ -134,6 +135,7 @@ def mainPage() {
             } else {
                 href "updatePage", title: "🔄 Check for Updates", description: "Download latest version", style: "external"
             }
+            href "setupSyncPage", title: "🔧 Setup Auto-Sync", description: "Create Hub Variables for cloud sync"
             href "aboutPage", title: "ℹ️ About & License", description: "Information and support"
         }
         
@@ -243,6 +245,109 @@ def updatePage() {
             href "mainPage", title: "← Back to Main", description: ""
         }
     }
+}
+
+def setupSyncPage() {
+    dynamicPage(name: "setupSyncPage", title: "Setup Auto-Sync", install: false, uninstall: false) {
+        section {
+            paragraph """
+                <div class="lumina-card">
+                    <h3>🔧 Auto-Sync Hub Variables</h3>
+                    <p>Lumina uses Hub Variables to automatically save and restore your configuration.</p>
+                    <p>This allows your settings to persist even when updating the dashboard.</p>
+                </div>
+            """
+        }
+        
+        section {
+            // Run setup and show results
+            def result = checkAndCreateVariables()
+            
+            if (result.allExist) {
+                paragraph """
+                    <div class="lumina-card" style="border-left-color: #28a745;">
+                        <h3>✅ Auto-Sync Ready!</h3>
+                        <p>All Hub Variables are configured correctly.</p>
+                        <hr>
+                        <strong>Variables:</strong>
+                        <ul>
+                            ${result.variables.collect { "<li>${it.name}: ${it.status}</li>" }.join("")}
+                        </ul>
+                    </div>
+                """
+            } else {
+                paragraph """
+                    <div class="lumina-card" style="border-left-color: #ffc107;">
+                        <h3>⚠️ Creating Variables...</h3>
+                        <p>${result.created} variables were created.</p>
+                        <hr>
+                        <strong>Variables:</strong>
+                        <ul>
+                            ${result.variables.collect { "<li>${it.name}: ${it.status}</li>" }.join("")}
+                        </ul>
+                    </div>
+                """
+            }
+        }
+        
+        section("📋 How it works") {
+            paragraph """
+                <div class="lumina-card">
+                    <ol>
+                        <li><strong>Auto-Save:</strong> When you change settings in Lumina, it waits 5 seconds then saves to Hubitat</li>
+                        <li><strong>Auto-Load:</strong> When you open Lumina, it automatically loads your saved configuration</li>
+                        <li><strong>Chunked Storage:</strong> Large configs are split into multiple variables (max 5 chunks)</li>
+                    </ol>
+                    <hr>
+                    <p><em>Variables are stored in: Settings → Hub Variables</em></p>
+                </div>
+            """
+        }
+        
+        section {
+            href "mainPage", title: "← Back to Main", description: ""
+        }
+    }
+}
+
+def checkAndCreateVariables() {
+    def variables = [
+        "LuminaConfig",
+        "LuminaConfig_0",
+        "LuminaConfig_1", 
+        "LuminaConfig_2",
+        "LuminaConfig_3",
+        "LuminaConfig_4"
+    ]
+    
+    def results = []
+    def created = 0
+    def allExist = true
+    
+    variables.each { varName ->
+        def exists = false
+        try {
+            def value = getGlobalVar(varName)
+            exists = (value != null)
+        } catch (e) {
+            exists = false
+        }
+        
+        if (!exists) {
+            allExist = false
+            try {
+                setGlobalVar(varName, "")
+                results << [name: varName, status: "✅ Created"]
+                created++
+            } catch (e) {
+                results << [name: varName, status: "❌ Error: ${e.message}"]
+            }
+        } else {
+            results << [name: varName, status: "✅ Exists"]
+        }
+    }
+    
+    return [allExist: allExist, created: created, variables: results]
 }
 
 def aboutPage() {
@@ -424,6 +529,7 @@ def findMakerAPI() {
 def installed() {
     log.info "Lumina Installer installed"
     initialize()
+    setupHubVariables()
 }
 
 def updated() {
@@ -433,6 +539,50 @@ def updated() {
 
 def initialize() {
     log.info "Lumina Installer initialized - Version ${LUMINA_VERSION}"
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AUTO-SYNC HUB VARIABLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+def setupHubVariables() {
+    log.info "Setting up Hub Variables for Lumina Auto-Sync..."
+    
+    def variables = [
+        "LuminaConfig",
+        "LuminaConfig_0",
+        "LuminaConfig_1", 
+        "LuminaConfig_2",
+        "LuminaConfig_3",
+        "LuminaConfig_4"
+    ]
+    
+    def created = 0
+    variables.each { varName ->
+        try {
+            def existing = getGlobalVar(varName)
+            if (existing == null) {
+                setGlobalVar(varName, "")
+                created++
+                log.info "Created Hub Variable: ${varName}"
+            }
+        } catch (e) {
+            // Variable doesn't exist, create it
+            try {
+                setGlobalVar(varName, "")
+                created++
+                log.info "Created Hub Variable: ${varName}"
+            } catch (e2) {
+                log.warn "Could not create variable ${varName}: ${e2.message}"
+            }
+        }
+    }
+    
+    if (created > 0) {
+        log.info "Lumina Auto-Sync: Created ${created} Hub Variables"
+    } else {
+        log.info "Lumina Auto-Sync: All Hub Variables already exist"
+    }
 }
 
 def uninstalled() {

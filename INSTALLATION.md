@@ -97,18 +97,38 @@ Agora você pode:
 
 ---
 
-### 🔄 Sincronização Automática
+### 🔄 Sincronização Automática (Auto-Sync)
 
-O Lumina sincroniza automaticamente suas configurações com o Hubitat!
+O Lumina sincroniza automaticamente suas configurações com o Hubitat usando **Hub Variables**!
 
-- **Primeira vez**: Configure no dispositivo principal (ex: tablet da sala)
-- **Outros dispositivos**: Ao abrir, as configurações são carregadas automaticamente
-- **Alterações**: Salvas automaticamente após 5 segundos
+#### Configuração do Auto-Sync
+
+**Método 1: Via Lumina Installer (Recomendado)**
+1. No Hubitat, abra o app **Lumina Dashboard Installer**
+2. Clique em **🔧 Setup Auto-Sync**
+3. As variáveis serão criadas automaticamente
+
+**Método 2: Manual**
+1. No Hubitat, vá em **Settings** → **Hub Variables**
+2. Clique em **Add Variable** e crie estas variáveis (todas como **String**):
+   - `LuminaConfig`
+   - `LuminaConfig_0`
+   - `LuminaConfig_1`
+   - `LuminaConfig_2`
+   - `LuminaConfig_3`
+   - `LuminaConfig_4`
+3. Deixe o valor vazio - o Lumina preenche automaticamente
+
+#### Como funciona
+
+- **Auto-Save**: Após qualquer alteração, aguarda 5 segundos e salva no Hubitat
+- **Auto-Load**: Ao abrir o Lumina, carrega a configuração salva automaticamente
+- **Multi-dispositivo**: Configure em um tablet, abra no celular e já está tudo pronto
 
 Isso significa que você pode:
 - Configurar tudo em um tablet
 - Abrir no celular e já ter tudo pronto
-- Trocar de dispositivo sem perder configs
+- Atualizar o HTML sem perder suas configurações
 
 ---
 
@@ -226,18 +246,38 @@ Now you can:
 
 ---
 
-### 🔄 Automatic Sync
+### 🔄 Automatic Sync (Auto-Sync)
 
-Lumina automatically syncs your settings with Hubitat!
+Lumina automatically syncs your settings with Hubitat using **Hub Variables**!
 
-- **First time**: Configure on your main device (e.g., living room tablet)
-- **Other devices**: Settings are loaded automatically when opened
-- **Changes**: Saved automatically after 5 seconds
+#### Auto-Sync Setup
+
+**Method 1: Via Lumina Installer (Recommended)**
+1. In Hubitat, open the **Lumina Dashboard Installer** app
+2. Click **🔧 Setup Auto-Sync**
+3. Variables will be created automatically
+
+**Method 2: Manual**
+1. In Hubitat, go to **Settings** → **Hub Variables**
+2. Click **Add Variable** and create these variables (all as **String**):
+   - `LuminaConfig`
+   - `LuminaConfig_0`
+   - `LuminaConfig_1`
+   - `LuminaConfig_2`
+   - `LuminaConfig_3`
+   - `LuminaConfig_4`
+3. Leave the value empty - Lumina fills it automatically
+
+#### How it works
+
+- **Auto-Save**: After any change, waits 5 seconds and saves to Hubitat
+- **Auto-Load**: When opening Lumina, loads saved configuration automatically
+- **Multi-device**: Configure on a tablet, open on your phone and it's all ready
 
 This means you can:
 - Configure everything on a tablet
 - Open on your phone and have everything ready
-- Switch devices without losing configs
+- Update the HTML without losing your settings
 
 ---
 
