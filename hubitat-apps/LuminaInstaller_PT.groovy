@@ -102,6 +102,8 @@ def mainPage() {
         // Seção de Status
         section("📊 Status") {
             def installed = isLuminaInstalled()
+            def installedFile = findInstalledLumina()
+            def installedVersion = getInstalledVersion()
             def statusClass = installed ? "status-installed" : "status-not-installed"
             def statusText = installed ? "INSTALADO" : "NÃO INSTALADO"
             
@@ -110,18 +112,20 @@ def mainPage() {
                     <strong>Status do Dashboard:</strong> 
                     <span class="lumina-status ${statusClass}">${statusText}</span>
                     <br><br>
+                    ${installed ? "<strong>Versão Instalada:</strong> ${installedVersion}<br><strong>Arquivo:</strong> ${installedFile?.name}<br><br>" : ""}
                     <strong>Versão do Instalador:</strong> ${LUMINA_VERSION}<br>
-                    <strong>Arquivo:</strong> ${LUMINA_FILENAME}
+                    <strong>Arquivo Padrão:</strong> ${LUMINA_FILENAME}
                 </div>
             """
             
-            if (installed) {
+            if (installed && installedFile) {
                 def hubIP = location.hubs[0].getDataValue("localIP") ?: "IP-DO-SEU-HUB"
+                def fileName = installedFile.name
                 paragraph """
                     <div class="lumina-card" style="border-left-color: #28a745;">
                         <strong>🔗 Acesse seu dashboard:</strong><br>
-                        <a href="http://${hubIP}/local/${LUMINA_FILENAME}" target="_blank" style="font-size: 14px; color: #0f3460;">
-                            http://${hubIP}/local/${LUMINA_FILENAME}
+                        <a href="http://${hubIP}/local/${fileName}" target="_blank" style="font-size: 14px; color: #0f3460;">
+                            http://${hubIP}/local/${fileName}
                         </a>
                     </div>
                 """
@@ -404,12 +408,41 @@ def aboutPage() {
 
 def isLuminaInstalled() {
     try {
-        def files = listFiles()
-        return files?.any { it.name == LUMINA_FILENAME }
+        def installed = findInstalledLumina()
+        return installed != null
     } catch (e) {
         log.error "Erro ao verificar instalação: ${e.message}"
         return false
     }
+}
+
+def findInstalledLumina() {
+    try {
+        def files = listFiles()
+        // Busca qualquer arquivo Lumina (v1.5, v1.6-beta, etc)
+        def luminaFile = files?.find { 
+            it.name?.startsWith("LuminaHighline") || 
+            it.name?.startsWith("Lumina_") ||
+            it.name?.toLowerCase()?.contains("lumina") && it.name?.endsWith(".html")
+        }
+        return luminaFile
+    } catch (e) {
+        log.error "Erro ao buscar Lumina: ${e.message}"
+        return null
+    }
+}
+
+def getInstalledVersion() {
+    def file = findInstalledLumina()
+    if (!file) return null
+    
+    def name = file.name
+    // Extrai versão do nome do arquivo (ex: LuminaHighline_v1.6-beta.html -> v1.6-beta)
+    def match = name =~ /[vV]?(\d+\.\d+[^.]*)/
+    if (match.find()) {
+        return "v${match.group(1)}"
+    }
+    return name.replace(".html", "")
 }
 
 def listFiles() {

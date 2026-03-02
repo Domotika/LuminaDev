@@ -102,6 +102,8 @@ def mainPage() {
         // Status Section
         section("📊 Status") {
             def installed = isLuminaInstalled()
+            def installedFile = findInstalledLumina()
+            def installedVersion = getInstalledVersion()
             def statusClass = installed ? "status-installed" : "status-not-installed"
             def statusText = installed ? "INSTALLED" : "NOT INSTALLED"
             
@@ -110,18 +112,20 @@ def mainPage() {
                     <strong>Dashboard Status:</strong> 
                     <span class="lumina-status ${statusClass}">${statusText}</span>
                     <br><br>
+                    ${installed ? "<strong>Installed Version:</strong> ${installedVersion}<br><strong>File:</strong> ${installedFile?.name}<br><br>" : ""}
                     <strong>Installer Version:</strong> ${LUMINA_VERSION}<br>
-                    <strong>File:</strong> ${LUMINA_FILENAME}
+                    <strong>Default File:</strong> ${LUMINA_FILENAME}
                 </div>
             """
             
-            if (installed) {
+            if (installed && installedFile) {
                 def hubIP = location.hubs[0].getDataValue("localIP") ?: "YOUR-HUB-IP"
+                def fileName = installedFile.name
                 paragraph """
                     <div class="lumina-card" style="border-left-color: #28a745;">
                         <strong>🔗 Access your dashboard:</strong><br>
-                        <a href="http://${hubIP}/local/${LUMINA_FILENAME}" target="_blank" style="font-size: 14px; color: #0f3460;">
-                            http://${hubIP}/local/${LUMINA_FILENAME}
+                        <a href="http://${hubIP}/local/${fileName}" target="_blank" style="font-size: 14px; color: #0f3460;">
+                            http://${hubIP}/local/${fileName}
                         </a>
                     </div>
                 """
@@ -152,8 +156,9 @@ def mainPage() {
             } else {
                 paragraph """
                     <div class="lumina-card" style="border-left-color: #ffc107;">
-                        ⚠️ <strong>Maker API not found</strong><br>
-                        Please install Maker API from Apps → Add Built-in App → Maker API
+                        ⚠️ <strong>Maker API not detected</strong><br>
+                        If you already have Maker API installed, ignore this message.<br>
+                        Otherwise, install from: Apps → Add Built-in App → Maker API
                     </div>
                 """
             }
@@ -403,12 +408,41 @@ def aboutPage() {
 
 def isLuminaInstalled() {
     try {
-        def files = listFiles()
-        return files?.any { it.name == LUMINA_FILENAME }
+        def installed = findInstalledLumina()
+        return installed != null
     } catch (e) {
         log.error "Error checking installation: ${e.message}"
         return false
     }
+}
+
+def findInstalledLumina() {
+    try {
+        def files = listFiles()
+        // Find any Lumina file (v1.5, v1.6-beta, etc)
+        def luminaFile = files?.find { 
+            it.name?.startsWith("LuminaHighline") || 
+            it.name?.startsWith("Lumina_") ||
+            it.name?.toLowerCase()?.contains("lumina") && it.name?.endsWith(".html")
+        }
+        return luminaFile
+    } catch (e) {
+        log.error "Error finding Lumina: ${e.message}"
+        return null
+    }
+}
+
+def getInstalledVersion() {
+    def file = findInstalledLumina()
+    if (!file) return null
+    
+    def name = file.name
+    // Extract version from filename (e.g., LuminaHighline_v1.6-beta.html -> v1.6-beta)
+    def match = name =~ /[vV]?(\d+\.\d+[^.]*)/
+    if (match.find()) {
+        return "v${match.group(1)}"
+    }
+    return name.replace(".html", "")
 }
 
 def listFiles() {
@@ -509,17 +543,42 @@ def uploadFile(String filename, String content) {
 }
 
 def findMakerAPI() {
+    // Method 1: Search child apps
     try {
         def apps = getChildApps()
-        return apps?.find { it.name?.toLowerCase()?.contains("maker") }
+        def maker = apps?.find { it.name?.toLowerCase()?.contains("maker") }
+        if (maker) return maker
     } catch (e) {
-        // Try alternative method
-        try {
-            return getAllChildApps()?.find { it.name?.toLowerCase()?.contains("maker") }
-        } catch (e2) {
-            return null
-        }
+        log.debug "getChildApps not available: ${e.message}"
     }
+    
+    // Method 2: Try getAllChildApps
+    try {
+        def allApps = getAllChildApps()
+        def maker = allApps?.find { it.name?.toLowerCase()?.contains("maker") }
+        if (maker) return maker
+    } catch (e) {
+        log.debug "getAllChildApps not available: ${e.message}"
+    }
+    
+    // Method 3: Check via HTTP if Maker API is accessible
+    try {
+        def params = [
+            uri: "http://127.0.0.1:8080",
+            path: "/apps/api",
+            contentType: "application/json",
+            timeout: 5
+        ]
+        httpGet(params) { resp ->
+            if (resp.status == 200) {
+                return [id: "detected", name: "Maker API"]
+            }
+        }
+    } catch (e) {
+        log.debug "Could not verify Maker API via HTTP"
+    }
+    
+    return null
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
