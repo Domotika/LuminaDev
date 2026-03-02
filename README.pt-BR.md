@@ -86,18 +86,22 @@ Nossa equipe enviará uma **Chave de Ativação** no formato `XXXX-XXXX-XXXX-XXX
 
 ## 🚀 Início Rápido
 
-### Instalação
+📖 **[Guia Completo de Instalação](INSTALLATION.md)** ← Comece aqui!
+
+### Instalação Rápida
 
 1. **Faça upload** do `LuminaHighline_vX.X.html` no **File Manager** do Hubitat
 2. **Configure** o app **Maker API** no Hubitat (Apps → Maker API)
 3. **Acesse**: `http://[IP-DO-SEU-HUB]/local/LuminaHighline_vX.X.html`
-4. **Configure**: Insira o IP do Hub, App ID e Token de Acesso nos Ajustes
+4. **Ative**: Envie seu ID de Instalação para receber a chave de licença
+5. **Configure**: Insira o IP do Hub, App ID e Token de Acesso nos Ajustes
 
 ### Requisitos
 
 - Hubitat Elevation (C-5, C-7 ou C-8)
 - App Maker API instalado e configurado
 - Navegador moderno (Chrome, Safari, Firefox, Edge)
+- **Licença Lumina ativa** ([Adquira aqui](https://luminadashboards.dev.br))
 
 ---
 

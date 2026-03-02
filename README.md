@@ -86,18 +86,22 @@ Our team will send you an **Activation Key** in the format `XXXX-XXXX-XXXX-XXXX`
 
 ## 🚀 Quick Start
 
-### Installation
+📖 **[Complete Installation Guide](INSTALLATION.md)** ← Start here!
+
+### Quick Installation
 
 1. **Upload** `LuminaHighline_vX.X.html` to Hubitat **File Manager**
 2. **Configure** the **Maker API** app in Hubitat (Apps → Maker API)
 3. **Access**: `http://[YOUR-HUB-IP]/local/LuminaHighline_vX.X.html`
-4. **Setup**: Enter Hub IP, App ID and Access Token in Settings
+4. **Activate**: Send your Installation ID to receive your license key
+5. **Setup**: Enter Hub IP, App ID and Access Token in Settings
 
 ### Requirements
 
 - Hubitat Elevation (C-5, C-7, or C-8)
 - Maker API app installed and configured
 - Modern web browser (Chrome, Safari, Firefox, Edge)
+- **Active Lumina license** ([Purchase here](https://luminadashboards.dev.br))
 
 ---
 
@@ -296,6 +300,7 @@ PushableButton, HoldableButton
 /
 ├── LuminaHighline_v1.X.html   # Single-file builds (ready to use)
 ├── hubitat-drivers/           # Auxiliary Groovy drivers
+├── INSTALLATION.md            # Step-by-step installation guide
 ├── LICENSE                    # Commercial license terms
 ├── README.md                  # Documentation (English)
 └── README.pt-BR.md            # Documentation (Portuguese)
