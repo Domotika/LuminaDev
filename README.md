@@ -88,7 +88,15 @@ Our team will send you an **Activation Key** in the format `XXXX-XXXX-XXXX-XXXX`
 
 📖 **[Complete Installation Guide](INSTALLATION.md)** ← Start here!
 
-### Quick Installation
+### Option 1: HPM Installation (Recommended)
+
+1. Open **Hubitat Package Manager** (HPM)
+2. Select **Install** → **Search by Keywords**
+3. Search for "**Lumina**"
+4. Click **Install**
+5. Open the app and click **Install Lumina Dashboard**
+
+### Option 2: Manual Installation
 
 1. **Upload** `LuminaHighline_vX.X.html` to Hubitat **File Manager**
 2. **Configure** the **Maker API** app in Hubitat (Apps → Maker API)
@@ -299,7 +307,11 @@ PushableButton, HoldableButton
 ```
 /
 ├── LuminaHighline_v1.X.html   # Single-file builds (ready to use)
+├── hubitat-apps/              # Hubitat Groovy apps
+│   └── LuminaInstaller.groovy # HPM installer app
 ├── hubitat-drivers/           # Auxiliary Groovy drivers
+├── packageManifest.json       # HPM package manifest
+├── repository.json            # HPM repository listing
 ├── INSTALLATION.md            # Step-by-step installation guide
 ├── LICENSE                    # Commercial license terms
 ├── README.md                  # Documentation (English)
