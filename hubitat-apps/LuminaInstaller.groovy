@@ -31,6 +31,7 @@ preferences {
     page(name: "installPage")
     page(name: "updatePage")
     page(name: "setupSyncPage")
+    page(name: "generateLinkPage")
     page(name: "aboutPage")
 }
 
@@ -140,6 +141,7 @@ def mainPage() {
                 href "updatePage", title: "🔄 Check for Updates", description: "Download latest version", style: "external"
             }
             href "setupSyncPage", title: "🔧 Setup Auto-Sync", description: "Create Hub Variables for cloud sync"
+            href "generateLinkPage", title: "🔗 Generate Access Link", description: "Ready-to-use link with auto-configuration"
             href "aboutPage", title: "ℹ️ About & License", description: "Information and support"
         }
         
@@ -353,6 +355,90 @@ def checkAndCreateVariables() {
     }
     
     return [allExist: allExist, created: created, variables: results]
+}
+
+def generateLinkPage() {
+    dynamicPage(name: "generateLinkPage", title: "Generate Access Link", install: false, uninstall: false) {
+        section {
+            paragraph """
+                <div class="lumina-card">
+                    <h3>🔗 Automatic Access Link</h3>
+                    <p>Generate a link that configures Lumina automatically!</p>
+                    <p>When opening this link, the dashboard will be connected to Hubitat.</p>
+                </div>
+            """
+        }
+        
+        section("📋 Maker API Data") {
+            paragraph """
+                <div class="lumina-card" style="border-left-color: #17a2b8;">
+                    <strong>Where to find:</strong><br>
+                    Apps → Maker API → Copy the <strong>App ID</strong> (number in URL) and <strong>Access Token</strong>
+                </div>
+            """
+            input "makerAppId", "text", title: "Maker API App ID", required: true, submitOnChange: true
+            input "makerToken", "text", title: "Maker API Access Token", required: true, submitOnChange: true
+        }
+        
+        section("🔑 License (Optional)") {
+            paragraph "<p class='text-muted'>If you have an activated license, include it here for automatic activation.</p>"
+            input "luminaLicense", "text", title: "License Key (XXXX-XXXX-XXXX-XXXX)", required: false, submitOnChange: true
+        }
+        
+        if (makerAppId && makerToken) {
+            section("✨ Your Access Link") {
+                def link = generateAccessLink()
+                def installedFile = findInstalledLumina()
+                def fileName = installedFile?.name ?: LUMINA_FILENAME
+                
+                paragraph """
+                    <div class="lumina-card" style="border-left-color: #28a745;">
+                        <h3>✅ Link Generated!</h3>
+                        <p>Copy and open on any device:</p>
+                        <hr>
+                        <textarea readonly style="width:100%; height:80px; font-size:11px; padding:10px; border:1px solid #ccc; border-radius:5px; background:#f5f5f5;" onclick="this.select()">${link}</textarea>
+                        <hr>
+                        <p style="font-size:11px; color:#666;">
+                            📱 <strong>Tip:</strong> Send this link via WhatsApp or email to your clients!
+                        </p>
+                    </div>
+                """
+                
+                if (luminaLicense) {
+                    paragraph """
+                        <div class="lumina-card" style="border-left-color: #ffc107;">
+                            🔑 <strong>License included!</strong> The dashboard will be activated automatically.
+                        </div>
+                    """
+                }
+            }
+        }
+        
+        section {
+            href "mainPage", title: "← Back to Main", description: ""
+        }
+    }
+}
+
+def generateAccessLink() {
+    def hubIP = location.hubs[0].getDataValue("localIP") ?: "192.168.1.1"
+    def installedFile = findInstalledLumina()
+    def fileName = installedFile?.name ?: LUMINA_FILENAME
+    
+    def configMap = [
+        hubIp: hubIP,
+        appId: makerAppId,
+        accessToken: makerToken
+    ]
+    
+    if (luminaLicense) {
+        configMap.license = luminaLicense
+    }
+    
+    def jsonConfig = groovy.json.JsonOutput.toJson(configMap)
+    def base64Config = jsonConfig.bytes.encodeBase64().toString()
+    
+    return "http://${hubIP}/local/${fileName}?config=${base64Config}"
 }
 
 def aboutPage() {
