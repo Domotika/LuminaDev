@@ -14,6 +14,8 @@
 
 🌐 **Website:** [luminadashboards.dev.br](https://luminadashboards.dev.br)
 
+[🇧🇷 Português](README.pt-BR.md)
+
 </div>
 
 ---
@@ -56,19 +58,19 @@
 
 <div align="center">
 
-| Home | Ambientes | Cenas |
+| Home | Rooms | Scenes |
 |:---:|:---:|:---:|
-| ![Home](https://i.ibb.co/ks0bNVHs/1.png) | ![Ambientes](https://i.ibb.co/TBGjTWvG/2.png) | ![Cenas](https://i.ibb.co/tpgcF3Z8/3.png) |
+| ![Home](https://i.ibb.co/ks0bNVHs/1.png) | ![Rooms](https://i.ibb.co/TBGjTWvG/2.png) | ![Scenes](https://i.ibb.co/tpgcF3Z8/3.png) |
 
-| Configuração API | Ajustes |
+| API Config | Settings |
 |:---:|:---:|
-| ![Config](https://i.ibb.co/RTqMtCM7/4.png) | ![Ajustes](https://i.ibb.co/v4q1KRCL/5.png) |
+| ![Config](https://i.ibb.co/RTqMtCM7/4.png) | ![Settings](https://i.ibb.co/v4q1KRCL/5.png) |
 
 </div>
 
-### 🎨 Backgrounds Inclusos
+### 🎨 Included Backgrounds
 
-Lumina inclui diversos wallpapers animados e estáticos:
+Lumina includes several animated and static wallpapers:
 
 | Animated | | |
 |:---:|:---:|:---:|
