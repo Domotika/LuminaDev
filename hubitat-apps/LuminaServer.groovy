@@ -25,6 +25,15 @@ preferences {
 }
 
 def mainPage() {
+    // Gera token automaticamente ao abrir a página
+    if (!state.accessToken) {
+        try {
+            createAccessToken()
+        } catch (e) {
+            log.error "Erro ao criar token: ${e.message}"
+        }
+    }
+    
     dynamicPage(name: "mainPage", title: "Lumina Dashboard Server", install: true, uninstall: true) {
         section("Configuração") {
             input "fileName", "text", title: "Nome do arquivo HTML", required: true, defaultValue: "LuminaHighline_v1.5.html"

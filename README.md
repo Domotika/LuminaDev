@@ -74,7 +74,32 @@ Use Lumina inside the official Hubitat app with remote access!
 3. **Add to Dashboard** as Attribute tile (select "html")
 4. **Enable Cloud** for remote access! ☁️
 
-### Method 3: Manual Installation
+### Method 3: Remote Access Server (iframe) 📱☁️
+
+Embed Lumina in any dashboard or app with full remote access support!
+
+1. **Install LuminaServer App:**
+   - Apps → Add User App → + New App → Import:
+   ```
+   https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaServer.groovy
+   ```
+2. **Add the App:**
+   - Apps → Add User App → **Lumina Dashboard Server**
+3. **Configure:**
+   - Set the HTML filename (default: `LuminaHighline_v1.5.html`)
+   - Click **Done**
+4. **Copy URLs:**
+   - Open the app settings to see generated URLs
+   - **Local URL** — For same-network access
+   - **Cloud URL** — For remote/mobile access ☁️
+
+5. **Use in Dashboards:**
+   - Add the Cloud URL to any iframe-compatible dashboard
+   - Works in **Hubitat Mobile App**, **ActionTiles**, **SharpTools**, etc.
+
+> 💡 **Why use this?** The standard Hubitat Cloud blocks iframe embedding. LuminaServer adds permissive headers (`X-Frame-Options: ALLOWALL`) to enable embedding anywhere.
+
+### Method 4: Manual Installation
 
 1. **Upload** `LuminaHighline_v1.5.html` to Hubitat **File Manager**
 2. **Access**: `http://[HUB-IP]/local/LuminaHighline_v1.5.html`
@@ -198,7 +223,8 @@ Use Lumina inside the official Hubitat app with remote access!
 ├── LuminaHighline_v1.6-beta.html # Beta with new features
 ├── hubitat-apps/
 │   ├── LuminaInstaller_PT.groovy # Installer (Portuguese)
-│   └── LuminaInstaller_EN.groovy # Installer (English)
+│   ├── LuminaInstaller_EN.groovy # Installer (English)
+│   └── LuminaServer.groovy       # Remote Access Server (iframe)
 ├── hubitat-drivers/
 │   ├── LuminaDashboardTile_PT.groovy # Dashboard Tile (Portuguese)
 │   └── LuminaDashboardTile_EN.groovy # Dashboard Tile (English)

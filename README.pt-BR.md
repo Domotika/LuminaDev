@@ -74,7 +74,32 @@ Use o Lumina dentro do app oficial do Hubitat com acesso remoto!
 3. **Adicione na Dashboard** como tile Attribute (selecione "html")
 4. **Ative o Cloud** para acesso remoto! ☁️
 
-### Método 3: Instalação Manual
+### Método 3: Servidor de Acesso Remoto (iframe) 📱☁️
+
+Incorpore o Lumina em qualquer dashboard ou app com suporte completo a acesso remoto!
+
+1. **Instale o App LuminaServer:**
+   - Apps → Add User App → + New App → Import:
+   ```
+   https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaServer.groovy
+   ```
+2. **Adicione o App:**
+   - Apps → Add User App → **Lumina Dashboard Server**
+3. **Configure:**
+   - Defina o nome do arquivo HTML (padrão: `LuminaHighline_v1.5.html`)
+   - Clique em **Done**
+4. **Copie as URLs:**
+   - Abra as configurações do app para ver as URLs geradas
+   - **URL Local** — Para acesso na mesma rede
+   - **URL Cloud** — Para acesso remoto/mobile ☁️
+
+5. **Use em Dashboards:**
+   - Adicione a URL Cloud em qualquer dashboard compatível com iframe
+   - Funciona no **App Mobile Hubitat**, **ActionTiles**, **SharpTools**, etc.
+
+> 💡 **Por que usar isso?** O Hubitat Cloud padrão bloqueia embedding em iframe. O LuminaServer adiciona headers permissivos (`X-Frame-Options: ALLOWALL`) para permitir embedding em qualquer lugar.
+
+### Método 4: Instalação Manual
 
 1. **Faça upload** do `LuminaHighline_v1.5.html` no **File Manager** do Hubitat
 2. **Acesse**: `http://[IP-DO-HUB]/local/LuminaHighline_v1.5.html`
@@ -198,7 +223,8 @@ Use o Lumina dentro do app oficial do Hubitat com acesso remoto!
 ├── LuminaHighline_v1.6-beta.html # Beta com novos recursos
 ├── hubitat-apps/
 │   ├── LuminaInstaller_PT.groovy # Instalador (Português)
-│   └── LuminaInstaller_EN.groovy # Instalador (Inglês)
+│   ├── LuminaInstaller_EN.groovy # Instalador (Inglês)
+│   └── LuminaServer.groovy       # Servidor de Acesso Remoto (iframe)
 ├── hubitat-drivers/
 │   ├── LuminaDashboardTile_PT.groovy # Tile Dashboard (Português)
 │   └── LuminaDashboardTile_EN.groovy # Tile Dashboard (Inglês)
