@@ -8,7 +8,8 @@
 
 *Single-file HTML that runs directly on your hub — zero external servers required.*
 
-[![Version](https://img.shields.io/badge/version-1.5.3-blue?style=for-the-badge)](https://github.com/Domotika/LuminaDev/releases)
+[![Version](https://img.shields.io/badge/version-1.5.6-blue?style=for-the-badge)](https://github.com/Domotika/LuminaDev/releases)
+[![Beta](https://img.shields.io/badge/beta-1.6-purple?style=for-the-badge)](https://github.com/Domotika/LuminaDev)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-00A4EF?style=for-the-badge)](https://hubitat.com)
 [![License](https://img.shields.io/badge/license-Commercial-yellow?style=for-the-badge)](LICENSE)
 
@@ -17,6 +18,17 @@
 [🇧🇷 Português](README.pt-BR.md)
 
 </div>
+
+---
+
+## ✨ What's New in v1.6
+
+- 🔗 **Auto-Setup Link** — Generate a link that configures everything automatically!
+- 📱 **Dashboard Tile** — Access Lumina inside the Hubitat app
+- ☁️ **Cloud Support** — Remote access via Hubitat Cloud
+- 🔄 **Auto-Sync** — Settings sync automatically across devices
+- 📷 **IP Cameras** — MJPEG, Snapshot, and RTSP support
+- ⭐ **Favorites Bar** — Quick access to your most-used devices
 
 ---
 
@@ -33,37 +45,88 @@
 
 ---
 
-## 🔐 Activation Guide
+## 🚀 Quick Start
 
-After installing Lumina on your Hubitat, you'll need to activate it:
+📖 **[Complete Installation Guide](INSTALLATION.md)** ← Full step-by-step instructions!
 
-### Step 1: Get Your Installation ID
+☁️ **[Cloud Remote Access Guide](CLOUD_ACCESS.md)** ← Setup access via Hubitat app!
 
-When you first open Lumina, an activation screen will appear:
+### Method 1: HPM - Hubitat Package Manager (Recommended) ⭐
 
-![Activation Screen](https://i.ibb.co/QFGspHqY/ativa-o-lumina.png)
+Installs everything automatically with one click!
 
-Your unique **Installation ID** (e.g., `LUM-5855-9E9C`) will be displayed.
+1. **Open HPM** in Hubitat
+2. **Install** → **Search by Keywords**
+3. Search for **"Lumina"**
+4. Select **Lumina Dashboard** → **Install**
+5. ✅ API, Installer, Tiles - all installed!
 
-### Step 2: Send to Support
+> Don't have HPM? [Install it here](https://hubitatpackagemanager.hubitatcommunity.com/)
 
-After completing your purchase, send your **Installation ID** via WhatsApp to our team:
+### Method 2: Automatic Installation
 
-📱 **WhatsApp:** [Click here to contact support](https://wa.me/5547996357469?text=Olá!%20Comprei%20o%20Lumina%20Dashboard.%20Meu%20ID%20de%20Instalação%20é:%20)
+1. **Install Maker API** in Hubitat (Apps → Add Built-in App)
+2. **Install Lumina Installer:**
+   - Apps → Add User App → + New App → Import:
+   ```
+   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-apps/LuminaInstaller_EN.groovy
+   ```
+3. **Click "📥 Install Lumina Dashboard"** — Downloads automatically!
+4. **Click "🔧 Setup Auto-Sync"** — Creates Hub Variables
+5. **Click "🔗 Generate Access Link"** — Enter App ID + Token
+6. **Open the generated link** — Everything is configured! ✅
 
-> Include your Installation ID and proof of purchase.
+### Method 2: Access via Hubitat App 📱
 
-### Step 3: Receive Your Activation Key
+Use Lumina inside the official Hubitat app with remote access!
 
-Our team will send you an **Activation Key** in the format `XXXX-XXXX-XXXX-XXXX`.
+1. **Install the Tile Driver:**
+   ```
+   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-drivers/LuminaDashboardTile_EN.groovy
+   ```
+2. **Create virtual device** with type "Lumina Dashboard Tile"
+3. **Add to Dashboard** as Attribute tile (select "html")
+4. **Enable Cloud** for remote access! ☁️
 
-### Step 4: Activate
+### Method 3: Remote Access Server (iframe) 📱☁️
 
-1. Enter your Activation Key in the field provided
-2. Click **"ATIVAR SISTEMA"** (Activate System)
-3. Done! Lumina is now fully activated ✅
+Embed Lumina in any dashboard or app with full remote access support!
 
-![Settings After Activation](https://i.ibb.co/k69pJjR8/ativa-o-lumina-inicio.png)
+1. **Install LuminaServer App:**
+   - Apps → Add User App → + New App → Import:
+   ```
+   https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaServer.groovy
+   ```
+2. **Add the App:**
+   - Apps → Add User App → **Lumina Dashboard Server**
+3. **Configure:**
+   - Set the HTML filename (default: `LuminaHighline_v1.5.html`)
+   - Click **Done**
+4. **Copy URLs:**
+   - Open the app settings to see generated URLs
+   - **Local URL** — For same-network access
+   - **Cloud URL** — For remote/mobile access ☁️
+
+5. **Use in Dashboards:**
+   - Add the Cloud URL to any iframe-compatible dashboard
+   - Works in **Hubitat Mobile App**, **ActionTiles**, **SharpTools**, etc.
+
+> 💡 **Why use this?** The standard Hubitat Cloud blocks iframe embedding. LuminaServer adds permissive headers (`X-Frame-Options: ALLOWALL`) to enable embedding anywhere.
+
+### Method 4: Manual Installation
+
+1. **Upload** `LuminaHighline_v1.5.html` to Hubitat **File Manager**
+2. **Access**: `http://[HUB-IP]/local/LuminaHighline_v1.5.html`
+3. **Configure** IP, App ID, Token in Settings
+
+---
+
+## 🔐 Activation
+
+1. Open Lumina → Copy your **Installation ID**
+2. Send via WhatsApp: [+55 47 99635-7469](https://wa.me/5547996357469?text=Hello!%20I%20purchased%20Lumina%20Dashboard.%20My%20Installation%20ID%20is:%20)
+3. Receive and enter your **Activation Key**
+4. ✅ Activated!
 
 ---
 
@@ -77,39 +140,10 @@ Our team will send you an **Activation Key** in the format `XXXX-XXXX-XXXX-XXXX`
 | Modern glass effects | 100% local execution | Tablets, phones, wall panels |
 | 🔌 **Maker API** | 🏠 **Multi-room** | 🎛️ **Advanced Controls** |
 | Native Hubitat integration | Organize by rooms | TV remotes, AC, blinds |
+| 🔗 **Auto-Setup** | 📱 **App Integration** | ☁️ **Cloud Access** |
+| One link configures all! | Works in Hubitat app | Remote via Hubitat Cloud |
 
 </div>
-
-![Lumina Screenshot](https://i.ibb.co/ks0bNVHs/1.png)
-
----
-
-## 🚀 Quick Start
-
-📖 **[Complete Installation Guide](INSTALLATION.md)** ← Start here!
-
-### Option 1: HPM Installation (Recommended)
-
-1. Open **Hubitat Package Manager** (HPM)
-2. Select **Install** → **Search by Keywords**
-3. Search for "**Lumina**"
-4. Click **Install**
-5. Open the app and click **Install Lumina Dashboard**
-
-### Option 2: Manual Installation
-
-1. **Upload** `LuminaHighline_vX.X.html` to Hubitat **File Manager**
-2. **Configure** the **Maker API** app in Hubitat (Apps → Maker API)
-3. **Access**: `http://[YOUR-HUB-IP]/local/LuminaHighline_vX.X.html`
-4. **Activate**: Send your Installation ID to receive your license key
-5. **Setup**: Enter Hub IP, App ID and Access Token in Settings
-
-### Requirements
-
-- Hubitat Elevation (C-5, C-7, or C-8)
-- Maker API app installed and configured
-- Modern web browser (Chrome, Safari, Firefox, Edge)
-- **Active Lumina license** ([Purchase here](https://luminadashboards.dev.br))
 
 ---
 
@@ -127,16 +161,6 @@ Our team will send you an **Activation Key** in the format `XXXX-XXXX-XXXX-XXXX`
 
 </div>
 
-### 🎨 Included Backgrounds
-
-Lumina includes several animated and static wallpapers:
-
-| Animated | | |
-|:---:|:---:|:---:|
-| ![Ocean](https://i.ibb.co/DP3PWBL0/ocean-3.gif) | ![Aurora](https://i.ibb.co/FbqRJsqC/aurora.gif) | ![Matrix](https://i.ibb.co/NnnPRhzH/matrix-3.gif) |
-
-</div>
-
 ---
 
 ## ✅ Device Compatibility
@@ -147,38 +171,27 @@ Lumina includes several animated and static wallpapers:
 |--------|---------------------|-------------|--------|
 | Generic Switch | Hubitat Built-in | SWITCH | ✅ |
 | Generic Dimmer | Hubitat Built-in | DIMMER | ✅ |
-| Zigbee Switch | Hubitat Built-in | SWITCH | ✅ |
-| Z-Wave Switch | Hubitat Built-in | SWITCH | ✅ |
-| **Molsmart Relays HTTP** | TRATO | SWITCH | ✅ |
-| **Molsmart Relays TCP 2/4/8/16/32CH** | TRATO | SWITCH | ✅ |
+| Zigbee/Z-Wave Switch | Hubitat Built-in | SWITCH | ✅ |
+| **Molsmart Relays HTTP/TCP** | TRATO | SWITCH | ✅ |
 | Shelly Relay | Shelly | SWITCH | ✅ |
-| Sonoff Basic | Sonoff | SWITCH | ✅ |
 
 ### 💡 Lighting
 
 | Device | Driver/Manufacturer | Lumina Type | Status |
 |--------|---------------------|-------------|--------|
 | Generic Dimmer | Hubitat Built-in | DIMMER | ✅ |
-| Zigbee Dimmer | Hubitat Built-in | DIMMER | ✅ |
-| Z-Wave Dimmer | Hubitat Built-in | DIMMER | ✅ |
-| Philips Hue Bulb | CoCoHue / Hubitat | LIGHT | ✅ |
+| Philips Hue | CoCoHue / Hubitat | LIGHT | ✅ |
 | IKEA Tradfri | Hubitat Built-in | DIMMER | ✅ |
-| LIFX | Community Driver | LIGHT | ✅ |
 | RGB/RGBW Controllers | Various | LIGHT | ✅ |
-| Tuya Zigbee Bulbs | Hubitat Built-in | DIMMER | ✅ |
 
-### 🌡️ Climate Control (AC / Thermostat)
+### 🌡️ Climate Control
 
 | Device | Driver/Manufacturer | Lumina Type | Status |
 |--------|---------------------|-------------|--------|
 | Generic Thermostat | Hubitat Built-in | AC | ✅ |
 | **Molsmart GW8 IR AC** | TRATO (irweb) | IR_REMOTE | ✅ |
-| Sensibo | Community Driver | AC | ✅ |
-| Cielo Breez | Community Driver | AC | ✅ |
-| Midea AC | Community Driver | AC | ✅ |
-| Tuya IR AC | Tuya Integration | AC | ✅ |
-| Ecobee | Hubitat Built-in | AC | ✅ |
-| Nest Thermostat | Community Driver | AC | ✅ |
+| Sensibo / Cielo | Community Driver | AC | ✅ |
+| Ecobee / Nest | Built-in/Community | AC | ✅ |
 
 ### 📺 TVs & Media
 
@@ -187,118 +200,32 @@ Lumina includes several animated and static wallpapers:
 | **Samsung TV** | Dave Gutheinz | TV | ✅ |
 | **LG webOS TV** | Community Driver | TV | ✅ |
 | **Molsmart GW8 IR TV** | TRATO (irweb) | IR_REMOTE | ✅ |
-| Roku TV | Community Driver | TV | ✅ |
-| Sony Bravia | Community Driver | TV | ✅ |
-| Vizio SmartCast | Community Driver | TV | ✅ |
-| Fire TV | Community Driver | TV | ✅ |
-| Chromecast | Community Driver | MEDIA | ✅ |
+| Roku / Fire TV | Community Driver | TV | ✅ |
 
-### 🔊 Audio / AVR / Multiroom
+### 🔊 Audio / AVR
 
 | Device | Driver/Manufacturer | Lumina Type | Status |
 |--------|---------------------|-------------|--------|
 | **Molsmart SoundSmart** | TRATO | AVR | ✅ |
-| Denon AVR | Community Driver | AVR | ✅ |
-| Marantz AVR | Community Driver | AVR | ✅ |
-| Yamaha MusicCast | Community Driver | AVR | ✅ |
+| Denon / Marantz AVR | Community Driver | AVR | ✅ |
 | Sonos | Community Driver | AVR | ✅ |
-| Google Home/Nest Audio | Community Driver | AVR | ✅ |
-| Echo/Alexa | Community Driver | AVR | ✅ |
 
 ### 🪟 Blinds & Shades
 
 | Device | Driver/Manufacturer | Lumina Type | Status |
 |--------|---------------------|-------------|--------|
 | Generic Window Shade | Hubitat Built-in | BLIND | ✅ |
-| **Molsmart GW8 RF** | TRATO | BLIND | ✅ |
-| **Molsmart Curtains HTTP/TCP** | TRATO | BLIND | ✅ |
-| Somfy RTS | Community Driver | BLIND | ✅ |
-| IKEA Fyrtur/Kadrilj | Hubitat Built-in | BLIND | ✅ |
-| Tuya Zigbee Blinds | Hubitat Built-in | BLIND | ✅ |
-| Zemismart Blinds | Community Driver | BLIND | ✅ |
-| Aqara Roller Shade | Hubitat Built-in | BLIND | ✅ |
+| **Molsmart Curtains** | TRATO | BLIND | ✅ |
+| Somfy / IKEA Fyrtur | Community/Built-in | BLIND | ✅ |
 
-### 🚪 Locks
+### 🚪 Locks & Sensors
 
 | Device | Driver/Manufacturer | Lumina Type | Status |
 |--------|---------------------|-------------|--------|
-| Generic Z-Wave Lock | Hubitat Built-in | LOCK | ✅ |
-| Yale Assure | Hubitat Built-in | LOCK | ✅ |
-| Schlage | Hubitat Built-in | LOCK | ✅ |
-| August Smart Lock | Community Driver | LOCK | ✅ |
-| Kwikset | Hubitat Built-in | LOCK | ✅ |
-| Zigbee Lock | Hubitat Built-in | LOCK | ✅ |
-
-### 👁️ Motion Sensors
-
-| Device | Driver/Manufacturer | Lumina Type | Status |
-|--------|---------------------|-------------|--------|
-| **Philips Hue Indoor (SML001)** | Hubitat Built-in | MOTION | ✅ |
-| **Philips Hue Outdoor (SML002)** | Hubitat Built-in | MOTION | ✅ |
-| Zigbee Motion Sensor | Hubitat Built-in | MOTION | ✅ |
-| Z-Wave Motion Sensor | Hubitat Built-in | MOTION | ✅ |
-| Aqara Motion Sensor | Hubitat Built-in | MOTION | ✅ |
-| SmartThings Motion | Hubitat Built-in | MOTION | ✅ |
-
-### 📡 Presence Sensors (Radar/Mmwave)
-
-| Device | Driver/Manufacturer | Lumina Type | Status |
-|--------|---------------------|-------------|--------|
-| **Mmwave MEROS MS600** | Community Driver | PRESENCE | ✅ |
-| **Tuya Mmwave (TS0601)** | Hubitat Built-in | PRESENCE | ✅ |
-| **MOES Mmwave (TS0225)** | Hubitat Built-in | PRESENCE | ✅ |
-| Aqara FP1/FP2 | Community Driver | PRESENCE | ✅ |
-| Everything Presence One | Community Driver | PRESENCE | ✅ |
-| Life Control Occupancy | Community Driver | PRESENCE | ✅ |
-
-### 💧 Safety Sensors
-
-| Device | Driver/Manufacturer | Lumina Type | Status |
-|--------|---------------------|-------------|--------|
-| Water Leak Sensor | Hubitat Built-in | WATER | ✅ |
-| Smoke Detector | Hubitat Built-in | SMOKE | ✅ |
-| CO Detector | Hubitat Built-in | SMOKE | ✅ |
-| Aqara Water Sensor | Hubitat Built-in | WATER | ✅ |
-| First Alert Smoke/CO | Hubitat Built-in | SMOKE | ✅ |
-| Zigbee Water Sensor | Hubitat Built-in | WATER | ✅ |
-
-### 🎬 Scenes & Buttons
-
-| Device | Driver/Manufacturer | Lumina Type | Status |
-|--------|---------------------|-------------|--------|
-| Hubitat Scenes | Hubitat Built-in | SCENE | ✅ |
-| Pushable Button | Various | SCENE | ✅ |
-| Pico Remote | Lutron | SCENE | ✅ |
-| Hue Dimmer Switch | CoCoHue | SCENE | ✅ |
-| IKEA Tradfri Remote | Hubitat Built-in | SCENE | ✅ |
-| Aqara Cube/Button | Hubitat Built-in | SCENE | ✅ |
-
-### 📲 IR/RF Controls (Molsmart Ecosystem)
-
-| Device | Driver/Manufacturer | Lumina Type | Status |
-|--------|---------------------|-------------|--------|
-| **Molsmart GW8 IR TV** | TRATO (irweb) | IR_REMOTE | ✅ |
-| **Molsmart GW8 IR AC** | TRATO (irweb) | IR_REMOTE | ✅ |
-| **Molsmart GW8 RF Blinds** | TRATO | BLIND | ✅ |
-| **Child Buttons (TV - xxx)** | TRATO | BUTTON | ✅ |
-| **Child Buttons (Cortina - xxx)** | TRATO | BUTTON | ✅ |
-
----
-
-## 🔧 Supported Hubitat Capabilities
-
-Lumina automatically detects devices by these Hubitat capabilities:
-
-```
-Switch, SwitchLevel, ColorControl, ColorTemperature
-Thermostat, ThermostatCoolingSetpoint, ThermostatHeatingSetpoint
-WindowShade, WindowBlind
-Lock
-AudioVolume, MusicPlayer, TV, SamsungTV
-MotionSensor, PresenceSensor
-WaterSensor, SmokeDetector, CarbonMonoxideDetector
-PushableButton, HoldableButton
-```
+| Z-Wave/Zigbee Lock | Hubitat Built-in | LOCK | ✅ |
+| Motion Sensor | Hubitat Built-in | MOTION | ✅ |
+| Presence/Mmwave | Various | PRESENCE | ✅ |
+| Water/Smoke Sensor | Hubitat Built-in | WATER/SMOKE | ✅ |
 
 ---
 
@@ -306,34 +233,49 @@ PushableButton, HoldableButton
 
 ```
 /
-├── LuminaHighline_v1.X.html   # Single-file builds (ready to use)
-├── hubitat-apps/              # Hubitat Groovy apps
-│   └── LuminaInstaller.groovy # HPM installer app
-├── hubitat-drivers/           # Auxiliary Groovy drivers
-├── packageManifest.json       # HPM package manifest
-├── repository.json            # HPM repository listing
-├── INSTALLATION.md            # Step-by-step installation guide
-├── LICENSE                    # Commercial license terms
-├── README.md                  # Documentation (English)
-└── README.pt-BR.md            # Documentation (Portuguese)
+├── LuminaHighline_v1.5.html      # ⭐ Stable release
+├── LuminaHighline_v1.6-beta.html # 🚀 Beta with new features
+├── LuminaBackgrounds.html        # DAKboard-style backgrounds
+├── hubitat-apps/
+│   ├── LuminaDashboardAPI.groovy # Main API (devices + hub variables)
+│   ├── LuminaInstaller_PT.groovy # Installer (Portuguese)
+│   ├── LuminaInstaller_EN.groovy # Installer (English)
+│   └── LuminaServer.groovy       # Remote Access Server (iframe)
+├── hubitat-drivers/
+│   ├── LuminaDashboardTile_PT.groovy # Dashboard Tile (Portuguese)
+│   └── LuminaDashboardTile_EN.groovy # Dashboard Tile (English)
+├── archive/
+│   └── legacy-versions/          # Old versions (v1.1-v1.4)
+├── INSTALLATION.md               # Installation guide
+├── CLOUD_ACCESS.md               # Cloud/Remote access guide
+├── LICENSE                       # Commercial license terms
+└── README.md                     # Documentation
 ```
 
 ---
 
 ## 🚀 Changelog
 
-### v1.5.3 (2026-03-01)
-- ✅ Full Molsmart ecosystem support (GW8 IR/RF, SoundSmart, Relays)
-- ✅ Child button detection (TV -, Cortina -, AC -)
-- ✅ IR Remote UI for TV and AC control
-- ✅ Mmwave sensor detection (TS0601, TS0225)
-- ✅ Fixed detection order (BLIND before SCENE)
-- ✅ Fixed sendHubitatCommand (positional parameters)
+### v1.6-beta (2026-03-02)
+- 🔗 **Auto-Setup Link** — Generate link with embedded config
+- 📱 **Dashboard Tile Driver** — Lumina inside Hubitat app
+- ☁️ **Hubitat Cloud Support** — Remote access via Cloud
+- 🔄 **Auto-Sync** — Settings saved to Hub Variables
+- 📷 **IP Cameras** — MJPEG, Snapshot, RTSP support
+- ⭐ **Favorites Bar** — Quick access to favorite devices
+- 🖼️ **Offline Mode** — Works without internet (CSS gradients fallback)
 
-### v1.4 (2026-03-01)
-- ✅ Fixed device detection (TV before AC)
-- ✅ Water/Smoke sensor support
-- ✅ Complete TV Remote UI
+### v1.5.6 (2026-03-01)
+- ✅ Lumina Installer app for automatic installation
+- ✅ Auto-Sync with Hub Variables
+- ✅ Full Molsmart ecosystem support
+- ✅ Scene button fix (push/1)
+
+### v1.5.3 (2026-03-01)
+- ✅ Molsmart GW8 IR/RF support
+- ✅ SoundSmart multiroom detection
+- ✅ Child button detection
+- ✅ IR Remote UI for TV and AC
 
 ---
 
@@ -346,6 +288,7 @@ PushableButton, HoldableButton
 | 🌐 **Website** | [luminadashboards.dev.br](https://luminadashboards.dev.br) |
 | 📦 **GitHub** | [Domotika/LuminaDev](https://github.com/Domotika/LuminaDev) |
 | 🏢 **Company** | [Domótika](https://domotika.com.br) |
+| 📱 **WhatsApp** | [+55 47 99635-7469](https://wa.me/5547996357469) |
 
 </div>
 
@@ -353,7 +296,7 @@ PushableButton, HoldableButton
 
 ## 📞 Support
 
-- **Developed by:** Domótika
+- **Developed by:** Domótika Ambientes Inteligentes LTDA
 - **Compatible with:** Hubitat Elevation C-5, C-7, C-8
 - **Contact:** [luminadashboards.dev.br](https://luminadashboards.dev.br)
 

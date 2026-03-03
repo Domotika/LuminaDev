@@ -4,7 +4,7 @@
  *  Professional Dashboard for Hubitat Elevation
  * ═══════════════════════════════════════════════════════════════════════════
  *  
- *  Copyright © 2024-2026 Domótika Automação Residencial LTDA
+ *  Copyright © 2024-2026 Domótika Ambientes Inteligentes LTDA
  *  https://luminadashboards.dev.br
  *  
  *  This installer downloads and manages the Lumina Dashboard HTML file.
@@ -23,13 +23,15 @@ definition(
     iconX2Url: "",
     iconX3Url: "",
     documentationLink: "https://luminadashboards.dev.br",
-    importUrl: "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller.groovy"
+    importUrl: "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller_EN.groovy"
 )
 
 preferences {
     page(name: "mainPage")
     page(name: "installPage")
     page(name: "updatePage")
+    page(name: "setupSyncPage")
+    page(name: "generateLinkPage")
     page(name: "aboutPage")
 }
 
@@ -101,6 +103,8 @@ def mainPage() {
         // Status Section
         section("📊 Status") {
             def installed = isLuminaInstalled()
+            def installedFile = findInstalledLumina()
+            def installedVersion = getInstalledVersion()
             def statusClass = installed ? "status-installed" : "status-not-installed"
             def statusText = installed ? "INSTALLED" : "NOT INSTALLED"
             
@@ -109,18 +113,20 @@ def mainPage() {
                     <strong>Dashboard Status:</strong> 
                     <span class="lumina-status ${statusClass}">${statusText}</span>
                     <br><br>
+                    ${installed ? "<strong>Installed Version:</strong> ${installedVersion}<br><strong>File:</strong> ${installedFile?.name}<br><br>" : ""}
                     <strong>Installer Version:</strong> ${LUMINA_VERSION}<br>
-                    <strong>File:</strong> ${LUMINA_FILENAME}
+                    <strong>Default File:</strong> ${LUMINA_FILENAME}
                 </div>
             """
             
-            if (installed) {
+            if (installed && installedFile) {
                 def hubIP = location.hubs[0].getDataValue("localIP") ?: "YOUR-HUB-IP"
+                def fileName = installedFile.name
                 paragraph """
                     <div class="lumina-card" style="border-left-color: #28a745;">
                         <strong>🔗 Access your dashboard:</strong><br>
-                        <a href="http://${hubIP}/local/${LUMINA_FILENAME}" target="_blank" style="font-size: 14px; color: #0f3460;">
-                            http://${hubIP}/local/${LUMINA_FILENAME}
+                        <a href="http://${hubIP}/local/${fileName}" target="_blank" style="font-size: 14px; color: #0f3460;">
+                            http://${hubIP}/local/${fileName}
                         </a>
                     </div>
                 """
@@ -134,6 +140,8 @@ def mainPage() {
             } else {
                 href "updatePage", title: "🔄 Check for Updates", description: "Download latest version", style: "external"
             }
+            href "setupSyncPage", title: "🔧 Setup Auto-Sync", description: "Create Hub Variables for cloud sync"
+            href "generateLinkPage", title: "🔗 Generate Access Link", description: "Ready-to-use link with auto-configuration"
             href "aboutPage", title: "ℹ️ About & License", description: "Information and support"
         }
         
@@ -150,8 +158,9 @@ def mainPage() {
             } else {
                 paragraph """
                     <div class="lumina-card" style="border-left-color: #ffc107;">
-                        ⚠️ <strong>Maker API not found</strong><br>
-                        Please install Maker API from Apps → Add Built-in App → Maker API
+                        ⚠️ <strong>Maker API not detected</strong><br>
+                        If you already have Maker API installed, ignore this message.<br>
+                        Otherwise, install from: Apps → Add Built-in App → Maker API
                     </div>
                 """
             }
@@ -245,6 +254,193 @@ def updatePage() {
     }
 }
 
+def setupSyncPage() {
+    dynamicPage(name: "setupSyncPage", title: "Setup Auto-Sync", install: false, uninstall: false) {
+        section {
+            paragraph """
+                <div class="lumina-card">
+                    <h3>🔧 Auto-Sync Hub Variables</h3>
+                    <p>Lumina uses Hub Variables to automatically save and restore your configuration.</p>
+                    <p>This allows your settings to persist even when updating the dashboard.</p>
+                </div>
+            """
+        }
+        
+        section {
+            // Run setup and show results
+            def result = checkAndCreateVariables()
+            
+            if (result.allExist) {
+                paragraph """
+                    <div class="lumina-card" style="border-left-color: #28a745;">
+                        <h3>✅ Auto-Sync Ready!</h3>
+                        <p>All Hub Variables are configured correctly.</p>
+                        <hr>
+                        <strong>Variables:</strong>
+                        <ul>
+                            ${result.variables.collect { "<li>${it.name}: ${it.status}</li>" }.join("")}
+                        </ul>
+                    </div>
+                """
+            } else {
+                paragraph """
+                    <div class="lumina-card" style="border-left-color: #ffc107;">
+                        <h3>⚠️ Creating Variables...</h3>
+                        <p>${result.created} variables were created.</p>
+                        <hr>
+                        <strong>Variables:</strong>
+                        <ul>
+                            ${result.variables.collect { "<li>${it.name}: ${it.status}</li>" }.join("")}
+                        </ul>
+                    </div>
+                """
+            }
+        }
+        
+        section("📋 How it works") {
+            paragraph """
+                <div class="lumina-card">
+                    <ol>
+                        <li><strong>Auto-Save:</strong> When you change settings in Lumina, it waits 5 seconds then saves to Hubitat</li>
+                        <li><strong>Auto-Load:</strong> When you open Lumina, it automatically loads your saved configuration</li>
+                        <li><strong>Chunked Storage:</strong> Large configs are split into multiple variables (max 5 chunks)</li>
+                    </ol>
+                    <hr>
+                    <p><em>Variables are stored in: Settings → Hub Variables</em></p>
+                </div>
+            """
+        }
+        
+        section {
+            href "mainPage", title: "← Back to Main", description: ""
+        }
+    }
+}
+
+def checkAndCreateVariables() {
+    def variables = [
+        "LuminaConfig",
+        "LuminaConfig_0",
+        "LuminaConfig_1", 
+        "LuminaConfig_2",
+        "LuminaConfig_3",
+        "LuminaConfig_4"
+    ]
+    
+    def results = []
+    def created = 0
+    def allExist = true
+    
+    variables.each { varName ->
+        def exists = false
+        try {
+            def value = getGlobalVar(varName)
+            exists = (value != null)
+        } catch (e) {
+            exists = false
+        }
+        
+        if (!exists) {
+            allExist = false
+            try {
+                setGlobalVar(varName, "")
+                results << [name: varName, status: "✅ Created"]
+                created++
+            } catch (e) {
+                results << [name: varName, status: "❌ Error: ${e.message}"]
+            }
+        } else {
+            results << [name: varName, status: "✅ Exists"]
+        }
+    }
+    
+    return [allExist: allExist, created: created, variables: results]
+}
+
+def generateLinkPage() {
+    dynamicPage(name: "generateLinkPage", title: "Generate Access Link", install: false, uninstall: false) {
+        section {
+            paragraph """
+                <div class="lumina-card">
+                    <h3>🔗 Automatic Access Link</h3>
+                    <p>Generate a link that configures Lumina automatically!</p>
+                    <p>When opening this link, the dashboard will be connected to Hubitat.</p>
+                </div>
+            """
+        }
+        
+        section("📋 Maker API Data") {
+            paragraph """
+                <div class="lumina-card" style="border-left-color: #17a2b8;">
+                    <strong>Where to find:</strong><br>
+                    Apps → Maker API → Copy the <strong>App ID</strong> (number in URL) and <strong>Access Token</strong>
+                </div>
+            """
+            input "makerAppId", "text", title: "Maker API App ID", required: true, submitOnChange: true
+            input "makerToken", "text", title: "Maker API Access Token", required: true, submitOnChange: true
+        }
+        
+        section("🔑 License (Optional)") {
+            paragraph "<p class='text-muted'>If you have an activated license, include it here for automatic activation.</p>"
+            input "luminaLicense", "text", title: "License Key (XXXX-XXXX-XXXX-XXXX)", required: false, submitOnChange: true
+        }
+        
+        if (makerAppId && makerToken) {
+            section("✨ Your Access Link") {
+                def link = generateAccessLink()
+                def installedFile = findInstalledLumina()
+                def fileName = installedFile?.name ?: LUMINA_FILENAME
+                
+                paragraph """
+                    <div class="lumina-card" style="border-left-color: #28a745;">
+                        <h3>✅ Link Generated!</h3>
+                        <p>Copy and open on any device:</p>
+                        <hr>
+                        <textarea readonly style="width:100%; height:80px; font-size:11px; padding:10px; border:1px solid #ccc; border-radius:5px; background:#f5f5f5;" onclick="this.select()">${link}</textarea>
+                        <hr>
+                        <p style="font-size:11px; color:#666;">
+                            📱 <strong>Tip:</strong> Send this link via WhatsApp or email to your clients!
+                        </p>
+                    </div>
+                """
+                
+                if (luminaLicense) {
+                    paragraph """
+                        <div class="lumina-card" style="border-left-color: #ffc107;">
+                            🔑 <strong>License included!</strong> The dashboard will be activated automatically.
+                        </div>
+                    """
+                }
+            }
+        }
+        
+        section {
+            href "mainPage", title: "← Back to Main", description: ""
+        }
+    }
+}
+
+def generateAccessLink() {
+    def hubIP = location.hubs[0].getDataValue("localIP") ?: "192.168.1.1"
+    def installedFile = findInstalledLumina()
+    def fileName = installedFile?.name ?: LUMINA_FILENAME
+    
+    def configMap = [
+        hubIp: hubIP,
+        appId: makerAppId,
+        accessToken: makerToken
+    ]
+    
+    if (luminaLicense) {
+        configMap.license = luminaLicense
+    }
+    
+    def jsonConfig = groovy.json.JsonOutput.toJson(configMap)
+    def base64Config = jsonConfig.bytes.encodeBase64().toString()
+    
+    return "http://${hubIP}/local/${fileName}?config=${base64Config}"
+}
+
 def aboutPage() {
     dynamicPage(name: "aboutPage", title: "About Lumina", install: false, uninstall: false) {
         section {
@@ -279,7 +475,7 @@ def aboutPage() {
         section("🏢 Developer") {
             paragraph """
                 <div class="lumina-card">
-                    <strong>Domótika Automação Residencial LTDA</strong><br>
+                    <strong>Domótika Ambientes Inteligentes LTDA</strong><br>
                     Balneário Camboriú - SC, Brazil<br><br>
                     <a href="https://domotika.com.br" target="_blank">domotika.com.br</a>
                 </div>
@@ -298,12 +494,41 @@ def aboutPage() {
 
 def isLuminaInstalled() {
     try {
-        def files = listFiles()
-        return files?.any { it.name == LUMINA_FILENAME }
+        def installed = findInstalledLumina()
+        return installed != null
     } catch (e) {
         log.error "Error checking installation: ${e.message}"
         return false
     }
+}
+
+def findInstalledLumina() {
+    try {
+        def files = listFiles()
+        // Find any Lumina file (v1.5, v1.6-beta, etc)
+        def luminaFile = files?.find { 
+            it.name?.startsWith("LuminaHighline") || 
+            it.name?.startsWith("Lumina_") ||
+            it.name?.toLowerCase()?.contains("lumina") && it.name?.endsWith(".html")
+        }
+        return luminaFile
+    } catch (e) {
+        log.error "Error finding Lumina: ${e.message}"
+        return null
+    }
+}
+
+def getInstalledVersion() {
+    def file = findInstalledLumina()
+    if (!file) return null
+    
+    def name = file.name
+    // Extract version from filename (e.g., LuminaHighline_v1.6-beta.html -> v1.6-beta)
+    def match = name =~ /[vV]?(\d+\.\d+[^.]*)/
+    if (match.find()) {
+        return "v${match.group(1)}"
+    }
+    return name.replace(".html", "")
 }
 
 def listFiles() {
@@ -404,17 +629,42 @@ def uploadFile(String filename, String content) {
 }
 
 def findMakerAPI() {
+    // Method 1: Search child apps
     try {
         def apps = getChildApps()
-        return apps?.find { it.name?.toLowerCase()?.contains("maker") }
+        def maker = apps?.find { it.name?.toLowerCase()?.contains("maker") }
+        if (maker) return maker
     } catch (e) {
-        // Try alternative method
-        try {
-            return getAllChildApps()?.find { it.name?.toLowerCase()?.contains("maker") }
-        } catch (e2) {
-            return null
-        }
+        log.debug "getChildApps not available: ${e.message}"
     }
+    
+    // Method 2: Try getAllChildApps
+    try {
+        def allApps = getAllChildApps()
+        def maker = allApps?.find { it.name?.toLowerCase()?.contains("maker") }
+        if (maker) return maker
+    } catch (e) {
+        log.debug "getAllChildApps not available: ${e.message}"
+    }
+    
+    // Method 3: Check via HTTP if Maker API is accessible
+    try {
+        def params = [
+            uri: "http://127.0.0.1:8080",
+            path: "/apps/api",
+            contentType: "application/json",
+            timeout: 5
+        ]
+        httpGet(params) { resp ->
+            if (resp.status == 200) {
+                return [id: "detected", name: "Maker API"]
+            }
+        }
+    } catch (e) {
+        log.debug "Could not verify Maker API via HTTP"
+    }
+    
+    return null
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -424,6 +674,7 @@ def findMakerAPI() {
 def installed() {
     log.info "Lumina Installer installed"
     initialize()
+    setupHubVariables()
 }
 
 def updated() {
@@ -433,6 +684,50 @@ def updated() {
 
 def initialize() {
     log.info "Lumina Installer initialized - Version ${LUMINA_VERSION}"
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AUTO-SYNC HUB VARIABLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+def setupHubVariables() {
+    log.info "Setting up Hub Variables for Lumina Auto-Sync..."
+    
+    def variables = [
+        "LuminaConfig",
+        "LuminaConfig_0",
+        "LuminaConfig_1", 
+        "LuminaConfig_2",
+        "LuminaConfig_3",
+        "LuminaConfig_4"
+    ]
+    
+    def created = 0
+    variables.each { varName ->
+        try {
+            def existing = getGlobalVar(varName)
+            if (existing == null) {
+                setGlobalVar(varName, "")
+                created++
+                log.info "Created Hub Variable: ${varName}"
+            }
+        } catch (e) {
+            // Variable doesn't exist, create it
+            try {
+                setGlobalVar(varName, "")
+                created++
+                log.info "Created Hub Variable: ${varName}"
+            } catch (e2) {
+                log.warn "Could not create variable ${varName}: ${e2.message}"
+            }
+        }
+    }
+    
+    if (created > 0) {
+        log.info "Lumina Auto-Sync: Created ${created} Hub Variables"
+    } else {
+        log.info "Lumina Auto-Sync: All Hub Variables already exist"
+    }
 }
 
 def uninstalled() {

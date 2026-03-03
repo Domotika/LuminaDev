@@ -9,132 +9,188 @@
 
 - Hubitat Elevation (C-5, C-7 ou C-8)
 - Acesso à interface web do Hubitat
-- Navegador moderno (Chrome, Safari, Firefox, Edge)
 - Licença Lumina ativa
 
 ---
 
+## Método 1: Instalação Automática (Recomendado) ⭐
+
 ### Passo 1: Instalar o Maker API
 
-O Maker API é o app oficial do Hubitat que permite comunicação externa.
-
 1. Acesse seu Hubitat: `http://[IP-DO-HUB]`
-2. Vá em **Apps** → **Add Built-in App**
-3. Selecione **Maker API**
-4. Configure:
-   - ✅ Marque **Allow Access via Local IP Address**
-   - ✅ Selecione **All Devices** ou escolha os dispositivos desejados
-   - ❌ Deixe desmarcado **Include Location Events**
+2. Vá em **Apps** → **Add Built-in App** → **Maker API**
+3. Configure:
+   - ✅ **Allow Access via Local IP Address**
+   - ✅ **All Devices** (ou selecione os desejados)
 5. Clique em **Done**
-6. Abra o Maker API criado e anote:
-   - **App ID** (número na URL, ex: `123`)
-   - **Access Token** (código longo)
-
-![Maker API Config](https://i.ibb.co/RTqMtCM7/4.png)
+6. Abra o Maker API e anote o **App ID** e **Access Token**
 
 ---
 
-### Passo 2: Upload do Lumina
+### Passo 2: Instalar o Lumina Installer
+
+1. No Hubitat, vá em **Apps** → **Add User App**
+2. Clique em **+ New App**
+3. Cole o código do Installer:
+   ```
+   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-apps/LuminaInstaller_PT.groovy
+   ```
+4. Clique em **Import** → **Save**
+5. Volte em **Apps** → **Add User App** → selecione **Lumina Dashboard - Instalador**
+6. O app será criado automaticamente
+
+---
+
+### Passo 3: Baixar e Instalar o Dashboard
+
+1. No Lumina Installer, clique em **📥 Instalar Lumina Dashboard**
+2. Aguarde o download do GitHub
+3. ✅ Dashboard instalado automaticamente!
+
+---
+
+### Passo 4: Configurar Auto-Sync
+
+1. No Lumina Installer, clique em **🔧 Configurar Auto-Sync**
+2. As Hub Variables serão criadas automaticamente
+3. ✅ Suas configurações serão salvas e sincronizadas!
+
+---
+
+### Passo 5: Gerar Link de Acesso Automático 🔗
+
+Este é o método mais fácil para configurar o Lumina!
+
+1. No Lumina Installer, clique em **🔗 Gerar Link de Acesso**
+2. Preencha:
+   - **App ID** do Maker API
+   - **Access Token** do Maker API
+   - **Chave de Licença** (opcional - se já tiver)
+3. Copie o **link gerado**
+4. Abra o link em qualquer dispositivo
+5. ✅ **Pronto!** O Lumina já está conectado e configurado!
+
+**💡 Dica:** Envie este link para seus clientes via WhatsApp. Ao abrir, tudo estará configurado automaticamente!
+
+---
+
+### Passo 6: Ativar a Licença
+
+Se não incluiu a licença no link:
+
+1. Na tela de ativação, copie o **ID de Instalação**
+2. Envie via WhatsApp: [+55 47 99635-7469](https://wa.me/5547996357469?text=Olá!%20Comprei%20o%20Lumina%20Dashboard.%20Meu%20ID%20de%20Instalação%20é:%20)
+3. Receba e digite sua **Chave de Ativação**
+4. ✅ Sistema ativado!
+
+---
+
+## Método 2: Acesso via App Hubitat 📱
+
+Use o Lumina dentro do app oficial do Hubitat!
+
+### Passo 1: Instalar o Driver da Tile
+
+1. No Hubitat, vá em **Drivers Code** → **+ New Driver**
+2. Clique em **Import** e cole:
+   ```
+   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-drivers/LuminaDashboardTile_PT.groovy
+   ```
+3. Clique em **Import** → **Save**
+
+---
+
+### Passo 2: Criar o Dispositivo Virtual
+
+1. Vá em **Devices** → **Add Device** → **Virtual**
+2. Preencha:
+   - **Device Name:** Lumina Dashboard
+   - **Type:** Lumina Dashboard Tile (PT)
+3. Clique em **Save Device**
+
+---
+
+### Passo 3: Configurar o Dispositivo
+
+1. Abra o dispositivo criado
+2. Em **Preferences**, configure:
+   - **Arquivo Lumina:** v1.5 Estável ou v1.6 Beta
+   - **Usar Hubitat Cloud:** ✅ Ative para acesso remoto!
+   - **Altura da Tile:** 100% (recomendado)
+3. Clique em **Save Preferences**
+
+---
+
+### Passo 4: Adicionar na Dashboard
+
+1. Vá em **Dashboards** → Escolha ou crie uma Dashboard
+2. Clique em **+** para adicionar tile
+3. Selecione o dispositivo **Lumina Dashboard**
+4. Configure a tile:
+   - **Template:** Attribute
+   - **Attribute:** html
+   - **Tamanho:** 4x4 ou maior (quanto maior, melhor!)
+5. ✅ O Lumina aparece dentro da Dashboard Hubitat!
+
+**🎉 Benefícios:**
+- Acesse pelo app Hubitat no celular
+- Acesso remoto automático via Hubitat Cloud
+- Sem precisar de navegador separado
+
+---
+
+## Método 3: Instalação Manual
+
+### Passo 1: Download do Arquivo
+
+Baixe o arquivo do GitHub:
+- **v1.5 Estável:** [LuminaHighline_v1.5.html](https://raw.githubusercontent.com/Domotika/LuminaDev/develop/LuminaHighline_v1.5.html)
+- **v1.6 Beta:** [LuminaHighline_v1.6-beta.html](https://raw.githubusercontent.com/Domotika/LuminaDev/develop/LuminaHighline_v1.6-beta.html)
+
+### Passo 2: Upload para o Hubitat
 
 1. No Hubitat, vá em **Settings** → **File Manager**
-2. Clique em **Choose File**
-3. Selecione o arquivo `LuminaHighline_v1.5.html`
-4. Clique em **Upload**
-5. Aguarde o upload completar
+2. Clique em **Choose File** → selecione o HTML baixado
+3. Clique em **Upload**
 
----
-
-### Passo 3: Acessar o Lumina
-
-Abra o navegador e acesse:
+### Passo 3: Acessar
 
 ```
 http://[IP-DO-HUB]/local/LuminaHighline_v1.5.html
 ```
 
-Exemplo: `http://192.168.1.100/local/LuminaHighline_v1.5.html`
+### Passo 4: Configurar Manualmente
+
+1. Vá em **Ajustes** (⚙️)
+2. Digite: **IP**, **App ID**, **Token**
+3. Teste e Salve
 
 ---
 
-### Passo 4: Ativar a Licença
-
-Na primeira vez que abrir, você verá a tela de ativação:
-
-![Tela de Ativação](https://i.ibb.co/QFGspHqY/ativa-o-lumina.png)
-
-1. **Copie o ID de Instalação** (ex: `LUM-5855-9E9C`)
-2. **Envie via WhatsApp** para nossa equipe junto com o comprovante de pagamento:
-   - 📱 [Clique aqui para abrir o WhatsApp](https://wa.me/5547996357469?text=Olá!%20Comprei%20o%20Lumina%20Dashboard.%20Meu%20ID%20de%20Instalação%20é:%20)
-3. **Receba sua Chave de Ativação** (formato: `XXXX-XXXX-XXXX-XXXX`)
-4. **Digite a chave** e clique em **ATIVAR SISTEMA**
-
----
-
-### Passo 5: Configurar Conexão
-
-Após a ativação, configure a conexão com o Hubitat:
-
-1. Vá em **Ajustes** (ícone de engrenagem)
-2. Em **Conexão Maker API**:
-   - **HUBITAT IP**: Digite o IP do seu hub (ex: `192.168.1.100`)
-   - **App ID**: Cole o App ID do Maker API
-   - **Access Token**: Cole o Token de Acesso
-3. Clique em **Testar** para verificar a conexão
-4. Se aparecer ✅ "Conexão bem sucedida!", clique em **Salvar**
-
-![Configuração](https://i.ibb.co/k69pJjR8/ativa-o-lumina-inicio.png)
-
----
-
-### Passo 6: Personalizar
-
-Agora você pode:
-
-- **Criar Ambientes**: Organize seus dispositivos por cômodos
-- **Renomear Dispositivos**: Dê nomes amigáveis
-- **Personalizar Backgrounds**: Escolha imagens para cada tela
-- **Organizar Layout**: Arraste e solte os cards
-
----
-
-### 🔄 Sincronização Automática
-
-O Lumina sincroniza automaticamente suas configurações com o Hubitat!
-
-- **Primeira vez**: Configure no dispositivo principal (ex: tablet da sala)
-- **Outros dispositivos**: Ao abrir, as configurações são carregadas automaticamente
-- **Alterações**: Salvas automaticamente após 5 segundos
-
-Isso significa que você pode:
-- Configurar tudo em um tablet
-- Abrir no celular e já ter tudo pronto
-- Trocar de dispositivo sem perder configs
-
----
-
-### ⚠️ Solução de Problemas
-
-| Problema | Solução |
-|----------|---------|
-| "Erro de conexão" | Verifique se o IP está correto e se está na mesma rede |
-| "Access Token inválido" | Copie novamente o token do Maker API |
-| "Dispositivos não aparecem" | Verifique se os dispositivos estão selecionados no Maker API |
-| "Página em branco" | Limpe o cache do navegador e recarregue |
-| HTTPS não funciona | O Hubitat local usa HTTP. Acesse via `http://` |
-
----
-
-### 📱 Dica: Criar Atalho na Tela Inicial
+## 📱 Criar Atalho na Tela Inicial
 
 **iOS/iPad:**
 1. Abra o Lumina no Safari
-2. Toque no ícone de compartilhar (quadrado com seta)
-3. Selecione "Adicionar à Tela de Início"
+2. Toque em Compartilhar (□↑) → **Adicionar à Tela de Início**
 
 **Android:**
 1. Abra o Lumina no Chrome
-2. Toque no menu (3 pontos)
-3. Selecione "Adicionar à tela inicial"
+2. Menu (⋮) → **Adicionar à tela inicial**
+
+---
+
+## ⚠️ Solução de Problemas
+
+| Problema | Solução |
+|----------|---------|
+| Erro de conexão | Verifique IP e se está na mesma rede |
+| Token inválido | Copie novamente do Maker API |
+| Dispositivos não aparecem | Verifique seleção no Maker API |
+| Página em branco | Limpe cache e recarregue |
+| HTTPS não funciona | Use `http://` (Hubitat local não usa HTTPS) |
+| Auto-Sync não funciona | Execute "🔧 Configurar Auto-Sync" no Installer |
+
+---
 
 ---
 
@@ -144,100 +200,186 @@ Isso significa que você pode:
 
 - Hubitat Elevation (C-5, C-7, or C-8)
 - Access to Hubitat web interface
-- Modern browser (Chrome, Safari, Firefox, Edge)
 - Active Lumina license
 
 ---
 
+## Method 1: Automatic Installation (Recommended) ⭐
+
 ### Step 1: Install Maker API
 
-Maker API is Hubitat's official app for external communication.
-
 1. Access your Hubitat: `http://[HUB-IP]`
-2. Go to **Apps** → **Add Built-in App**
-3. Select **Maker API**
-4. Configure:
-   - ✅ Check **Allow Access via Local IP Address**
-   - ✅ Select **All Devices** or choose specific devices
-   - ❌ Leave unchecked **Include Location Events**
+2. Go to **Apps** → **Add Built-in App** → **Maker API**
+3. Configure:
+   - ✅ **Allow Access via Local IP Address**
+   - ✅ **All Devices** (or select desired ones)
 5. Click **Done**
-6. Open the created Maker API and note:
-   - **App ID** (number in URL, e.g., `123`)
-   - **Access Token** (long code)
+6. Open Maker API and note the **App ID** and **Access Token**
 
 ---
 
-### Step 2: Upload Lumina
+### Step 2: Install Lumina Installer
+
+1. In Hubitat, go to **Apps** → **Add User App**
+2. Click **+ New App**
+3. Paste the Installer code:
+   ```
+   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-apps/LuminaInstaller_EN.groovy
+   ```
+4. Click **Import** → **Save**
+5. Go back to **Apps** → **Add User App** → select **Lumina Dashboard Installer**
+6. The app will be created automatically
+
+---
+
+### Step 3: Download and Install Dashboard
+
+1. In Lumina Installer, click **📥 Install Lumina Dashboard**
+2. Wait for GitHub download
+3. ✅ Dashboard installed automatically!
+
+---
+
+### Step 4: Configure Auto-Sync
+
+1. In Lumina Installer, click **🔧 Setup Auto-Sync**
+2. Hub Variables will be created automatically
+3. ✅ Your settings will be saved and synced!
+
+---
+
+### Step 5: Generate Automatic Access Link 🔗
+
+This is the easiest way to configure Lumina!
+
+1. In Lumina Installer, click **🔗 Generate Access Link**
+2. Fill in:
+   - **App ID** from Maker API
+   - **Access Token** from Maker API
+   - **License Key** (optional - if you have one)
+3. Copy the **generated link**
+4. Open the link on any device
+5. ✅ **Done!** Lumina is connected and configured!
+
+**💡 Tip:** Send this link to your clients via WhatsApp. When opened, everything will be configured automatically!
+
+---
+
+### Step 6: Activate License
+
+If you didn't include the license in the link:
+
+1. On the activation screen, copy the **Installation ID**
+2. Send via WhatsApp: [+55 47 99635-7469](https://wa.me/5547996357469?text=Hello!%20I%20purchased%20Lumina%20Dashboard.%20My%20Installation%20ID%20is:%20)
+3. Receive and enter your **Activation Key**
+4. ✅ System activated!
+
+---
+
+## Method 2: Access via Hubitat App 📱
+
+Use Lumina inside the official Hubitat app!
+
+### Step 1: Install the Tile Driver
+
+1. In Hubitat, go to **Drivers Code** → **+ New Driver**
+2. Click **Import** and paste:
+   ```
+   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-drivers/LuminaDashboardTile_EN.groovy
+   ```
+3. Click **Import** → **Save**
+
+---
+
+### Step 2: Create Virtual Device
+
+1. Go to **Devices** → **Add Device** → **Virtual**
+2. Fill in:
+   - **Device Name:** Lumina Dashboard
+   - **Type:** Lumina Dashboard Tile
+3. Click **Save Device**
+
+---
+
+### Step 3: Configure the Device
+
+1. Open the created device
+2. In **Preferences**, configure:
+   - **Lumina File:** v1.5 Stable or v1.6 Beta
+   - **Use Hubitat Cloud:** ✅ Enable for remote access!
+   - **Tile Height:** 100% (recommended)
+3. Click **Save Preferences**
+
+---
+
+### Step 4: Add to Dashboard
+
+1. Go to **Dashboards** → Choose or create a Dashboard
+2. Click **+** to add tile
+3. Select the **Lumina Dashboard** device
+4. Configure the tile:
+   - **Template:** Attribute
+   - **Attribute:** html
+   - **Size:** 4x4 or larger (bigger is better!)
+5. ✅ Lumina appears inside the Hubitat Dashboard!
+
+**🎉 Benefits:**
+- Access via Hubitat app on your phone
+- Automatic remote access via Hubitat Cloud
+- No separate browser needed
+
+---
+
+## Method 3: Manual Installation
+
+### Step 1: Download the File
+
+Download from GitHub:
+- **v1.5 Stable:** [LuminaHighline_v1.5.html](https://raw.githubusercontent.com/Domotika/LuminaDev/develop/LuminaHighline_v1.5.html)
+- **v1.6 Beta:** [LuminaHighline_v1.6-beta.html](https://raw.githubusercontent.com/Domotika/LuminaDev/develop/LuminaHighline_v1.6-beta.html)
+
+### Step 2: Upload to Hubitat
 
 1. In Hubitat, go to **Settings** → **File Manager**
-2. Click **Choose File**
-3. Select `LuminaHighline_v1.5.html`
-4. Click **Upload**
-5. Wait for upload to complete
+2. Click **Choose File** → select downloaded HTML
+3. Click **Upload**
 
----
-
-### Step 3: Access Lumina
-
-Open browser and go to:
+### Step 3: Access
 
 ```
 http://[HUB-IP]/local/LuminaHighline_v1.5.html
 ```
 
-Example: `http://192.168.1.100/local/LuminaHighline_v1.5.html`
+### Step 4: Configure Manually
+
+1. Go to **Settings** (⚙️)
+2. Enter: **IP**, **App ID**, **Token**
+3. Test and Save
 
 ---
 
-### Step 4: Activate License
+## 📱 Create Home Screen Shortcut
 
-On first launch, you'll see the activation screen:
+**iOS/iPad:**
+1. Open Lumina in Safari
+2. Tap Share (□↑) → **Add to Home Screen**
 
-1. **Copy your Installation ID** (e.g., `LUM-5855-9E9C`)
-2. **Send via WhatsApp** to our team with proof of purchase:
-   - 📱 [Click here to open WhatsApp](https://wa.me/5547996357469?text=Hello!%20I%20purchased%20Lumina%20Dashboard.%20My%20Installation%20ID%20is:%20)
-3. **Receive your Activation Key** (format: `XXXX-XXXX-XXXX-XXXX`)
-4. **Enter the key** and click **ATIVAR SISTEMA** (Activate System)
-
----
-
-### Step 5: Configure Connection
-
-After activation, configure the Hubitat connection:
-
-1. Go to **Ajustes** (gear icon)
-2. In **Conexão Maker API**:
-   - **HUBITAT IP**: Enter your hub's IP (e.g., `192.168.1.100`)
-   - **App ID**: Paste the Maker API App ID
-   - **Access Token**: Paste the Access Token
-3. Click **Testar** (Test) to verify connection
-4. If you see ✅ "Conexão bem sucedida!", click **Salvar** (Save)
+**Android:**
+1. Open Lumina in Chrome
+2. Menu (⋮) → **Add to Home screen**
 
 ---
 
-### Step 6: Customize
+## ⚠️ Troubleshooting
 
-Now you can:
-
-- **Create Rooms**: Organize devices by room
-- **Rename Devices**: Give friendly names
-- **Customize Backgrounds**: Choose images for each screen
-- **Organize Layout**: Drag and drop cards
-
----
-
-### 🔄 Automatic Sync
-
-Lumina automatically syncs your settings with Hubitat!
-
-- **First time**: Configure on your main device (e.g., living room tablet)
-- **Other devices**: Settings are loaded automatically when opened
-- **Changes**: Saved automatically after 5 seconds
-
-This means you can:
-- Configure everything on a tablet
-- Open on your phone and have everything ready
-- Switch devices without losing configs
+| Problem | Solution |
+|---------|----------|
+| Connection error | Check IP and same network |
+| Invalid token | Copy again from Maker API |
+| Devices not showing | Check selection in Maker API |
+| Blank page | Clear cache and reload |
+| HTTPS not working | Use `http://` (local Hubitat doesn't use HTTPS) |
+| Auto-Sync not working | Run "🔧 Setup Auto-Sync" in Installer |
 
 ---
 
