@@ -16,6 +16,15 @@
             "required": true,
             "primary": true,
             "oauth": false
+        },
+        {
+            "id": "lumina-server",
+            "name": "Lumina Dashboard Server",
+            "namespace": "domotika",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaServer.groovy",
+            "required": false,
+            "primary": false,
+            "oauth": true
         }
     ],
     "drivers": []
