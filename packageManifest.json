@@ -1,12 +1,12 @@
 {
     "packageName": "Lumina Dashboard",
     "author": "Domótika",
-    "version": "1.5.6",
+    "version": "1.6.0",
     "minimumHEVersion": "2.3.0",
-    "dateReleased": "2026-03-01",
-    "documentationLink": "https://github.com/Domotika/LuminaDev/blob/main/INSTALLATION.md",
+    "dateReleased": "2026-03-03",
+    "documentationLink": "https://github.com/Domotika/LuminaDev/blob/main/README.pt-BR.md",
     "communityLink": "https://luminadashboards.dev.br",
-    "releaseNotes": "Professional glassmorphism dashboard for Hubitat Elevation. Requires license activation.",
+    "releaseNotes": "v1.6: Lumina Dashboard API integrada, importação de rooms do Hubitat, suporte a câmeras IP, barra de favoritos.",
     "apps": [
         {
             "id": "lumina-api",
@@ -18,12 +18,19 @@
             "oauth": true
         },
         {
-            "id": "lumina-installer",
-            "name": "Lumina Dashboard Installer",
+            "id": "lumina-installer-pt",
+            "name": "Lumina Installer (Português)",
             "namespace": "domotika",
-            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller.groovy",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller_PT.groovy",
             "required": false,
-            "primary": false,
+            "oauth": false
+        },
+        {
+            "id": "lumina-installer-en",
+            "name": "Lumina Installer (English)",
+            "namespace": "domotika",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller_EN.groovy",
+            "required": false,
             "oauth": false
         },
         {
@@ -32,9 +39,23 @@
             "namespace": "domotika",
             "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaServer.groovy",
             "required": false,
-            "primary": false,
             "oauth": true
         }
     ],
-    "drivers": []
+    "drivers": [
+        {
+            "id": "lumina-tile-pt",
+            "name": "Lumina Dashboard Tile (PT)",
+            "namespace": "domotika",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-drivers/LuminaDashboardTile_PT.groovy",
+            "required": false
+        },
+        {
+            "id": "lumina-tile-en",
+            "name": "Lumina Dashboard Tile (EN)",
+            "namespace": "domotika",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-drivers/LuminaDashboardTile_EN.groovy",
+            "required": false
+        }
+    ]
 }

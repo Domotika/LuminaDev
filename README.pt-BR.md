@@ -49,7 +49,19 @@
 
 📖 **[Guia Completo de Instalação](INSTALLATION.md)** ← Instruções passo a passo!
 
-### Método 1: Instalação Automática (Recomendado) ⭐
+### Método 1: HPM - Hubitat Package Manager (Recomendado) ⭐
+
+Instala tudo automaticamente com um clique!
+
+1. **Abra o HPM** no Hubitat
+2. **Install** → **Search by Keywords**
+3. Busque por **"Lumina"**
+4. Selecione **Lumina Dashboard** → **Install**
+5. ✅ API, Installer, Tiles - tudo instalado!
+
+> Não tem HPM? [Instale aqui](https://hubitatpackagemanager.hubitatcommunity.com/)
+
+### Método 2: Instalação Automática
 
 1. **Instale o Maker API** no Hubitat (Apps → Add Built-in App)
 2. **Instale o Lumina Installer:**
