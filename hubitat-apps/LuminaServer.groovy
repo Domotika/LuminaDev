@@ -128,25 +128,39 @@ def serveLumina() {
 
 def readFile(String filename) {
     try {
-        def uri = "http://127.0.0.1:8080/local/${filename}"
-        
-        def params = [
-            uri: uri,
-            textParser: true,
-            timeout: 30
-        ]
-        
-        def result = null
-        httpGet(params) { resp ->
-            if (resp.status == 200) {
-                result = resp.data.text
-            }
+        // Método 1: Usar downloadHubFile (Hubitat 2.3.4+)
+        def fileData = downloadHubFile(filename)
+        if (fileData) {
+            return new String(fileData, "UTF-8")
         }
-        return result
-    } catch (Exception e) {
-        log.error "Erro ao ler arquivo ${filename}: ${e.message}"
-        return null
+    } catch (Exception e1) {
+        logDebug "downloadHubFile falhou: ${e1.message}, tentando método alternativo..."
+        
+        try {
+            // Método 2: HTTP via IP do hub
+            def hubIP = location.hub.localIP
+            def uri = "http://${hubIP}:8080/local/${filename}"
+            
+            def params = [
+                uri: uri,
+                textParser: true,
+                timeout: 30,
+                ignoreSSLIssues: true
+            ]
+            
+            def result = null
+            httpGet(params) { resp ->
+                if (resp.status == 200) {
+                    result = resp.data.text
+                }
+            }
+            return result
+        } catch (Exception e2) {
+            log.error "Erro ao ler arquivo ${filename}: ${e2.message}"
+            return null
+        }
     }
+    return null
 }
 
 def errorPage(String message) {
