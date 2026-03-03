@@ -331,19 +331,17 @@ def checkAndCreateVariables() {
     def created = 0
     def allExist = true
     
+    // Obter lista de variáveis existentes
+    def existingVars = getAllGlobalVars()?.keySet() ?: []
+    
     variables.each { varName ->
-        def exists = false
-        try {
-            def value = getGlobalVar(varName)
-            exists = (value != null)
-        } catch (e) {
-            exists = false
-        }
+        def exists = existingVars.contains(varName)
         
         if (!exists) {
             allExist = false
             try {
-                setGlobalVar(varName, "")
+                // addGlobalVariable CRIA a variável (setGlobalVar só atualiza existentes!)
+                addGlobalVariable(varName, "", "string")
                 results << [name: varName, status: "✅ Criada"]
                 created++
             } catch (e) {
@@ -708,23 +706,19 @@ def setupHubVariables() {
         "LuminaConfig_4"
     ]
     
+    // Obter lista de variáveis existentes
+    def existingVars = getAllGlobalVars()?.keySet() ?: []
+    
     def created = 0
     variables.each { varName ->
-        try {
-            def existing = getGlobalVar(varName)
-            if (existing == null) {
-                setGlobalVar(varName, "")
-                created++
-                log.info "Hub Variable criada: ${varName}"
-            }
-        } catch (e) {
-            // Variável não existe, criar
+        if (!existingVars.contains(varName)) {
             try {
-                setGlobalVar(varName, "")
+                // addGlobalVariable CRIA a variável (setGlobalVar só atualiza existentes!)
+                addGlobalVariable(varName, "", "string")
                 created++
                 log.info "Hub Variable criada: ${varName}"
-            } catch (e2) {
-                log.warn "Não foi possível criar variável ${varName}: ${e2.message}"
+            } catch (e) {
+                log.warn "Não foi possível criar variável ${varName}: ${e.message}"
             }
         }
     }
