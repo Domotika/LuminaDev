@@ -233,8 +233,9 @@ Embed Lumina in any dashboard or app with full remote access support!
 
 ```
 /
-├── LuminaHighline_v1.5.html      # Stable release
-├── LuminaHighline_v1.6-beta.html # Beta with new features
+├── LuminaHighline_v1.5.html      # ⭐ Stable release
+├── LuminaHighline_v1.6-beta.html # 🚀 Beta with new features
+├── LuminaBackgrounds.html        # DAKboard-style backgrounds
 ├── hubitat-apps/
 │   ├── LuminaDashboardAPI.groovy # Main API (devices + hub variables)
 │   ├── LuminaInstaller_PT.groovy # Installer (Portuguese)
@@ -243,10 +244,12 @@ Embed Lumina in any dashboard or app with full remote access support!
 ├── hubitat-drivers/
 │   ├── LuminaDashboardTile_PT.groovy # Dashboard Tile (Portuguese)
 │   └── LuminaDashboardTile_EN.groovy # Dashboard Tile (English)
-├── INSTALLATION.md               # Complete installation guide
+├── archive/
+│   └── legacy-versions/          # Old versions (v1.1-v1.4)
+├── INSTALLATION.md               # Installation guide
+├── CLOUD_ACCESS.md               # Cloud/Remote access guide
 ├── LICENSE                       # Commercial license terms
-├── README.md                     # Documentation (English)
-└── README.pt-BR.md               # Documentation (Portuguese)
+└── README.md                     # Documentation
 ```
 
 ---

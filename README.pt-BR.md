@@ -233,19 +233,23 @@ Incorpore o Lumina em qualquer dashboard ou app com suporte completo a acesso re
 
 ```
 /
-├── LuminaHighline_v1.5.html      # Release estável
-├── LuminaHighline_v1.6-beta.html # Beta com novos recursos
+├── LuminaHighline_v1.5.html      # ⭐ Release estável
+├── LuminaHighline_v1.6-beta.html # 🚀 Beta com novos recursos
+├── LuminaBackgrounds.html        # Backgrounds estilo DAKboard
 ├── hubitat-apps/
+│   ├── LuminaDashboardAPI.groovy # API principal (devices + variables)
 │   ├── LuminaInstaller_PT.groovy # Instalador (Português)
 │   ├── LuminaInstaller_EN.groovy # Instalador (Inglês)
-│   └── LuminaServer.groovy       # Servidor de Acesso Remoto (iframe)
+│   └── LuminaServer.groovy       # Servidor de Acesso Remoto
 ├── hubitat-drivers/
 │   ├── LuminaDashboardTile_PT.groovy # Tile Dashboard (Português)
 │   └── LuminaDashboardTile_EN.groovy # Tile Dashboard (Inglês)
-├── INSTALLATION.md               # Guia completo de instalação
-├── LICENSE                       # Termos da licença comercial
-├── README.md                     # Documentação (Inglês)
-└── README.pt-BR.md               # Documentação (Português)
+├── archive/
+│   └── legacy-versions/          # Versões antigas (v1.1-v1.4)
+├── INSTALLATION.md               # Guia de instalação
+├── CLOUD_ACCESS.md               # Guia de acesso Cloud/Remoto
+├── LICENSE                       # Licença comercial
+└── README.md                     # Documentação
 ```
 
 ---
