@@ -49,6 +49,8 @@
 
 📖 **[Guia Completo de Instalação](INSTALLATION.md)** ← Instruções passo a passo!
 
+☁️ **[Guia de Acesso Remoto via Cloud](CLOUD_ACCESS.md)** ← Configurar acesso pelo app Hubitat!
+
 ### Método 1: HPM - Hubitat Package Manager (Recomendado) ⭐
 
 Instala tudo automaticamente com um clique!
