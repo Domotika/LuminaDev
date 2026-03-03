@@ -355,23 +355,48 @@ def checkAndCreateVariables() {
 }
 
 def createHubVariable(String varName) {
-    try {
-        def params = [
-            uri: "http://127.0.0.1:8080",
-            path: "/hub/variable/add",
-            contentType: "application/x-www-form-urlencoded",
-            body: [name: varName, type: "string", value: ""],
-            timeout: 10
-        ]
-        def success = false
-        httpPost(params) { resp ->
-            success = (resp.status == 200 || resp.status == 302)
+    // Tentar múltiplos métodos/endpoints
+    def endpoints = [
+        [method: "GET", path: "/hub/variable/add/${varName}/string"],
+        [method: "GET", path: "/hub/variable/add?name=${varName}&type=string"],
+        [method: "GET", path: "/hub2/variable/add/${varName}/string"],
+        [method: "POST", path: "/hub2/variable/add", body: [name: varName, type: "string"]]
+    ]
+    
+    for (ep in endpoints) {
+        try {
+            def params = [
+                uri: "http://127.0.0.1:8080",
+                path: ep.path,
+                timeout: 10
+            ]
+            def success = false
+            
+            if (ep.method == "GET") {
+                httpGet(params) { resp ->
+                    log.debug "GET ${ep.path} -> ${resp.status}"
+                    success = (resp.status == 200 || resp.status == 302)
+                }
+            } else {
+                params.contentType = "application/x-www-form-urlencoded"
+                params.body = ep.body
+                httpPost(params) { resp ->
+                    log.debug "POST ${ep.path} -> ${resp.status}"
+                    success = (resp.status == 200 || resp.status == 302)
+                }
+            }
+            
+            if (success) {
+                log.info "Variável ${varName} criada via ${ep.method} ${ep.path}"
+                return true
+            }
+        } catch (e) {
+            log.debug "Tentativa ${ep.method} ${ep.path} falhou: ${e.message}"
         }
-        return success
-    } catch (e) {
-        log.warn "createHubVariable falhou: ${e.message}"
-        return false
     }
+    
+    log.warn "Não foi possível criar variável ${varName} automaticamente"
+    return false
 }
 
 def generateLinkPage() {
