@@ -305,12 +305,12 @@ def setupSyncPage() {
                         <hr>
                         <strong>Variáveis necessárias (Type: String):</strong>
                         <ul>
-                            <li><code>LuminaConfig</code></li>
-                            <li><code>LuminaConfig_0</code></li>
-                            <li><code>LuminaConfig_1</code></li>
-                            <li><code>LuminaConfig_2</code></li>
-                            <li><code>LuminaConfig_3</code></li>
-                            <li><code>LuminaConfig_4</code></li>
+                            <li><code>LuminaData</code></li>
+                            <li><code>LuminaData_0</code></li>
+                            <li><code>LuminaData_1</code></li>
+                            <li><code>LuminaData_2</code></li>
+                            <li><code>LuminaData_3</code></li>
+                            <li><code>LuminaData_4</code></li>
                         </ul>
                         <hr>
                         <p style="font-size:12px;">⏱️ Leva ~30 segundos. Depois volte aqui para verificar.</p>
@@ -341,12 +341,12 @@ def setupSyncPage() {
 
 def checkAndCreateVariables() {
     def variables = [
-        "LuminaConfig",
-        "LuminaConfig_0",
-        "LuminaConfig_1", 
-        "LuminaConfig_2",
-        "LuminaConfig_3",
-        "LuminaConfig_4"
+        "LuminaData",
+        "LuminaData_0",
+        "LuminaData_1", 
+        "LuminaData_2",
+        "LuminaData_3",
+        "LuminaData_4"
     ]
     
     def results = []
@@ -725,12 +725,12 @@ def setupHubVariables() {
     log.info "Configurando Hub Variables para Lumina Auto-Sync..."
     
     def variables = [
-        "LuminaConfig",
-        "LuminaConfig_0",
-        "LuminaConfig_1", 
-        "LuminaConfig_2",
-        "LuminaConfig_3",
-        "LuminaConfig_4"
+        "LuminaData",
+        "LuminaData_0",
+        "LuminaData_1", 
+        "LuminaData_2",
+        "LuminaData_3",
+        "LuminaData_4"
     ]
     
     // Obter lista de variáveis existentes
