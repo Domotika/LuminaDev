@@ -39,7 +39,7 @@ preferences {
 //  CONFIGURAÇÃO
 // ═══════════════════════════════════════════════════════════════════════════
 
-@groovy.transform.Field static final String LUMINA_VERSION = "1.5.6"
+@groovy.transform.Field static final String LUMINA_VERSION = "1.5.7"
 @groovy.transform.Field static final String LUMINA_FILENAME = "LuminaHighline_v1.5.html"
 @groovy.transform.Field static final String GITHUB_RAW_URL = "https://raw.githubusercontent.com/Domotika/LuminaDev/main/LuminaHighline_v1.5.html"
 @groovy.transform.Field static final String GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Domotika/LuminaDev/main/version.txt"
