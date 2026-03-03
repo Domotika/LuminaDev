@@ -339,13 +339,12 @@ def checkAndCreateVariables() {
         
         if (!exists) {
             allExist = false
-            try {
-                // addGlobalVariable CRIA a variável (setGlobalVar só atualiza existentes!)
-                addGlobalVariable(varName, "", "string")
+            def success = createHubVariable(varName)
+            if (success) {
                 results << [name: varName, status: "✅ Criada"]
                 created++
-            } catch (e) {
-                results << [name: varName, status: "❌ Erro: ${e.message}"]
+            } else {
+                results << [name: varName, status: "❌ Falha ao criar"]
             }
         } else {
             results << [name: varName, status: "✅ Existe"]
@@ -353,6 +352,26 @@ def checkAndCreateVariables() {
     }
     
     return [allExist: allExist, created: created, variables: results]
+}
+
+def createHubVariable(String varName) {
+    try {
+        def params = [
+            uri: "http://127.0.0.1:8080",
+            path: "/hub/variable/add",
+            contentType: "application/x-www-form-urlencoded",
+            body: [name: varName, type: "string", value: ""],
+            timeout: 10
+        ]
+        def success = false
+        httpPost(params) { resp ->
+            success = (resp.status == 200 || resp.status == 302)
+        }
+        return success
+    } catch (e) {
+        log.warn "createHubVariable falhou: ${e.message}"
+        return false
+    }
 }
 
 def generateLinkPage() {
@@ -712,13 +731,11 @@ def setupHubVariables() {
     def created = 0
     variables.each { varName ->
         if (!existingVars.contains(varName)) {
-            try {
-                // addGlobalVariable CRIA a variável (setGlobalVar só atualiza existentes!)
-                addGlobalVariable(varName, "", "string")
+            if (createHubVariable(varName)) {
                 created++
                 log.info "Hub Variable criada: ${varName}"
-            } catch (e) {
-                log.warn "Não foi possível criar variável ${varName}: ${e.message}"
+            } else {
+                log.warn "Não foi possível criar variável ${varName}"
             }
         }
     }
