@@ -282,16 +282,38 @@ def setupSyncPage() {
                         </ul>
                     </div>
                 """
-            } else {
+            } else if (result.created > 0) {
                 paragraph """
                     <div class="lumina-card" style="border-left-color: #ffc107;">
-                        <h3>⚠️ Criando Variáveis...</h3>
+                        <h3>⚠️ Algumas variáveis criadas</h3>
                         <p>${result.created} variáveis foram criadas.</p>
                         <hr>
                         <strong>Variáveis:</strong>
                         <ul>
                             ${result.variables.collect { "<li>${it.name}: ${it.status}</li>" }.join("")}
                         </ul>
+                    </div>
+                """
+            } else {
+                // Nenhuma criada automaticamente - mostrar instruções manuais
+                def missing = result.variables.findAll { it.status.contains("Falha") || it.status.contains("Erro") }
+                paragraph """
+                    <div class="lumina-card" style="border-left-color: #dc3545;">
+                        <h3>📝 Criação Manual Necessária</h3>
+                        <p>O Hubitat não permite criar Hub Variables automaticamente via apps.</p>
+                        <p><strong>Crie manualmente em:</strong> Settings → Hub Variables → Add Variable</p>
+                        <hr>
+                        <strong>Variáveis necessárias (Type: String):</strong>
+                        <ul>
+                            <li><code>LuminaConfig</code></li>
+                            <li><code>LuminaConfig_0</code></li>
+                            <li><code>LuminaConfig_1</code></li>
+                            <li><code>LuminaConfig_2</code></li>
+                            <li><code>LuminaConfig_3</code></li>
+                            <li><code>LuminaConfig_4</code></li>
+                        </ul>
+                        <hr>
+                        <p style="font-size:12px;">⏱️ Leva ~30 segundos. Depois volte aqui para verificar.</p>
                     </div>
                 """
             }
@@ -355,47 +377,8 @@ def checkAndCreateVariables() {
 }
 
 def createHubVariable(String varName) {
-    // Tentar múltiplos métodos/endpoints
-    def endpoints = [
-        [method: "GET", path: "/hub/variable/add/${varName}/string"],
-        [method: "GET", path: "/hub/variable/add?name=${varName}&type=string"],
-        [method: "GET", path: "/hub2/variable/add/${varName}/string"],
-        [method: "POST", path: "/hub2/variable/add", body: [name: varName, type: "string"]]
-    ]
-    
-    for (ep in endpoints) {
-        try {
-            def params = [
-                uri: "http://127.0.0.1:8080",
-                path: ep.path,
-                timeout: 10
-            ]
-            def success = false
-            
-            if (ep.method == "GET") {
-                httpGet(params) { resp ->
-                    log.debug "GET ${ep.path} -> ${resp.status}"
-                    success = (resp.status == 200 || resp.status == 302)
-                }
-            } else {
-                params.contentType = "application/x-www-form-urlencoded"
-                params.body = ep.body
-                httpPost(params) { resp ->
-                    log.debug "POST ${ep.path} -> ${resp.status}"
-                    success = (resp.status == 200 || resp.status == 302)
-                }
-            }
-            
-            if (success) {
-                log.info "Variável ${varName} criada via ${ep.method} ${ep.path}"
-                return true
-            }
-        } catch (e) {
-            log.debug "Tentativa ${ep.method} ${ep.path} falhou: ${e.message}"
-        }
-    }
-    
-    log.warn "Não foi possível criar variável ${varName} automaticamente"
+    // Hubitat não expõe API para criar Hub Variables de dentro de apps
+    // Usuário precisa criar manualmente em Settings → Hub Variables
     return false
 }
 
