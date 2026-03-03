@@ -9,12 +9,21 @@
     "releaseNotes": "Professional glassmorphism dashboard for Hubitat Elevation. Requires license activation.",
     "apps": [
         {
+            "id": "lumina-api",
+            "name": "Lumina Dashboard API",
+            "namespace": "domotika",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaDashboardAPI.groovy",
+            "required": true,
+            "primary": true,
+            "oauth": true
+        },
+        {
             "id": "lumina-installer",
             "name": "Lumina Dashboard Installer",
             "namespace": "domotika",
             "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller.groovy",
-            "required": true,
-            "primary": true,
+            "required": false,
+            "primary": false,
             "oauth": false
         },
         {

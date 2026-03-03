@@ -222,6 +222,7 @@ Embed Lumina in any dashboard or app with full remote access support!
 ├── LuminaHighline_v1.5.html      # Stable release
 ├── LuminaHighline_v1.6-beta.html # Beta with new features
 ├── hubitat-apps/
+│   ├── LuminaDashboardAPI.groovy # Main API (devices + hub variables)
 │   ├── LuminaInstaller_PT.groovy # Installer (Portuguese)
 │   ├── LuminaInstaller_EN.groovy # Installer (English)
 │   └── LuminaServer.groovy       # Remote Access Server (iframe)
