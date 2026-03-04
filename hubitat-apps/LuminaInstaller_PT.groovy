@@ -305,13 +305,12 @@ def setupSyncPage() {
                         <hr>
                         <strong>Variáveis necessárias (Type: String):</strong>
                         <ul>
-                            <li><code>LuminaData</code></li>
-                            <li><code>LuminaData_0</code></li>
-                            <li><code>LuminaData_1</code></li>
-                            <li><code>LuminaData_2</code></li>
-                            <li><code>LuminaData_3</code></li>
-                            <li><code>LuminaData_4</code></li>
+                            <li><code>LuminaData</code> (metadados)</li>
+                            <li><code>LuminaData_0</code> até <code>LuminaData_14</code> (15 chunks)</li>
                         </ul>
+                        <p style="font-size:10px; color:#666; margin-top:8px;">
+                            Total: 16 variáveis. Suporta configs de até ~15KB.
+                        </p>
                         <hr>
                         <p style="font-size:12px;">⏱️ Leva ~30 segundos. Depois volte aqui para verificar.</p>
                     </div>
@@ -342,11 +341,9 @@ def setupSyncPage() {
 def checkAndCreateVariables() {
     def variables = [
         "LuminaData",
-        "LuminaData_0",
-        "LuminaData_1", 
-        "LuminaData_2",
-        "LuminaData_3",
-        "LuminaData_4"
+        "LuminaData_0", "LuminaData_1", "LuminaData_2", "LuminaData_3", "LuminaData_4",
+        "LuminaData_5", "LuminaData_6", "LuminaData_7", "LuminaData_8", "LuminaData_9",
+        "LuminaData_10", "LuminaData_11", "LuminaData_12", "LuminaData_13", "LuminaData_14"
     ]
     
     def results = []
@@ -726,11 +723,9 @@ def setupHubVariables() {
     
     def variables = [
         "LuminaData",
-        "LuminaData_0",
-        "LuminaData_1", 
-        "LuminaData_2",
-        "LuminaData_3",
-        "LuminaData_4"
+        "LuminaData_0", "LuminaData_1", "LuminaData_2", "LuminaData_3", "LuminaData_4",
+        "LuminaData_5", "LuminaData_6", "LuminaData_7", "LuminaData_8", "LuminaData_9",
+        "LuminaData_10", "LuminaData_11", "LuminaData_12", "LuminaData_13", "LuminaData_14"
     ]
     
     // Obter lista de variáveis existentes
