@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { min-height: 100vh; transition: background 0.5s ease; }
+        
+        /* Background Options */
+        .bg-pure-black { background: #000000; }
+        .bg-dark-gray { background: #0a0a0a; }
+        .bg-gradient-subtle { background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%); }
+        .bg-gradient-blue { background: linear-gradient(135deg, #0a0a0f 0%, #0d1117 50%, #0a0a0f 100%); }
+        .bg-image { background-size: cover; background-position: center; background-attachment: fixed; }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .glass:hover { background: rgba(255, 255, 255, 0.04); }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: all 0.2s ease;
+        }
+        .card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        
+        .status-online { color: #22c55e; }
+        .status-offline { color: #ef4444; }
+        .status-warning { color: #f59e0b; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-white p-6 bg-pure-black" id="body">
+    <div id="app" class="max-w-6xl mx-auto">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-xl font-medium text-white/90 tracking-tight">Command Center</h1>
+                <p class="text-xs text-white/30 mt-0.5">Domotika</p>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="text-right">
+                    <p class="text-2xl font-light text-white/80" id="clock">--:--</p>
+                    <p class="text-[10px] text-white/30 uppercase tracking-widest" id="date">--</p>
+                </div>
+                <button onclick="openSettings()" class="w-9 h-9 rounded-full glass flex items-center justify-center text-white/40 hover:text-white/80 transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-12 gap-4">
+            
+            <!-- OpenRouter -->
+            <div class="col-span-3 glass rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs text-white/40 uppercase tracking-wider">OpenRouter</span>
+                    <button onclick="fetchOpenRouterUsage()" id="refreshBtn" class="text-white/30 hover:text-white/60 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="openRouterStats">
+                    <p class="text-white/20 text-xs text-center py-8">Configure em ⚙️</p>
+                </div>
+                <p class="text-[9px] text-white/20 text-center mt-4" id="lastUpdate">--</p>
+            </div>
+
+            <!-- Services -->
+            <div class="col-span-5 glass rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs text-white/40 uppercase tracking-wider">Serviços</span>
+                    <span class="text-sm font-medium text-white/60" id="totalCost">R$ 0</span>
+                </div>
+                <div class="space-y-1.5 max-h-[240px] overflow-y-auto scrollbar-hide" id="servicesList"></div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="col-span-4 glass rounded-2xl p-5">
+                <span class="text-xs text-white/40 uppercase tracking-wider">Alertas</span>
+                <div class="mt-4 space-y-2 max-h-[240px] overflow-y-auto scrollbar-hide" id="alertsList">
+                    <p class="text-white/20 text-xs text-center py-8">Tudo OK</p>
+                </div>
+            </div>
+
+            <!-- Projects -->
+            <div class="col-span-8 glass rounded-2xl p-5">
+                <span class="text-xs text-white/40 uppercase tracking-wider">Projetos</span>
+                <div class="grid grid-cols-4 gap-3 mt-4" id="projectsList"></div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-span-4 glass rounded-2xl p-5">
+                <span class="text-xs text-white/40 uppercase tracking-wider">Links</span>
+                <div class="flex flex-wrap gap-2 mt-4" id="quickLinks"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/95 z-50 hidden items-center justify-center p-4">
+        <div class="glass rounded-2xl p-6 w-full max-w-xl max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <span class="text-sm font-medium">Configurações</span>
+                <button onclick="closeSettings()" class="text-white/40 hover:text-white">✕</button>
+            </div>
+            
+            <div class="space-y-6">
+                <!-- Background -->
+                <div>
+                    <label class="text-[10px] text-white/40 uppercase tracking-wider">Fundo</label>
+                    <div class="grid grid-cols-5 gap-2 mt-2">
+                        <button onclick="setBg('pure-black')" class="h-12 rounded-lg bg-black border border-white/10 hover:border-white/30 transition-colors" title="Preto"></button>
+                        <button onclick="setBg('dark-gray')" class="h-12 rounded-lg bg-[#0a0a0a] border border-white/10 hover:border-white/30 transition-colors" title="Cinza"></button>
+                        <button onclick="setBg('gradient-subtle')" class="h-12 rounded-lg bg-gradient-to-b from-[#0a0a0a] to-[#111] border border-white/10 hover:border-white/30 transition-colors" title="Gradiente"></button>
+                        <button onclick="setBg('gradient-blue')" class="h-12 rounded-lg bg-gradient-to-br from-[#0a0a0f] to-[#0d1117] border border-white/10 hover:border-white/30 transition-colors" title="Azul"></button>
+                        <button onclick="document.getElementById('bgImageInput').click()" class="h-12 rounded-lg border border-dashed border-white/20 hover:border-white/40 transition-colors flex items-center justify-center text-white/40 text-xs">URL</button>
+                    </div>
+                    <input type="text" id="bgImageInput" placeholder="URL da imagem de fundo" 
+                        class="mt-2 w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-white/30"
+                        onchange="setBgImage(this.value)">
+                </div>
+
+                <!-- OpenRouter -->
+                <div>
+                    <label class="text-[10px] text-white/40 uppercase tracking-wider">OpenRouter API Key</label>
+                    <input type="password" id="openRouterKey" placeholder="sk-or-v1-..." 
+                        class="mt-2 w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-xs font-mono focus:outline-none focus:border-white/30">
+                    <button onclick="saveOpenRouterKey()" class="mt-2 w-full bg-white/10 hover:bg-white/15 py-2 rounded-lg text-xs transition-colors">Salvar</button>
+                </div>
+
+                <!-- Add Service -->
+                <div>
+                    <label class="text-[10px] text-white/40 uppercase tracking-wider">Novo Serviço</label>
+                    <div class="grid grid-cols-4 gap-2 mt-2">
+                        <input type="text" id="newServiceName" placeholder="Nome" class="col-span-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                        <input type="number" id="newServiceCost" placeholder="R$" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                        <input type="date" id="newServiceDue" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                    </div>
+                    <input type="url" id="newServiceUrl" placeholder="URL" class="mt-2 w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                    <button onclick="addService()" class="mt-2 w-full bg-white/10 hover:bg-white/15 py-2 rounded-lg text-xs transition-colors">+ Adicionar</button>
+                </div>
+
+                <!-- Add Project -->
+                <div>
+                    <label class="text-[10px] text-white/40 uppercase tracking-wider">Novo Projeto</label>
+                    <div class="grid grid-cols-3 gap-2 mt-2">
+                        <input type="text" id="newProjectName" placeholder="Nome" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                        <input type="text" id="newProjectVersion" placeholder="Versão" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                        <input type="text" id="newProjectIcon" placeholder="Emoji" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none text-center">
+                    </div>
+                    <input type="url" id="newProjectUrl" placeholder="URL (ping)" class="mt-2 w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                    <button onclick="addProject()" class="mt-2 w-full bg-white/10 hover:bg-white/15 py-2 rounded-lg text-xs transition-colors">+ Adicionar</button>
+                </div>
+
+                <!-- Add Link -->
+                <div>
+                    <label class="text-[10px] text-white/40 uppercase tracking-wider">Novo Link</label>
+                    <div class="grid grid-cols-4 gap-2 mt-2">
+                        <input type="text" id="newLinkIcon" placeholder="🔗" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none text-center">
+                        <input type="text" id="newLinkName" placeholder="Nome" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                        <input type="url" id="newLinkUrl" placeholder="URL" class="col-span-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                    </div>
+                    <button onclick="addQuickLink()" class="mt-2 w-full bg-white/10 hover:bg-white/15 py-2 rounded-lg text-xs transition-colors">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'domotika_cc';
+        const OPENROUTER_KEY = 'openrouter_key';
+        const BG_KEY = 'cc_background';
+        const REFRESH = 5 * 60 * 1000;
+        
+        const DEFAULT = {
+            services: [
+                { id: 1, name: 'Firebase', cost: 0, dueDate: null, url: 'https://console.firebase.google.com' },
+                { id: 2, name: 'OpenRouter', cost: 0, currency: 'USD', dueDate: null, url: 'https://openrouter.ai/activity' },
+                { id: 3, name: 'Anthropic', cost: 0, currency: 'USD', dueDate: null, url: 'https://console.anthropic.com' },
+                { id: 4, name: 'DeepSeek', cost: 0, currency: 'USD', dueDate: null, url: 'https://platform.deepseek.com' },
+                { id: 5, name: 'Google AI Studio', cost: 0, dueDate: null, url: 'https://aistudio.google.com' },
+                { id: 6, name: 'GitHub Copilot', cost: 50, dueDate: '2026-03-20', url: 'https://github.com/settings/copilot' },
+                { id: 7, name: 'luminadashboards.dev.br', cost: 40, dueDate: '2026-06-01', url: 'https://registro.br' },
+                { id: 8, name: 'domotika.net.br', cost: 40, dueDate: '2026-06-01', url: 'https://registro.br' },
+            ],
+            projects: [
+                { id: 1, name: 'Lumina Cloud', version: 'v1.5.8', url: 'https://lumina-cloud-c8d21.web.app', icon: '☁️', status: 'online' },
+                { id: 2, name: 'luminadashboards', version: 'v1.0', url: 'https://cloud.luminadashboards.dev.br', icon: '💡', status: 'checking' },
+                { id: 3, name: 'R69 Schwilo', version: '-', url: null, icon: '📺', status: 'offline' },
+                { id: 4, name: 'OpenClaw', version: 'latest', url: null, icon: '🐱', status: 'online' },
+            ],
+            quickLinks: [
+                { id: 1, name: 'Hubitat', url: 'http://192.168.100.5', icon: '🏠' },
+                { id: 2, name: 'Firebase', url: 'https://console.firebase.google.com', icon: '🔥' },
+                { id: 3, name: 'GitHub', url: 'https://github.com/Domotika', icon: '🐙' },
+                { id: 4, name: 'OpenRouter', url: 'https://openrouter.ai/activity', icon: '📊' },
+            ],
+            openRouterData: null
+        };
+
+        let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || DEFAULT;
+        
+        function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+        // Background
+        function setBg(type) {
+            const body = document.getElementById('body');
+            body.className = 'text-white p-6 bg-' + type;
+            body.style.backgroundImage = '';
+            localStorage.setItem(BG_KEY, type);
+        }
+        
+        function setBgImage(url) {
+            if (!url) return;
+            const body = document.getElementById('body');
+            body.className = 'text-white p-6 bg-image';
+            body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.9)), url(${url})`;
+            localStorage.setItem(BG_KEY, 'image:' + url);
+        }
+        
+        function loadBg() {
+            const saved = localStorage.getItem(BG_KEY);
+            if (!saved) return;
+            if (saved.startsWith('image:')) {
+                setBgImage(saved.substring(6));
+                document.getElementById('bgImageInput').value = saved.substring(6);
+            } else {
+                setBg(saved);
+            }
+        }
+
+        // OpenRouter
+        async function fetchOpenRouterUsage() {
+            const key = localStorage.getItem(OPENROUTER_KEY);
+            if (!key) return;
+            
+            document.getElementById('refreshBtn').classList.add('animate-spin');
+            try {
+                const res = await fetch('https://openrouter.ai/api/v1/auth/key', { headers: { 'Authorization': `Bearer ${key}` }});
+                if (!res.ok) throw new Error();
+                data.openRouterData = (await res.json()).data;
+                save();
+                renderOpenRouter();
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+            } catch { document.getElementById('openRouterStats').innerHTML = '<p class="text-red-400/60 text-xs text-center py-8">Erro na API</p>'; }
+            document.getElementById('refreshBtn').classList.remove('animate-spin');
+        }
+
+        function renderOpenRouter() {
+            const s = data.openRouterData;
+            if (!s) return;
+            const usage = s.usage || 0;
+            const limit = s.limit || 0;
+            const pct = limit > 0 ? (usage/limit*100) : 0;
+            const color = pct > 80 ? 'text-red-400' : pct > 50 ? 'text-amber-400' : 'text-emerald-400';
+            
+            document.getElementById('openRouterStats').innerHTML = `
+                <div class="text-center">
+                    <p class="text-3xl font-light ${color}">$${usage.toFixed(2)}</p>
+                    <p class="text-[10px] text-white/30 mt-1">de $${limit.toFixed(2)}</p>
+                </div>
+                ${limit > 0 ? `<div class="mt-4 h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div class="h-full ${color.replace('text-','bg-')} transition-all" style="width:${pct}%"></div>
+                </div>` : ''}
+            `;
+        }
+
+        function saveOpenRouterKey() {
+            const key = document.getElementById('openRouterKey').value.trim();
+            if (!key) return;
+            localStorage.setItem(OPENROUTER_KEY, key);
+            fetchOpenRouterUsage();
+            closeSettings();
+        }
+
+        // Render
+        function render() {
+            renderServices();
+            renderProjects();
+            renderLinks();
+            renderAlerts();
+            renderOpenRouter();
+            updateClock();
+            const k = localStorage.getItem(OPENROUTER_KEY);
+            if (k) document.getElementById('openRouterKey').value = k;
+        }
+
+        function renderServices() {
+            const c = document.getElementById('servicesList');
+            let total = 0;
+            c.innerHTML = data.services.map(s => {
+                const cost = s.cost || 0;
+                total += s.currency === 'USD' ? cost * 5.5 : cost;
+                const days = s.dueDate ? Math.ceil((new Date(s.dueDate) - new Date()) / 86400000) : null;
+                const warn = days !== null && days <= 7 && days >= 0;
+                return `
+                    <div class="card rounded-lg px-3 py-2.5 flex items-center justify-between cursor-pointer group" onclick="window.open('${s.url}','_blank')">
+                        <span class="text-sm text-white/70">${s.name}${warn ? `<span class="ml-2 text-[9px] text-amber-400">${days}d</span>` : ''}</span>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-white/40 font-mono">${cost ? (s.currency==='USD'?'$':'R$')+cost : '-'}</span>
+                            <button onclick="event.stopPropagation();removeService(${s.id})" class="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 text-xs transition-all">✕</button>
+                        </div>
+                    </div>`;
+            }).join('');
+            document.getElementById('totalCost').textContent = 'R$ ' + total.toFixed(0);
+        }
+
+        function renderProjects() {
+            document.getElementById('projectsList').innerHTML = data.projects.map(p => {
+                const dot = p.status === 'online' ? 'bg-emerald-500' : p.status === 'checking' ? 'bg-amber-500 animate-pulse' : 'bg-white/20';
+                return `
+                    <div class="card rounded-xl p-4 ${p.url ? 'cursor-pointer' : ''}" ${p.url ? `onclick="window.open('${p.url}','_blank')"` : ''}>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-lg">${p.icon}</span>
+                            <span class="w-1.5 h-1.5 rounded-full ${dot}"></span>
+                        </div>
+                        <p class="text-xs text-white/70 truncate">${p.name}</p>
+                        <p class="text-[10px] text-white/30">${p.version}</p>
+                    </div>`;
+            }).join('');
+        }
+
+        function renderLinks() {
+            document.getElementById('quickLinks').innerHTML = data.quickLinks.map(l => `
+                <a href="${l.url}" target="_blank" class="card rounded-lg px-3 py-2 flex items-center gap-2 text-xs text-white/60 hover:text-white/90 group">
+                    <span>${l.icon}</span>${l.name}
+                    <button onclick="event.preventDefault();event.stopPropagation();removeLink(${l.id})" class="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 ml-1 transition-all">✕</button>
+                </a>
+            `).join('');
+        }
+
+        function renderAlerts() {
+            const alerts = [];
+            data.services.forEach(s => {
+                if (s.dueDate) {
+                    const d = Math.ceil((new Date(s.dueDate) - new Date()) / 86400000);
+                    if (d <= 7 && d >= 0) alerts.push({ msg: `${s.name}: ${d}d`, type: d <= 3 ? 'urgent' : 'warn' });
+                    else if (d < 0) alerts.push({ msg: `${s.name}: vencido`, type: 'urgent' });
+                }
+            });
+            if (data.openRouterData?.limit > 0) {
+                const pct = (data.openRouterData.usage / data.openRouterData.limit) * 100;
+                if (pct >= 80) alerts.push({ msg: `OpenRouter: ${pct.toFixed(0)}%`, type: pct >= 90 ? 'urgent' : 'warn' });
+            }
+            data.projects.forEach(p => { if (p.status === 'offline') alerts.push({ msg: `${p.name}: offline`, type: 'warn' }); });
+            
+            document.getElementById('alertsList').innerHTML = alerts.length === 0 ? 
+                '<p class="text-white/20 text-xs text-center py-8">Tudo OK</p>' :
+                alerts.map(a => `<div class="text-xs px-3 py-2 rounded-lg ${a.type === 'urgent' ? 'bg-red-500/10 text-red-400/80' : 'bg-amber-500/10 text-amber-400/80'}">${a.msg}</div>`).join('');
+        }
+
+        function updateClock() {
+            const n = new Date();
+            document.getElementById('clock').textContent = n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('date').textContent = n.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+
+        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('flex'); }
+        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
+
+        function addService() {
+            const n = document.getElementById('newServiceName').value.trim();
+            if (!n) return;
+            data.services.push({ id: Date.now(), name: n, cost: +document.getElementById('newServiceCost').value || 0, dueDate: document.getElementById('newServiceDue').value || null, url: document.getElementById('newServiceUrl').value || '#' });
+            save(); render();
+            ['newServiceName','newServiceCost','newServiceDue','newServiceUrl'].forEach(i => document.getElementById(i).value = '');
+        }
+        function removeService(id) { if(confirm('Remover?')){ data.services = data.services.filter(s=>s.id!==id); save(); render(); }}
+
+        function addProject() {
+            const n = document.getElementById('newProjectName').value.trim();
+            if (!n) return;
+            data.projects.push({ id: Date.now(), name: n, version: document.getElementById('newProjectVersion').value || '-', url: document.getElementById('newProjectUrl').value || null, icon: document.getElementById('newProjectIcon').value || '📁', status: 'checking' });
+            save(); render(); checkProjects();
+            ['newProjectName','newProjectVersion','newProjectUrl','newProjectIcon'].forEach(i => document.getElementById(i).value = '');
+        }
+
+        function addQuickLink() {
+            const n = document.getElementById('newLinkName').value.trim();
+            const u = document.getElementById('newLinkUrl').value.trim();
+            if (!n || !u) return;
+            data.quickLinks.push({ id: Date.now(), name: n, url: u, icon: document.getElementById('newLinkIcon').value || '🔗' });
+            save(); render();
+            ['newLinkIcon','newLinkName','newLinkUrl'].forEach(i => document.getElementById(i).value = '');
+        }
+        function removeLink(id) { data.quickLinks = data.quickLinks.filter(l=>l.id!==id); save(); render(); }
+
+        async function checkProjects() {
+            for (const p of data.projects) {
+                if (p.url) {
+                    p.status = 'checking'; render();
+                    try {
+                        const c = new AbortController();
+                        setTimeout(() => c.abort(), 5000);
+                        await fetch(p.url, { mode: 'no-cors', signal: c.signal });
+                        p.status = 'online';
+                    } catch { p.status = 'offline'; }
+                }
+            }
+            save(); render();
+        }
+
+        // Init
+        loadBg();
+        render();
+        setInterval(updateClock, 1000);
+        if (localStorage.getItem(OPENROUTER_KEY)) { fetchOpenRouterUsage(); setInterval(fetchOpenRouterUsage, REFRESH); }
+        setTimeout(checkProjects, 2000);
+        setInterval(checkProjects, REFRESH);
+    </script>
+</body>
+</html>

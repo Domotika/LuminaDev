@@ -1,27 +1,19 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { viteSingleFile } from 'vite-plugin-singlefile';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { viteSingleFile } from 'vite-plugin-singlefile'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), viteSingleFile()],
   build: {
+    target: 'esnext',
+    assetsInlineLimit: 100000000,
+    chunkSizeWarningLimit: 100000000,
     cssCodeSplit: false,
-    outDir: 'dist',
-    assetsDir: '', // Flat structure for Hubitat
-    emptyOutDir: true,
-    minify: 'terser', // Maximum minification
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console logs for production
-      }
-    },
+    reportCompressedSize: false,
     rollupOptions: {
       output: {
-        entryFileNames: '[name].js',
-        chunkFileNames: '[name].js',
-        assetFileNames: '[name].[ext]'
-      }
-    }
-  }
-});
+        inlineDynamicImports: true,
+      },
+    },
+  },
+})

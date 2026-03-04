@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { min-height: 100vh; transition: background 0.5s ease; }
+        .bg-pure-black { background: #000; }
+        .bg-dark-gray { background: #080808; }
+        .bg-gradient-subtle { background: linear-gradient(180deg, #050505 0%, #0a0a0a 100%); }
+        .bg-gradient-blue { background: linear-gradient(135deg, #050508 0%, #080810 100%); }
+        .bg-image { background-size: cover; background-position: center; background-attachment: fixed; }
+        
+        .glass { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); }
+        .glass:hover { background: rgba(255,255,255,0.03); }
+        .card { background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); transition: all 0.2s; }
+        .card:hover { background: rgba(255,255,255,0.03); }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .icon { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.5; fill: none; }
+        .icon-sm { width: 14px; height: 14px; }
+        .icon-lg { width: 20px; height: 20px; }
+    </style>
+</head>
+<body class="text-white p-6 bg-pure-black" id="body">
+    
+    <!-- SVG Icons -->
+    <svg style="display:none">
+        <symbol id="i-zap" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></symbol>
+        <symbol id="i-card" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></symbol>
+        <symbol id="i-bell" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></symbol>
+        <symbol id="i-folder" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></symbol>
+        <symbol id="i-link" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></symbol>
+        <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></symbol>
+        <symbol id="i-server" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="6" rx="1"/><rect x="2" y="15" width="20" height="6" rx="1"/><circle cx="6" cy="6" r="1"/><circle cx="6" cy="18" r="1"/></symbol>
+        <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></symbol>
+        <symbol id="i-code" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></symbol>
+        <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></symbol>
+        <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></symbol>
+        <symbol id="i-external" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></symbol>
+    </svg>
+
+    <div id="app" class="max-w-6xl mx-auto">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-lg font-medium text-white/80 tracking-tight">Command Center</h1>
+                <p class="text-[10px] text-white/25 mt-0.5 uppercase tracking-widest">Domotika</p>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="text-right">
+                    <p class="text-2xl font-light text-white/70" id="clock">--:--</p>
+                    <p class="text-[9px] text-white/25 uppercase tracking-widest" id="date">--</p>
+                </div>
+                <button onclick="openSettings()" class="w-8 h-8 rounded-full glass flex items-center justify-center text-white/25 hover:text-white/50 transition-colors">
+                    <svg class="icon-sm"><use href="#i-settings"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-12 gap-4">
+            
+            <!-- OpenRouter -->
+            <div class="col-span-3 glass rounded-xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2 text-white/30">
+                        <svg class="icon-sm"><use href="#i-zap"/></svg>
+                        <span class="text-[10px] uppercase tracking-wider">OpenRouter</span>
+                    </div>
+                    <button onclick="fetchOpenRouterUsage()" id="refreshBtn" class="text-white/20 hover:text-white/40 transition-colors">
+                        <svg class="icon-sm"><use href="#i-refresh"/></svg>
+                    </button>
+                </div>
+                <div id="openRouterStats">
+                    <p class="text-white/15 text-[10px] text-center py-8">Configure em ⚙️</p>
+                </div>
+                <p class="text-[8px] text-white/15 text-center mt-4" id="lastUpdate">--</p>
+            </div>
+
+            <!-- Services -->
+            <div class="col-span-5 glass rounded-xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2 text-white/30">
+                        <svg class="icon-sm"><use href="#i-card"/></svg>
+                        <span class="text-[10px] uppercase tracking-wider">Serviços</span>
+                    </div>
+                    <span class="text-xs font-light text-white/40" id="totalCost">R$ 0</span>
+                </div>
+                <div class="space-y-1 max-h-[220px] overflow-y-auto scrollbar-hide" id="servicesList"></div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="col-span-4 glass rounded-xl p-5">
+                <div class="flex items-center gap-2 text-white/30 mb-4">
+                    <svg class="icon-sm"><use href="#i-bell"/></svg>
+                    <span class="text-[10px] uppercase tracking-wider">Alertas</span>
+                </div>
+                <div class="space-y-1.5 max-h-[220px] overflow-y-auto scrollbar-hide" id="alertsList">
+                    <p class="text-white/15 text-[10px] text-center py-8">Tudo OK</p>
+                </div>
+            </div>
+
+            <!-- Projects -->
+            <div class="col-span-8 glass rounded-xl p-5">
+                <div class="flex items-center gap-2 text-white/30 mb-4">
+                    <svg class="icon-sm"><use href="#i-folder"/></svg>
+                    <span class="text-[10px] uppercase tracking-wider">Projetos</span>
+                </div>
+                <div class="grid grid-cols-4 gap-2" id="projectsList"></div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-span-4 glass rounded-xl p-5">
+                <div class="flex items-center gap-2 text-white/30 mb-4">
+                    <svg class="icon-sm"><use href="#i-link"/></svg>
+                    <span class="text-[10px] uppercase tracking-wider">Links</span>
+                </div>
+                <div class="space-y-1" id="quickLinks"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/95 z-50 hidden items-center justify-center p-4">
+        <div class="glass rounded-xl p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <span class="text-xs text-white/50">Configurações</span>
+                <button onclick="closeSettings()" class="text-white/30 hover:text-white/60 text-sm">✕</button>
+            </div>
+            
+            <div class="space-y-5">
+                <!-- Background -->
+                <div>
+                    <label class="text-[9px] text-white/30 uppercase tracking-wider">Fundo</label>
+                    <div class="grid grid-cols-5 gap-2 mt-2">
+                        <button onclick="setBg('pure-black')" class="h-10 rounded-lg bg-black border border-white/10 hover:border-white/20"></button>
+                        <button onclick="setBg('dark-gray')" class="h-10 rounded-lg bg-[#080808] border border-white/10 hover:border-white/20"></button>
+                        <button onclick="setBg('gradient-subtle')" class="h-10 rounded-lg bg-gradient-to-b from-[#050505] to-[#0a0a0a] border border-white/10 hover:border-white/20"></button>
+                        <button onclick="setBg('gradient-blue')" class="h-10 rounded-lg bg-gradient-to-br from-[#050508] to-[#080810] border border-white/10 hover:border-white/20"></button>
+                        <button onclick="document.getElementById('bgInput').focus()" class="h-10 rounded-lg border border-dashed border-white/10 hover:border-white/20 text-white/20 text-[9px]">IMG</button>
+                    </div>
+                    <input type="text" id="bgInput" placeholder="URL imagem de fundo" class="mt-2 w-full bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-[10px] focus:outline-none" onchange="setBgImage(this.value)">
+                </div>
+
+                <!-- OpenRouter -->
+                <div>
+                    <label class="text-[9px] text-white/30 uppercase tracking-wider">OpenRouter API</label>
+                    <input type="password" id="openRouterKey" placeholder="sk-or-v1-..." class="mt-2 w-full bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-[10px] font-mono focus:outline-none">
+                    <button onclick="saveOpenRouterKey()" class="mt-2 w-full bg-white/5 hover:bg-white/10 py-2 rounded-lg text-[10px] transition-colors">Salvar</button>
+                </div>
+
+                <!-- Add Service -->
+                <div>
+                    <label class="text-[9px] text-white/30 uppercase tracking-wider">Novo Serviço</label>
+                    <div class="grid grid-cols-4 gap-1.5 mt-2">
+                        <input type="text" id="sName" placeholder="Nome" class="col-span-2 bg-white/5 border border-white/5 rounded px-2 py-1.5 text-[10px] focus:outline-none">
+                        <input type="number" id="sCost" placeholder="R$" class="bg-white/5 border border-white/5 rounded px-2 py-1.5 text-[10px] focus:outline-none">
+                        <input type="date" id="sDue" class="bg-white/5 border border-white/5 rounded px-2 py-1.5 text-[10px] focus:outline-none">
+                    </div>
+                    <input type="url" id="sUrl" placeholder="URL" class="mt-1.5 w-full bg-white/5 border border-white/5 rounded px-2 py-1.5 text-[10px] focus:outline-none">
+                    <button onclick="addService()" class="mt-2 w-full bg-white/5 hover:bg-white/10 py-1.5 rounded text-[10px]">+ Adicionar</button>
+                </div>
+
+                <!-- Add Project -->
+                <div>
+                    <label class="text-[9px] text-white/30 uppercase tracking-wider">Novo Projeto</label>
+                    <div class="grid grid-cols-3 gap-1.5 mt-2">
+                        <input type="text" id="pName" placeholder="Nome" class="bg-white/5 border border-white/5 rounded px-2 py-1.5 text-[10px] focus:outline-none">
+                        <input type="text" id="pVer" placeholder="Versão" class="bg-white/5 border border-white/5 rounded px-2 py-1.5 text-[10px] focus:outline-none">
+                        <input type="url" id="pUrl" placeholder="URL" class="bg-white/5 border border-white/5 rounded px-2 py-1.5 text-[10px] focus:outline-none">
+                    </div>
+                    <button onclick="addProject()" class="mt-2 w-full bg-white/5 hover:bg-white/10 py-1.5 rounded text-[10px]">+ Adicionar</button>
+                </div>
+
+                <!-- Add Link -->
+                <div>
+                    <label class="text-[9px] text-white/30 uppercase tracking-wider">Novo Link</label>
+                    <div class="grid grid-cols-2 gap-1.5 mt-2">
+                        <input type="text" id="lName" placeholder="Nome" class="bg-white/5 border border-white/5 rounded px-2 py-1.5 text-[10px] focus:outline-none">
+                        <input type="url" id="lUrl" placeholder="URL" class="bg-white/5 border border-white/5 rounded px-2 py-1.5 text-[10px] focus:outline-none">
+                    </div>
+                    <button onclick="addLink()" class="mt-2 w-full bg-white/5 hover:bg-white/10 py-1.5 rounded text-[10px]">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SK='domotika_cc5',OK='or_key',BK='cc_bg',RF=300000;
+        
+        const DEF={
+            services:[
+                {id:1,name:'Firebase',cost:0,url:'https://console.firebase.google.com'},
+                {id:2,name:'OpenRouter',cost:0,c:'USD',url:'https://openrouter.ai/activity'},
+                {id:3,name:'Anthropic',cost:0,c:'USD',url:'https://console.anthropic.com'},
+                {id:4,name:'DeepSeek',cost:0,c:'USD',url:'https://platform.deepseek.com'},
+                {id:5,name:'Google AI Studio',cost:0,url:'https://aistudio.google.com'},
+                {id:6,name:'GitHub Copilot',cost:50,due:'2026-03-20',url:'https://github.com/settings/copilot'},
+                {id:7,name:'luminadashboards.dev.br',cost:40,due:'2026-06-01',url:'https://registro.br'},
+                {id:8,name:'domotika.net.br',cost:40,due:'2026-06-01',url:'https://registro.br'},
+            ],
+            projects:[
+                {id:1,name:'Lumina Cloud',v:'v1.5.8',url:'https://lumina-cloud-c8d21.web.app',s:'online'},
+                {id:2,name:'luminadashboards',v:'v1.0',url:'https://cloud.luminadashboards.dev.br',s:'checking'},
+                {id:3,name:'R69 Schwilo',v:'-',s:'offline'},
+                {id:4,name:'OpenClaw',v:'latest',s:'online'},
+            ],
+            links:[
+                {id:1,name:'Hubitat',url:'http://192.168.100.5'},
+                {id:2,name:'Firebase',url:'https://console.firebase.google.com'},
+                {id:3,name:'GitHub',url:'https://github.com/Domotika'},
+                {id:4,name:'OpenRouter',url:'https://openrouter.ai/activity'},
+            ],
+            or:null
+        };
+        
+        let D=JSON.parse(localStorage.getItem(SK))||DEF;
+        const save=()=>localStorage.setItem(SK,JSON.stringify(D));
+
+        // BG
+        function setBg(t){document.body.className='text-white p-6 bg-'+t;document.body.style.backgroundImage='';localStorage.setItem(BK,t);}
+        function setBgImage(u){if(!u)return;document.body.className='text-white p-6 bg-image';document.body.style.backgroundImage=`linear-gradient(rgba(0,0,0,0.9),rgba(0,0,0,0.95)),url(${u})`;localStorage.setItem(BK,'img:'+u);}
+        function loadBg(){const s=localStorage.getItem(BK);if(!s)return;if(s.startsWith('img:')){setBgImage(s.slice(4));document.getElementById('bgInput').value=s.slice(4);}else setBg(s);}
+
+        // OpenRouter
+        async function fetchOpenRouterUsage(){
+            const k=localStorage.getItem(OK);if(!k)return;
+            document.getElementById('refreshBtn').classList.add('animate-spin');
+            try{
+                const r=await fetch('https://openrouter.ai/api/v1/auth/key',{headers:{'Authorization':'Bearer '+k}});
+                if(!r.ok)throw 0;
+                D.or=(await r.json()).data;save();renderOR();
+                document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+            }catch{document.getElementById('openRouterStats').innerHTML='<p class="text-red-400/40 text-[10px] text-center py-8">Erro</p>';}
+            document.getElementById('refreshBtn').classList.remove('animate-spin');
+        }
+        
+        function renderOR(){
+            const s=D.or;if(!s)return;
+            const u=s.usage||0,l=s.limit||0,p=l>0?(u/l*100):0;
+            const c=p>80?'text-red-400/70':p>50?'text-amber-400/70':'text-emerald-400/70';
+            document.getElementById('openRouterStats').innerHTML=`
+                <div class="text-center">
+                    <p class="text-2xl font-light ${c}">$${u.toFixed(2)}</p>
+                    <p class="text-[9px] text-white/20 mt-1">${l>0?`de $${l.toFixed(2)}`:'pay-as-you-go'}</p>
+                </div>
+                ${l>0?`<div class="mt-3 h-0.5 bg-white/5 rounded-full overflow-hidden"><div class="h-full ${c.replace('text-','bg-')}" style="width:${p}%"></div></div>`:''}
+            `;
+        }
+        
+        function saveOpenRouterKey(){const k=document.getElementById('openRouterKey').value.trim();if(!k)return;localStorage.setItem(OK,k);fetchOpenRouterUsage();closeSettings();}
+
+        // Render
+        function render(){renderServices();renderProjects();renderLinks();renderAlerts();renderOR();updateClock();const k=localStorage.getItem(OK);if(k)document.getElementById('openRouterKey').value=k;}
+        
+        function renderServices(){
+            const c=document.getElementById('servicesList');let t=0;
+            c.innerHTML=D.services.map(s=>{
+                const cost=s.cost||0;t+=s.c==='USD'?cost*5.5:cost;
+                const days=s.due?Math.ceil((new Date(s.due)-new Date())/864e5):null;
+                const w=days!==null&&days<=7&&days>=0;
+                return`<div class="card rounded-lg px-3 py-2 flex items-center justify-between cursor-pointer group" onclick="window.open('${s.url}','_blank')">
+                    <div class="flex items-center gap-2">
+                        <svg class="icon-sm text-white/20"><use href="#i-globe"/></svg>
+                        <span class="text-[11px] text-white/50">${s.name}${w?`<span class="ml-1.5 text-[9px] text-amber-400/60">${days}d</span>`:''}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-white/25 font-mono">${cost?(s.c==='USD'?'$':'R$')+cost:'-'}</span>
+                        <button onclick="event.stopPropagation();delS(${s.id})" class="opacity-0 group-hover:opacity-100 text-white/15 hover:text-red-400/60 text-[10px]">✕</button>
+                    </div>
+                </div>`;
+            }).join('');
+            document.getElementById('totalCost').textContent='R$ '+t.toFixed(0);
+        }
+        
+        function renderProjects(){
+            document.getElementById('projectsList').innerHTML=D.projects.map(p=>{
+                const dot=p.s==='online'?'bg-emerald-500/70':p.s==='checking'?'bg-amber-500/70 animate-pulse':'bg-white/10';
+                return`<div class="card rounded-lg p-3 ${p.url?'cursor-pointer':''}" ${p.url?`onclick="window.open('${p.url}','_blank')"`:''}">
+                    <div class="flex items-center justify-between mb-2">
+                        <svg class="icon-sm text-white/20"><use href="#i-server"/></svg>
+                        <span class="w-1.5 h-1.5 rounded-full ${dot}"></span>
+                    </div>
+                    <p class="text-[10px] text-white/50 truncate">${p.name}</p>
+                    <p class="text-[9px] text-white/20">${p.v}</p>
+                </div>`;
+            }).join('');
+        }
+        
+        function renderLinks(){
+            document.getElementById('quickLinks').innerHTML=D.links.map(l=>`
+                <a href="${l.url}" target="_blank" class="card rounded-lg px-3 py-2 flex items-center gap-2 group">
+                    <svg class="icon-sm text-white/20"><use href="#i-external"/></svg>
+                    <span class="text-[10px] text-white/40">${l.name}</span>
+                    <button onclick="event.preventDefault();event.stopPropagation();delL(${l.id})" class="ml-auto opacity-0 group-hover:opacity-100 text-white/15 hover:text-red-400/60 text-[10px]">✕</button>
+                </a>
+            `).join('');
+        }
+        
+        function renderAlerts(){
+            const a=[];
+            D.services.forEach(s=>{if(s.due){const d=Math.ceil((new Date(s.due)-new Date())/864e5);if(d<=7&&d>=0)a.push({m:`${s.name}: ${d}d`,t:d<=3?'u':'w'});else if(d<0)a.push({m:`${s.name}: vencido`,t:'u'});}});
+            if(D.or?.limit>0){const p=(D.or.usage/D.or.limit)*100;if(p>=80)a.push({m:`OpenRouter: ${p.toFixed(0)}%`,t:p>=90?'u':'w'});}
+            D.projects.forEach(p=>{if(p.s==='offline')a.push({m:`${p.name}: offline`,t:'w'});});
+            document.getElementById('alertsList').innerHTML=a.length===0?'<p class="text-white/15 text-[10px] text-center py-8">Tudo OK</p>':
+                a.map(x=>`<div class="text-[10px] px-3 py-2 rounded-lg ${x.t==='u'?'bg-red-500/10 text-red-400/60':'bg-amber-500/10 text-amber-400/60'}">${x.m}</div>`).join('');
+        }
+        
+        function updateClock(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});document.getElementById('date').textContent=n.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});}
+        
+        function openSettings(){document.getElementById('settingsModal').classList.remove('hidden');document.getElementById('settingsModal').classList.add('flex');}
+        function closeSettings(){document.getElementById('settingsModal').classList.add('hidden');}
+        
+        function addService(){const n=document.getElementById('sName').value.trim();if(!n)return;D.services.push({id:Date.now(),name:n,cost:+document.getElementById('sCost').value||0,due:document.getElementById('sDue').value||null,url:document.getElementById('sUrl').value||'#'});save();render();['sName','sCost','sDue','sUrl'].forEach(i=>document.getElementById(i).value='');}
+        function delS(id){if(confirm('Remover?')){D.services=D.services.filter(s=>s.id!==id);save();render();}}
+        
+        function addProject(){const n=document.getElementById('pName').value.trim();if(!n)return;D.projects.push({id:Date.now(),name:n,v:document.getElementById('pVer').value||'-',url:document.getElementById('pUrl').value||null,s:'checking'});save();render();checkP();['pName','pVer','pUrl'].forEach(i=>document.getElementById(i).value='');}
+        
+        function addLink(){const n=document.getElementById('lName').value.trim(),u=document.getElementById('lUrl').value.trim();if(!n||!u)return;D.links.push({id:Date.now(),name:n,url:u});save();render();['lName','lUrl'].forEach(i=>document.getElementById(i).value='');}
+        function delL(id){D.links=D.links.filter(l=>l.id!==id);save();render();}
+        
+        async function checkP(){for(const p of D.projects){if(p.url){p.s='checking';render();try{const c=new AbortController();setTimeout(()=>c.abort(),5e3);await fetch(p.url,{mode:'no-cors',signal:c.signal});p.s='online';}catch{p.s='offline';}}}save();render();}
+        
+        // Init
+        loadBg();render();setInterval(updateClock,1e3);
+        if(localStorage.getItem(OK)){fetchOpenRouterUsage();setInterval(fetchOpenRouterUsage,RF);}
+        setTimeout(checkP,2e3);setInterval(checkP,RF);
+    </script>
+</body>
+</html>

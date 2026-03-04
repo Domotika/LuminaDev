@@ -92,32 +92,32 @@ export const AuthLock: React.FC<AuthLockProps> = ({ onUnlock }) => {
         </div>
 
         {/* Keypad */}
-        <div className="grid grid-cols-3 gap-4 w-full max-w-[240px]">
+        <div className="grid grid-cols-3 gap-3 place-items-center">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <button
                     key={num}
                     onClick={() => handleNumberClick(num)}
-                    className="h-16 w-16 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-xl font-light text-white transition-all active:scale-95 flex items-center justify-center"
+                    className="h-14 w-14 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-xl font-light text-white transition-all active:scale-95 flex items-center justify-center"
                 >
                     {num}
                 </button>
             ))}
             <button 
                 onClick={handleClear}
-                className="h-16 w-16 rounded-full text-xs text-white/40 font-medium hover:text-white transition-colors flex items-center justify-center"
+                className="h-14 w-14 rounded-full text-[10px] text-white/40 font-medium hover:text-white transition-colors flex items-center justify-center"
             >
                 LIMPAR
             </button>
             <button
                 onClick={() => handleNumberClick(0)}
-                className="h-16 w-16 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-xl font-light text-white transition-all active:scale-95 flex items-center justify-center"
+                className="h-14 w-14 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-xl font-light text-white transition-all active:scale-95 flex items-center justify-center"
             >
                 0
             </button>
             <button 
                 onClick={handleSubmit}
                 disabled={pin.length === 0}
-                className={`h-16 w-16 rounded-full border flex items-center justify-center transition-all active:scale-95 ${
+                className={`h-14 w-14 rounded-full border flex items-center justify-center transition-all active:scale-95 ${
                     pin.length > 0 
                         ? 'bg-blue-500/20 border-blue-500/40 text-blue-200 hover:bg-blue-500/30' 
                         : 'bg-transparent border-transparent text-white/10'

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Lumina Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loader-container {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 24px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .status { font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 8px; }
+        .progress { font-size: 12px; color: rgba(255,255,255,0.4); }
+        .error { color: #f87171; }
+        .config-form {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .config-form h2 { font-size: 18px; margin-bottom: 24px; font-weight: 500; }
+        .config-form label { 
+            display: block; 
+            font-size: 10px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.5); 
+            margin-bottom: 8px; 
+        }
+        .config-form input {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .config-form input:focus { outline: none; border-color: #6366f1; }
+        .config-form button {
+            width: 100%;
+            background: #6366f1;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .config-form button:hover { background: #4f46e5; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="loader-container" id="loader">
+        <div class="spinner"></div>
+        <div class="status" id="status">Carregando Lumina Dashboard...</div>
+        <div class="progress" id="progress"></div>
+    </div>
+
+    <div class="config-form hidden" id="config">
+        <h2>⚙️ Configurar Conexão</h2>
+        <label>Hub UUID (Cloud ID)</label>
+        <input type="text" id="hubUuid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+        <label>App ID (Maker API)</label>
+        <input type="text" id="appId" placeholder="Ex: 14">
+        <label>Access Token</label>
+        <input type="text" id="token" placeholder="Token do Maker API">
+        <button onclick="saveConfig()">Conectar</button>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'lumina_cloud_config';
+        const CHUNK_VAR = 'LuminaApp';
+        
+        async function init() {
+            const config = getConfig();
+            if (!config) {
+                showConfig();
+                return;
+            }
+            await loadApp(config);
+        }
+
+        function getConfig() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                return saved ? JSON.parse(saved) : null;
+            } catch { return null; }
+        }
+
+        function saveConfig() {
+            const config = {
+                hubUuid: document.getElementById('hubUuid').value.trim(),
+                appId: document.getElementById('appId').value.trim(),
+                token: document.getElementById('token').value.trim()
+            };
+            if (!config.hubUuid || !config.appId || !config.token) {
+                alert('Preencha todos os campos');
+                return;
+            }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+            location.reload();
+        }
+
+        function showConfig() {
+            document.getElementById('loader').classList.add('hidden');
+            document.getElementById('config').classList.remove('hidden');
+            const config = getConfig();
+            if (config) {
+                document.getElementById('hubUuid').value = config.hubUuid || '';
+                document.getElementById('appId').value = config.appId || '';
+                document.getElementById('token').value = config.token || '';
+            }
+        }
+
+        function setStatus(msg, isError = false) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status' + (isError ? ' error' : '');
+        }
+
+        function setProgress(msg) {
+            document.getElementById('progress').textContent = msg;
+        }
+
+        async function loadApp(config) {
+            try {
+                setStatus('Conectando ao Hubitat...');
+                const baseUrl = `https://cloud.hubitat.com/api/${config.hubUuid}/apps/${config.appId}`;
+                
+                // First, get chunk count
+                setStatus('Buscando configuração...');
+                const metaRes = await fetch(`${baseUrl}/hubvariables/${CHUNK_VAR}?access_token=${config.token}`);
+                if (!metaRes.ok) throw new Error('Falha ao conectar - verifique as credenciais');
+                
+                const metaData = await metaRes.json();
+                const metaValue = metaData.value || '';
+                
+                if (!metaValue.startsWith('CHUNKS:')) {
+                    throw new Error('App não encontrado nas Hub Variables. Configure LuminaApp_0, LuminaApp_1, etc.');
+                }
+                
+                const chunkCount = parseInt(metaValue.replace('CHUNKS:', ''));
+                setStatus(`Carregando app (${chunkCount} partes)...`);
+                
+                // Fetch all chunks
+                let base64 = '';
+                for (let i = 0; i < chunkCount; i++) {
+                    setProgress(`Parte ${i + 1} de ${chunkCount}`);
+                    const chunkRes = await fetch(`${baseUrl}/hubvariables/${CHUNK_VAR}_${i}?access_token=${config.token}`);
+                    if (!chunkRes.ok) throw new Error(`Falha ao carregar parte ${i}`);
+                    const chunkData = await chunkRes.json();
+                    base64 += chunkData.value || '';
+                }
+                
+                setStatus('Iniciando dashboard...');
+                setProgress('');
+                
+                // Decode and execute
+                const html = decodeURIComponent(escape(atob(base64)));
+                document.open();
+                document.write(html);
+                document.close();
+                
+            } catch (err) {
+                setStatus(err.message, true);
+                setProgress('Clique para reconfigurar');
+                document.getElementById('progress').style.cursor = 'pointer';
+                document.getElementById('progress').onclick = showConfig;
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

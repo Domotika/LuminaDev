@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; background: #0d0d0d; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        canvas { box-shadow: 0 0 50px rgba(0, 255, 204, 0.2); }
+    </style>
+</head>
+<body>
+    <canvas id="c" width="1024" height="1024"></canvas>
+    <script>
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+
+        // Background
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Grid Cyberpunk
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 2;
+        for(let i=0; i<1024; i+=64) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 1024); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(1024, i); ctx.stroke();
+        }
+
+        // Glow Effect
+        ctx.shadowBlur = 40;
+        ctx.shadowColor = '#00ffcc';
+        ctx.strokeStyle = '#00ffcc';
+        ctx.lineWidth = 10;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        // Cat Silhouette (Abstract Geometric)
+        ctx.beginPath();
+        // Head
+        ctx.moveTo(300, 600); 
+        ctx.lineTo(250, 400); // Cheek L
+        ctx.lineTo(220, 250); // Ear L Tip
+        ctx.lineTo(400, 350); // Ear L Base
+        ctx.lineTo(624, 350); // Top Head
+        ctx.lineTo(804, 250); // Ear R Tip
+        ctx.lineTo(774, 400); // Ear R Base
+        ctx.lineTo(724, 600); // Cheek R
+        ctx.closePath();
+        ctx.stroke();
+
+        // Eyes (Neon Pink)
+        ctx.shadowColor = '#ff00ff';
+        ctx.fillStyle = '#ff00ff';
+        
+        // Eye L
+        ctx.beginPath();
+        ctx.moveTo(350, 450); ctx.lineTo(450, 450); ctx.lineTo(450, 480); ctx.lineTo(350, 470); 
+        ctx.fill();
+
+        // Eye R
+        ctx.beginPath();
+        ctx.moveTo(574, 450); ctx.lineTo(674, 450); ctx.lineTo(674, 470); ctx.lineTo(574, 480);
+        ctx.fill();
+
+        // Nose/Mouth Lines (Data Streams)
+        ctx.shadowColor = '#00ffcc';
+        ctx.strokeStyle = 'rgba(0, 255, 204, 0.7)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(512, 350); ctx.lineTo(512, 550); // Nose line
+        ctx.moveTo(512, 550); ctx.lineTo(450, 600); // Whisker L
+        ctx.moveTo(512, 550); ctx.lineTo(574, 600); // Whisker R
+        ctx.stroke();
+
+        // Text Overlay
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#ffffff';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 80px "Courier New"';
+        ctx.fillText("SCHWILO", 340, 850);
+        
+        ctx.font = '40px "Courier New"';
+        ctx.fillStyle = '#00ffcc';
+        ctx.shadowColor = '#00ffcc';
+        ctx.fillText("SYSTEM: ONLINE", 350, 920);
+
+        // Binary Rain Decor
+        ctx.font = '20px monospace';
+        ctx.fillStyle = 'rgba(0, 255, 204, 0.3)';
+        ctx.shadowBlur = 0;
+        for(let i=0; i<20; i++) {
+            const x = Math.random() * 1024;
+            const y = Math.random() * 1024;
+            ctx.fillText("101101001", x, y);
+        }
+    </script>
+</body>
+</html>

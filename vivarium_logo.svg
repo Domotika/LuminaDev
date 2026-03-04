@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <linearGradient id="leafGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1a3320;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4a7c59;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Terrarium Geometry (Hexagon Outline) -->
+  <path d="M250 50 L423 150 V350 L250 450 L77 350 V150 Z" 
+        fill="none" 
+        stroke="#2C2C2C" 
+        stroke-width="8"
+        stroke-linejoin="round"/>
+        
+  <!-- Inner Glass Reflection (Subtle) -->
+  <path d="M250 65 L408 156 V344 L250 435 L92 344 V156 Z" 
+        fill="none" 
+        stroke="#C5A059" 
+        stroke-width="2" 
+        opacity="0.5"/>
+
+  <!-- Organic Element (Stylized Fern/Plant rising) -->
+  <path d="M250 420 Q250 300 200 250 Q150 200 180 150" 
+        fill="none" 
+        stroke="url(#leafGrad)" 
+        stroke-width="12" 
+        stroke-linecap="round"/>
+        
+  <path d="M250 420 Q260 320 320 280 Q360 250 340 180" 
+        fill="none" 
+        stroke="url(#leafGrad)" 
+        stroke-width="10" 
+        stroke-linecap="round"/>
+        
+  <!-- Minimalist Typography -->
+  <text x="50%" y="540" text-anchor="middle" font-family="'Cinzel', serif" font-size="60" fill="#2C2C2C" letter-spacing="12">VIVARIUM</text>
+  <text x="50%" y="570" text-anchor="middle" font-family="'Lato', sans-serif" font-size="16" fill="#C5A059" letter-spacing="6" text-transform="uppercase">Arte Botânica • Guarda do Embaú</text>
+</svg>

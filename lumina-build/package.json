@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:cloud": "vite build --config vite.config.cloud.ts",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -18,8 +19,12 @@
     "vite": "^7.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.2.1",
     "terser": "^5.46.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",

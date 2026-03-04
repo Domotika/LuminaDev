@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Lightbulb, Power, Thermometer, Lock, Tv, Music, Moon, Sun, Wind, Play, Pause, Volume2, Blinds, Footprints, Radio } from 'lucide-react';
+import { Lightbulb, Power, Thermometer, Lock, Tv, Music, Moon, Sun, Wind, Play, Pause, Volume2, Blinds, Footprints, Radio, Smartphone, Circle } from 'lucide-react';
 import { DeviceType } from '../types';
 
 export const getIconForDevice = (type: DeviceType, isActive: boolean) => {
@@ -33,6 +33,10 @@ export const getIconForDevice = (type: DeviceType, isActive: boolean) => {
       return <Footprints {...props} />;
     case DeviceType.PRESENCE:
       return <Radio {...props} />;
+    case DeviceType.IR_REMOTE:
+      return <Smartphone {...props} />;
+    case DeviceType.BUTTON:
+      return <Circle {...props} />;
     default:
       return <Power {...props} />;
   }

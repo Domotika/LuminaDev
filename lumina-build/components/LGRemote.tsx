@@ -82,10 +82,8 @@ export const LGRemote: React.FC<LGRemoteProps> = ({ device, onUpdate, allDevices
           if (target) {
               // Send 'on' for switches, 'push' for buttons (simplified)
               const cmd = (target.type === DeviceType.SWITCH || target.type === DeviceType.LIGHT) ? 'on' : 'push';
-              await sendHubitatCommand({
-                  deviceId: target.hubitatId,
-                  command: cmd
-              });
+              // CORRIGIDO: Parâmetros posicionais
+              await sendHubitatCommand(target.hubitatId, cmd);
               return; // Skip default action
           }
       }
@@ -147,11 +145,8 @@ export const LGRemote: React.FC<LGRemoteProps> = ({ device, onUpdate, allDevices
   };
 
   const sendCommand = async (command: string, args: (string|number)[] = []) => {
-      await sendHubitatCommand({
-          deviceId: device.hubitatId,
-          command: command,
-          arguments: args
-      });
+      // CORRIGIDO: Parâmetros posicionais
+      await sendHubitatCommand(device.hubitatId, command, args.length > 0 ? args : undefined);
   };
 
   const handlePower = () => {

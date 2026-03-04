@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vivarium | Mundos em Vidro - Guarda do Embaú</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Lato', sans-serif; background-color: #F8F9FA; color: #2C2C2C; }
+        h1, h2, h3, .font-serif { font-family: 'Cinzel', serif; }
+        .hero-bg {
+            background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1463936575829-25148e1db1b8?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover;
+            background-position: center;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Navigation -->
+    <nav class="absolute top-0 w-full z-50 py-8 px-6 md:px-12 flex justify-between items-center text-white/90">
+        <div class="text-2xl font-serif tracking-[0.2em] font-semibold border-b border-white/30 pb-2">VIVARIUM</div>
+        <div class="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest">
+            <a href="#collection" class="hover:text-emerald-300 transition-colors">Coleção</a>
+            <a href="#about" class="hover:text-emerald-300 transition-colors">O Artista</a>
+            <a href="#contact" class="hover:text-emerald-300 transition-colors">Contato</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero-bg h-screen flex flex-col justify-center items-center text-center px-6 text-white relative">
+        <span class="text-xs md:text-sm font-bold uppercase tracking-[0.4em] mb-6 text-emerald-300 animate-pulse">Design Biofílico</span>
+        <h1 class="text-5xl md:text-7xl lg:text-8xl mb-8 leading-tight drop-shadow-2xl">Mundos Vivos <br><span class="italic font-light text-white/80">em Vidro</span></h1>
+        <p class="max-w-xl text-lg md:text-xl font-light leading-relaxed mb-12 text-white/90">
+            Paludários e terrários exclusivos criados por quem estuda ecossistemas há 25 anos. 
+            Uma peça de floresta tropical para o seu ambiente.
+        </p>
+        <a href="#collection" class="px-10 py-4 border border-white/40 hover:bg-white hover:text-green-900 transition-all duration-500 uppercase text-xs font-bold tracking-[0.25em]">
+            Explorar Coleção
+        </a>
+        
+        <!-- Location Badge -->
+        <div class="absolute bottom-10 right-10 flex items-center gap-3 opacity-70">
+            <div class="text-right">
+                <span class="block text-[10px] uppercase tracking-widest">Ateliê</span>
+                <span class="font-serif">Guarda do Embaú, SC</span>
+            </div>
+            <div class="w-12 h-[1px] bg-white"></div>
+        </div>
+    </header>
+
+    <!-- Concept Section -->
+    <section id="about" class="py-24 px-6 md:px-24 grid grid-cols-1 md:grid-cols-2 gap-16 items-center max-w-7xl mx-auto">
+        <div class="relative group">
+            <div class="absolute -inset-4 bg-emerald-900/10 rounded-sm transform rotate-2 transition-transform group-hover:rotate-0"></div>
+            <img src="https://images.unsplash.com/photo-1596716021876-2f74811a2a4b?auto=format&fit=crop&q=80&w=800" alt="Detail of moss" class="relative shadow-xl w-full object-cover aspect-[4/5]">
+        </div>
+        <div>
+            <span class="text-emerald-800 font-bold text-xs uppercase tracking-[0.2em] mb-4 block">A Expertise</span>
+            <h2 class="text-4xl font-serif text-gray-900 mb-8">Não é decoração.<br>É Biologia.</h2>
+            <p class="text-gray-600 leading-relaxed mb-6 font-light text-lg">
+                Diferente de um arranjo floral, um sistema da Vivarium é projetado para durar. Com 25 anos de experiência em aquarismo de alto nível, Raphael Vasconcelos traz o equilíbrio químico e biológico para dentro do vidro.
+            </p>
+            <p class="text-gray-600 leading-relaxed mb-10 font-light text-lg">
+                Cada peça é única, com substrato preparado, microfauna ativa e plantas selecionadas para prosperar no microclima da Guarda do Embaú.
+            </p>
+            <div class="flex gap-4 items-center">
+                <span class="text-3xl font-serif text-emerald-900">25+</span>
+                <span class="text-xs uppercase tracking-widest text-gray-500">Anos de <br>Experiência</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Collection Grid -->
+    <section id="collection" class="bg-stone-100 py-32 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl font-serif text-gray-900 mb-4">Obras Recentes</h2>
+                <div class="w-24 h-1 bg-emerald-800 mx-auto opacity-20"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Item 1 -->
+                <div class="group cursor-pointer">
+                    <div class="overflow-hidden aspect-square mb-6 bg-white shadow-sm">
+                        <img src="https://images.unsplash.com/photo-1616629916694-884617cb751f?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    </div>
+                    <h3 class="text-xl font-serif text-gray-800 mb-1">Paludário "Rio da Madre"</h3>
+                    <p class="text-xs uppercase tracking-widest text-gray-500">Design Imersivo • 60cm</p>
+                </div>
+                
+                <!-- Item 2 -->
+                <div class="group cursor-pointer">
+                    <div class="overflow-hidden aspect-square mb-6 bg-white shadow-sm">
+                        <img src="https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    </div>
+                    <h3 class="text-xl font-serif text-gray-800 mb-1">Terrário Nano</h3>
+                    <p class="text-xs uppercase tracking-widest text-gray-500">Musgos Raros • 20cm</p>
+                </div>
+
+                <!-- Item 3 -->
+                <div class="group cursor-pointer">
+                    <div class="overflow-hidden aspect-square mb-6 bg-white shadow-sm">
+                        <img src="https://images.unsplash.com/photo-1627918342289-4096055d72f1?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    </div>
+                    <h3 class="text-xl font-serif text-gray-800 mb-1">Vivarium Tech</h3>
+                    <p class="text-xs uppercase tracking-widest text-gray-500">Automatizado • Domótika</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer / Contact -->
+    <footer id="contact" class="bg-[#1a1c1a] text-stone-300 py-24 px-6 border-t border-white/5">
+        <div class="max-w-5xl mx-auto text-center">
+            <h2 class="text-4xl font-serif text-white mb-8">Leve a natureza para casa</h2>
+            <p class="mb-12 font-light text-lg max-w-2xl mx-auto text-white/60">
+                Estamos aceitando encomendas personalizadas. Visite nosso showroom na Pousada Acauan ou entre em contato para um projeto exclusivo.
+            </p>
+            <div class="flex flex-col md:flex-row justify-center gap-6">
+                <a href="https://instagram.com/vivarium.guarda" target="_blank" class="px-8 py-4 bg-emerald-900/80 hover:bg-emerald-800 text-white uppercase text-xs font-bold tracking-[0.2em] transition-all">
+                    Siga no Instagram
+                </a>
+                <a href="https://wa.me/5548999999999" target="_blank" class="px-8 py-4 border border-white/20 hover:bg-white hover:text-black uppercase text-xs font-bold tracking-[0.2em] transition-all">
+                    Falar no WhatsApp
+                </a>
+            </div>
+            <div class="mt-24 pt-8 border-t border-white/10 text-[10px] uppercase tracking-[0.2em] opacity-40 flex justify-between">
+                <span>&copy; 2026 Vivarium</span>
+                <span>Design by Schwilo</span>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

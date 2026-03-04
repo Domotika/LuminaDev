@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domotika Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+        .glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+        .glow-yellow { box-shadow: 0 0 20px rgba(234, 179, 8, 0.3); }
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .scroll-gradient {
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+        }
+    </style>
+</head>
+<body class="text-white p-6">
+    <div id="app" class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl">
+                    🖥️
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                        Domotika Command Center
+                    </h1>
+                    <p class="text-white/40 text-sm">Monitoramento em tempo real</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <p class="text-2xl font-light" id="clock">--:--</p>
+                    <p class="text-white/40 text-xs" id="date">--</p>
+                </div>
+                <button onclick="openSettings()" class="p-3 glass rounded-xl hover:bg-white/10 transition-colors">
+                    ⚙️
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Services Status -->
+            <div class="lg:col-span-2 glass rounded-3xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-semibold flex items-center gap-2">
+                        <span class="text-2xl">☁️</span> Serviços & Assinaturas
+                    </h2>
+                    <div class="flex items-center gap-2 text-xs text-white/40">
+                        <span class="w-2 h-2 rounded-full bg-green-500 pulse-dot"></span>
+                        Atualizado agora
+                    </div>
+                </div>
+                
+                <div class="space-y-3" id="servicesList">
+                    <!-- Services will be rendered here -->
+                </div>
+                
+                <div class="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                    <span class="text-white/50">Total Mensal Estimado</span>
+                    <span class="text-2xl font-bold text-green-400" id="totalCost">R$ 0,00</span>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                
+                <!-- Projects Status -->
+                <div class="glass rounded-3xl p-6">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 mb-4">
+                        <span class="text-2xl">📊</span> Projetos
+                    </h2>
+                    <div class="space-y-3" id="projectsList">
+                        <!-- Projects will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Alerts -->
+                <div class="glass rounded-3xl p-6">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 mb-4">
+                        <span class="text-2xl">🔔</span> Alertas
+                    </h2>
+                    <div class="space-y-2" id="alertsList">
+                        <p class="text-white/30 text-sm text-center py-4">Nenhum alerta</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="mt-6 glass rounded-3xl p-6">
+            <h2 class="text-lg font-semibold flex items-center gap-2 mb-4">
+                <span class="text-2xl">🔗</span> Acesso Rápido
+            </h2>
+            <div class="flex flex-wrap gap-3" id="quickLinks">
+                <!-- Quick links will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass rounded-3xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold">⚙️ Configurações</h2>
+                <button onclick="closeSettings()" class="p-2 hover:bg-white/10 rounded-lg">✕</button>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Adicionar Serviço</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="text" id="newServiceName" placeholder="Nome do serviço" 
+                            class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/30">
+                        <input type="number" id="newServiceCost" placeholder="Custo mensal (R$)" 
+                            class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/30">
+                        <input type="date" id="newServiceDue" 
+                            class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/30">
+                        <input type="url" id="newServiceUrl" placeholder="URL do dashboard" 
+                            class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/30">
+                    </div>
+                    <button onclick="addService()" class="mt-3 w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-semibold transition-colors">
+                        + Adicionar Serviço
+                    </button>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Adicionar Projeto</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="text" id="newProjectName" placeholder="Nome do projeto" 
+                            class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/30">
+                        <input type="text" id="newProjectVersion" placeholder="Versão atual" 
+                            class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/30">
+                        <input type="url" id="newProjectUrl" placeholder="URL para monitorar (ping)" 
+                            class="col-span-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/30">
+                    </div>
+                    <button onclick="addProject()" class="mt-3 w-full bg-purple-600 hover:bg-purple-500 py-3 rounded-xl font-semibold transition-colors">
+                        + Adicionar Projeto
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============== DATA ==============
+        const STORAGE_KEY = 'domotika_dashboard';
+        
+        const DEFAULT_DATA = {
+            services: [
+                { id: 1, name: 'Firebase', cost: 0, currency: 'BRL', dueDate: null, status: 'free', url: 'https://console.firebase.google.com', icon: '🔥' },
+                { id: 2, name: 'OpenRouter', cost: 100, currency: 'BRL', dueDate: '2026-03-15', status: 'active', url: 'https://openrouter.ai', icon: '🤖' },
+                { id: 3, name: 'Anthropic', cost: 250, currency: 'BRL', dueDate: '2026-04-01', status: 'active', url: 'https://console.anthropic.com', icon: '🧠' },
+                { id: 4, name: 'DeepSeek', cost: 50, currency: 'BRL', dueDate: '2026-03-20', status: 'active', url: 'https://platform.deepseek.com', icon: '🔍' },
+                { id: 5, name: 'Google AI Studio', cost: 0, currency: 'BRL', dueDate: null, status: 'free', url: 'https://aistudio.google.com', icon: '🎨' },
+                { id: 6, name: 'GitHub Copilot', cost: 50, currency: 'BRL', dueDate: '2026-03-20', status: 'active', url: 'https://github.com/settings/copilot', icon: '🐙' },
+                { id: 7, name: 'Domínio .dev.br', cost: 40, currency: 'BRL', dueDate: '2026-06-01', status: 'active', url: 'https://registro.br', icon: '🌐' },
+                { id: 8, name: 'Domínio .net.br', cost: 40, currency: 'BRL', dueDate: '2026-06-01', status: 'active', url: 'https://registro.br', icon: '🌐' },
+                { id: 9, name: 'Vercel', cost: 0, currency: 'BRL', dueDate: null, status: 'free', url: 'https://vercel.com/dashboard', icon: '▲' },
+            ],
+            projects: [
+                { id: 1, name: 'Lumina Dashboard', version: 'v1.5.8', status: 'online', url: 'https://lumina-cloud-c8d21.web.app', icon: '💡' },
+                { id: 2, name: 'Lumina Cloud', version: 'v1.0', status: 'online', url: 'https://cloud.luminadashboards.dev.br', icon: '☁️' },
+                { id: 3, name: 'R69 Schwilo', version: '-', status: 'offline', url: null, icon: '📺' },
+                { id: 4, name: 'OpenClaw Gateway', version: 'latest', status: 'online', url: null, icon: '🐱' },
+            ],
+            quickLinks: [
+                { name: 'Hubitat', url: 'http://192.168.100.5', icon: '🏠' },
+                { name: 'Firebase Console', url: 'https://console.firebase.google.com', icon: '🔥' },
+                { name: 'GitHub', url: 'https://github.com/Domotika', icon: '🐙' },
+                { name: 'OpenRouter', url: 'https://openrouter.ai/activity', icon: '📊' },
+            ]
+        };
+
+        let data = loadData();
+
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            return saved ? JSON.parse(saved) : DEFAULT_DATA;
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // ============== RENDER ==============
+        function render() {
+            renderServices();
+            renderProjects();
+            renderQuickLinks();
+            renderAlerts();
+            updateClock();
+        }
+
+        function renderServices() {
+            const container = document.getElementById('servicesList');
+            let totalBRL = 0;
+
+            container.innerHTML = data.services.map(service => {
+                const cost = service.cost || 0;
+                totalBRL += cost;
+                
+                const statusColor = service.status === 'free' ? 'text-blue-400' : 
+                                   service.status === 'active' ? 'text-green-400' : 'text-red-400';
+                const statusText = service.status === 'free' ? 'Free' : 
+                                  service.status === 'active' ? 'Ativo' : 'Inativo';
+                
+                const dueText = service.dueDate ? formatDate(service.dueDate) : '-';
+                const daysUntilDue = service.dueDate ? getDaysUntil(service.dueDate) : null;
+                const dueBadge = daysUntilDue !== null && daysUntilDue <= 7 ? 
+                    `<span class="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full text-[10px]">${daysUntilDue}d</span>` : '';
+
+                return `
+                    <div class="glass-card rounded-2xl p-4 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer group"
+                         onclick="window.open('${service.url}', '_blank')">
+                        <div class="flex items-center gap-4">
+                            <span class="text-2xl">${service.icon}</span>
+                            <div>
+                                <p class="font-medium">${service.name}</p>
+                                <p class="text-xs text-white/40">Vence: ${dueText} ${dueBadge}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="font-mono ${cost === 0 ? 'text-white/30' : 'text-white'}">
+                                ${cost === 0 ? '-' : 'R$ ' + cost.toFixed(2)}
+                            </span>
+                            <span class="${statusColor} text-xs font-semibold uppercase">${statusText}</span>
+                            <button onclick="event.stopPropagation(); removeService(${service.id})" 
+                                    class="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded text-red-400 transition-all">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('totalCost').textContent = `R$ ${totalBRL.toFixed(2)}`;
+        }
+
+        function renderProjects() {
+            const container = document.getElementById('projectsList');
+            
+            container.innerHTML = data.projects.map(project => {
+                const statusColor = project.status === 'online' ? 'bg-green-500' : 
+                                   project.status === 'checking' ? 'bg-yellow-500' : 'bg-red-500';
+                
+                return `
+                    <div class="glass-card rounded-xl p-3 flex items-center justify-between ${project.url ? 'cursor-pointer hover:bg-white/5' : ''}"
+                         ${project.url ? `onclick="window.open('${project.url}', '_blank')"` : ''}>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">${project.icon}</span>
+                            <div>
+                                <p class="font-medium text-sm">${project.name}</p>
+                                <p class="text-[10px] text-white/40">${project.version}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${statusColor} ${project.status === 'online' ? 'pulse-dot' : ''}"></span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderQuickLinks() {
+            const container = document.getElementById('quickLinks');
+            
+            container.innerHTML = data.quickLinks.map(link => `
+                <a href="${link.url}" target="_blank" 
+                   class="glass-card rounded-xl px-4 py-3 flex items-center gap-2 hover:bg-white/10 transition-colors">
+                    <span>${link.icon}</span>
+                    <span class="text-sm">${link.name}</span>
+                </a>
+            `).join('');
+        }
+
+        function renderAlerts() {
+            const container = document.getElementById('alertsList');
+            const alerts = [];
+
+            // Check for upcoming due dates
+            data.services.forEach(service => {
+                if (service.dueDate) {
+                    const days = getDaysUntil(service.dueDate);
+                    if (days <= 7 && days >= 0) {
+                        alerts.push({
+                            type: days <= 3 ? 'urgent' : 'warning',
+                            message: `${service.name} vence em ${days} dias`,
+                            icon: '⏰'
+                        });
+                    } else if (days < 0) {
+                        alerts.push({
+                            type: 'urgent',
+                            message: `${service.name} venceu há ${Math.abs(days)} dias!`,
+                            icon: '🚨'
+                        });
+                    }
+                }
+            });
+
+            // Check for offline projects
+            data.projects.forEach(project => {
+                if (project.status === 'offline') {
+                    alerts.push({
+                        type: 'warning',
+                        message: `${project.name} está offline`,
+                        icon: '📴'
+                    });
+                }
+            });
+
+            if (alerts.length === 0) {
+                container.innerHTML = '<p class="text-white/30 text-sm text-center py-4">✅ Tudo em ordem!</p>';
+                return;
+            }
+
+            container.innerHTML = alerts.map(alert => {
+                const bgColor = alert.type === 'urgent' ? 'bg-red-500/10 border-red-500/30' : 'bg-yellow-500/10 border-yellow-500/30';
+                const textColor = alert.type === 'urgent' ? 'text-red-300' : 'text-yellow-300';
+                
+                return `
+                    <div class="p-3 rounded-xl border ${bgColor} ${textColor} text-sm flex items-center gap-2">
+                        <span>${alert.icon}</span>
+                        ${alert.message}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ============== HELPERS ==============
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        }
+
+        function getDaysUntil(dateStr) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const target = new Date(dateStr);
+            target.setHours(0, 0, 0, 0);
+            return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('date').textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+        }
+
+        // ============== ACTIONS ==============
+        function openSettings() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+            document.getElementById('settingsModal').classList.add('flex');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+            document.getElementById('settingsModal').classList.remove('flex');
+        }
+
+        function addService() {
+            const name = document.getElementById('newServiceName').value.trim();
+            const cost = parseFloat(document.getElementById('newServiceCost').value) || 0;
+            const dueDate = document.getElementById('newServiceDue').value || null;
+            const url = document.getElementById('newServiceUrl').value.trim() || '#';
+
+            if (!name) return alert('Nome é obrigatório!');
+
+            data.services.push({
+                id: Date.now(),
+                name,
+                cost,
+                currency: 'BRL',
+                dueDate,
+                status: cost === 0 ? 'free' : 'active',
+                url,
+                icon: '📦'
+            });
+
+            saveData();
+            render();
+
+            // Clear form
+            document.getElementById('newServiceName').value = '';
+            document.getElementById('newServiceCost').value = '';
+            document.getElementById('newServiceDue').value = '';
+            document.getElementById('newServiceUrl').value = '';
+        }
+
+        function removeService(id) {
+            if (!confirm('Remover este serviço?')) return;
+            data.services = data.services.filter(s => s.id !== id);
+            saveData();
+            render();
+        }
+
+        function addProject() {
+            const name = document.getElementById('newProjectName').value.trim();
+            const version = document.getElementById('newProjectVersion').value.trim() || '-';
+            const url = document.getElementById('newProjectUrl').value.trim() || null;
+
+            if (!name) return alert('Nome é obrigatório!');
+
+            data.projects.push({
+                id: Date.now(),
+                name,
+                version,
+                status: 'checking',
+                url,
+                icon: '📁'
+            });
+
+            saveData();
+            render();
+
+            // Clear form
+            document.getElementById('newProjectName').value = '';
+            document.getElementById('newProjectVersion').value = '';
+            document.getElementById('newProjectUrl').value = '';
+
+            // If URL provided, check status
+            if (url) {
+                checkProjectStatus(data.projects[data.projects.length - 1]);
+            }
+        }
+
+        async function checkProjectStatus(project) {
+            if (!project.url) return;
+            
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch(project.url, { 
+                    mode: 'no-cors',
+                    signal: controller.signal 
+                });
+                clearTimeout(timeout);
+                
+                project.status = 'online';
+            } catch (e) {
+                project.status = 'offline';
+            }
+            
+            saveData();
+            render();
+        }
+
+        async function checkAllProjects() {
+            for (const project of data.projects) {
+                if (project.url) {
+                    project.status = 'checking';
+                    render();
+                    await checkProjectStatus(project);
+                }
+            }
+        }
+
+        // ============== INIT ==============
+        render();
+        setInterval(updateClock, 1000);
+        setInterval(checkAllProjects, 60000); // Check every minute
+        
+        // Initial check
+        setTimeout(checkAllProjects, 2000);
+    </script>
+</body>
+</html>

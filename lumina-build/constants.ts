@@ -1,39 +1,56 @@
 
 import { Device, DeviceType, Room } from './types';
 
+// Imagens Unsplash originais - identidade visual do Lumina
+export const ROOM_BACKGROUNDS = {
+  living: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1920&q=80',
+  kitchen: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1920&q=80',
+  bedroom: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1920&q=80',
+  theater: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=1920&q=80',
+  entry: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1920&q=80',
+  default: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1920&q=80'
+};
+
+// Gradientes CSS elegantes para fallback offline automático
+// Browser tenta carregar imagem; se falhar, gradiente aparece
+export const OFFLINE_GRADIENTS = {
+  living: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+  kitchen: 'linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 50%, #0d0d0d 100%)',
+  bedroom: 'linear-gradient(135deg, #1e3a5f 0%, #1a2a4a 50%, #0f1f3a 100%)',
+  theater: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #0d0d1a 100%)',
+  entry: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 50%, #0d1318 100%)',
+  default: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+};
+
 export const MOCK_ROOMS: Room[] = [
   {
     id: 'living',
     name: 'Sala de Estar',
-    // Luxury Living Room
-    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1920&q=80',
+    image: ROOM_BACKGROUNDS.living,
     deviceIds: ['d1', 'd2', 'ac1', 'd4', 'avr1', 'lgtv1', 's1', 'd12', 'b1']
   },
   {
     id: 'kitchen',
     name: 'Cozinha Gourmet',
-    // Luxury Kitchen
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80',
+    image: ROOM_BACKGROUNDS.kitchen,
     deviceIds: ['d5', 'd6']
   },
   {
     id: 'master',
     name: 'Suíte Master',
-    // Luxury Bedroom
-    image: 'https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?auto=format&fit=crop&w=1920&q=80',
+    image: ROOM_BACKGROUNDS.bedroom,
     deviceIds: ['d7', 'd8', 'd9', 's3']
   },
   {
     id: 'theater',
     name: 'Home Theater',
-    // Home Cinema / Media Room
-    image: 'https://images.unsplash.com/photo-1595769816263-9b910be24d5f?auto=format&fit=crop&w=1920&q=80',
+    image: ROOM_BACKGROUNDS.theater,
     deviceIds: ['d10', 'd11', 's2']
   },
   {
     id: 'entry',
     name: 'Entrada Principal',
-    image: 'https://images.unsplash.com/photo-1516455590571-18256e5bb9ff?auto=format&fit=crop&w=1920&q=80',
+    image: ROOM_BACKGROUNDS.entry,
     deviceIds: ['d13', 'd14']
   }
 ];

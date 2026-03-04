@@ -1,0 +1,14 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Schwilo//NONSGML v1.0//EN
+BEGIN:VEVENT
+UID:uid1@example.com
+DTSTAMP:20260203T232200Z
+ORGANIZER;CN=Schwilo:MAILTO:schwilo@openclaw.ai
+DTSTART;VALUE=DATE:20260224
+DTEND;VALUE=DATE:20260225
+SUMMARY:Viagem SP - Treinamento Hubitat ✈️
+DESCRIPTION:Viagem de Navegantes para São Paulo para ministrar treinamento de certificação Hubitat Elevation.\nLembrete de voo e check-in.
+LOCATION:São Paulo, SP
+END:VEVENT
+END:VCALENDAR

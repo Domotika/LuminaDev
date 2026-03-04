@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domotika Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        body {
+            min-height: 100vh;
+            background: #0a0a0f;
+        }
+        
+        .bg-tech {
+            background-image: 
+                radial-gradient(ellipse at 20% 30%, rgba(0, 188, 212, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 70%),
+                linear-gradient(180deg, #0a0a0f 0%, #0f172a 50%, #0a0a0f 100%);
+            background-attachment: fixed;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .glow-cyan { box-shadow: 0 0 30px rgba(0, 188, 212, 0.3); }
+        .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+        .glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+        
+        .pulse-dot { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .icon-box {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Grid lines effect */
+        .grid-bg {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+    </style>
+</head>
+<body class="text-white bg-tech grid-bg">
+    <div id="app" class="max-w-7xl mx-auto p-4 lg:p-6">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center glow-cyan">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Command Center</h1>
+                    <p class="text-white/40 text-sm">Domotika • Monitoramento em tempo real</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-3xl font-light text-white/90" id="clock">--:--</p>
+                    <p class="text-white/40 text-xs uppercase tracking-wider" id="date">--</p>
+                </div>
+                <button onclick="openSettings()" class="p-3 glass rounded-xl hover:bg-white/10 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            
+            <!-- OpenRouter Card -->
+            <div class="glass rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="icon-box bg-gradient-to-br from-emerald-500 to-teal-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <span class="font-semibold text-white/90">OpenRouter</span>
+                    </div>
+                    <button onclick="fetchOpenRouterUsage()" id="refreshBtn" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/40 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div id="openRouterStats" class="space-y-4">
+                    <div class="text-center py-6 text-white/30 text-sm">
+                        Configure a API Key em ⚙️
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-3 border-t border-white/5 text-[10px] text-white/30 text-center" id="lastUpdate">--</div>
+            </div>
+
+            <!-- Services -->
+            <div class="lg:col-span-2 glass rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="icon-box bg-gradient-to-br from-violet-500 to-purple-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                        </div>
+                        <span class="font-semibold text-white/90">Serviços</span>
+                    </div>
+                    <span class="text-xl font-bold text-emerald-400" id="totalCost">R$ 0</span>
+                </div>
+                
+                <div class="space-y-2 max-h-[280px] overflow-y-auto scrollbar-hide pr-1" id="servicesList"></div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="glass rounded-2xl p-5">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="icon-box bg-gradient-to-br from-amber-500 to-orange-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                    </div>
+                    <span class="font-semibold text-white/90">Alertas</span>
+                </div>
+                <div class="space-y-2 max-h-[280px] overflow-y-auto scrollbar-hide" id="alertsList">
+                    <p class="text-white/30 text-sm text-center py-6">✅ Tudo OK</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects Row -->
+        <div class="mt-4 glass rounded-2xl p-5">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="icon-box bg-gradient-to-br from-cyan-500 to-blue-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                </div>
+                <span class="font-semibold text-white/90">Projetos</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" id="projectsList"></div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="mt-4 glass rounded-2xl p-5">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="icon-box bg-gradient-to-br from-pink-500 to-rose-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                </div>
+                <span class="font-semibold text-white/90">Acesso Rápido</span>
+            </div>
+            <div class="flex flex-wrap gap-2" id="quickLinks"></div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="glass rounded-2xl p-6 w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold">⚙️ Configurações</h2>
+                <button onclick="closeSettings()" class="p-2 hover:bg-white/10 rounded-lg text-white/50 hover:text-white">✕</button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- OpenRouter API Key -->
+                <div class="p-4 glass-card rounded-xl">
+                    <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-3">OpenRouter API</h3>
+                    <input type="password" id="openRouterKey" placeholder="sk-or-v1-..." 
+                        class="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 font-mono">
+                    <button onclick="saveOpenRouterKey()" class="mt-3 w-full bg-cyan-600 hover:bg-cyan-500 py-2.5 rounded-lg font-semibold transition-colors text-sm">
+                        Salvar e Testar
+                    </button>
+                </div>
+
+                <!-- Add Service -->
+                <div class="p-4 glass-card rounded-xl">
+                    <h3 class="text-xs font-bold text-violet-400 uppercase tracking-wider mb-3">Adicionar Serviço</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="newServiceName" placeholder="Nome" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500">
+                        <input type="number" id="newServiceCost" placeholder="Custo R$" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500">
+                        <input type="date" id="newServiceDue" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500">
+                        <input type="url" id="newServiceUrl" placeholder="URL" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500">
+                    </div>
+                    <button onclick="addService()" class="mt-3 w-full bg-violet-600 hover:bg-violet-500 py-2 rounded-lg font-semibold transition-colors text-sm">+ Adicionar</button>
+                </div>
+
+                <!-- Add Project -->
+                <div class="p-4 glass-card rounded-xl">
+                    <h3 class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3">Adicionar Projeto</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="newProjectName" placeholder="Nome" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <input type="text" id="newProjectVersion" placeholder="Versão" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <input type="url" id="newProjectUrl" placeholder="URL (ping)" class="col-span-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <button onclick="addProject()" class="mt-3 w-full bg-blue-600 hover:bg-blue-500 py-2 rounded-lg font-semibold transition-colors text-sm">+ Adicionar</button>
+                </div>
+
+                <!-- Add Quick Link -->
+                <div class="p-4 glass-card rounded-xl">
+                    <h3 class="text-xs font-bold text-pink-400 uppercase tracking-wider mb-3">Adicionar Link</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <input type="text" id="newLinkIcon" placeholder="Emoji" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-pink-500 text-center">
+                        <input type="text" id="newLinkName" placeholder="Nome" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-pink-500">
+                        <input type="url" id="newLinkUrl" placeholder="URL" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-pink-500">
+                    </div>
+                    <button onclick="addQuickLink()" class="mt-3 w-full bg-pink-600 hover:bg-pink-500 py-2 rounded-lg font-semibold transition-colors text-sm">+ Adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'domotika_dashboard';
+        const OPENROUTER_KEY_STORAGE = 'openrouter_api_key';
+        const REFRESH_INTERVAL = 5 * 60 * 1000;
+        
+        const SERVICE_ICONS = {
+            'Firebase': { gradient: 'from-amber-500 to-orange-600', icon: '🔥' },
+            'OpenRouter': { gradient: 'from-emerald-500 to-teal-600', icon: '⚡' },
+            'Anthropic': { gradient: 'from-orange-500 to-red-600', icon: '🧠' },
+            'DeepSeek': { gradient: 'from-blue-500 to-indigo-600', icon: '🔍' },
+            'Google AI Studio': { gradient: 'from-red-500 to-pink-600', icon: '🎨' },
+            'GitHub Copilot': { gradient: 'from-gray-600 to-gray-800', icon: '🐙' },
+            'Vercel': { gradient: 'from-gray-700 to-black', icon: '▲' },
+            'default': { gradient: 'from-slate-500 to-slate-700', icon: '📦' }
+        };
+        
+        const DEFAULT_DATA = {
+            services: [
+                { id: 1, name: 'Firebase', cost: 0, currency: 'BRL', dueDate: null, status: 'free', url: 'https://console.firebase.google.com' },
+                { id: 2, name: 'OpenRouter', cost: 0, currency: 'USD', dueDate: null, status: 'active', url: 'https://openrouter.ai/activity', isApi: true },
+                { id: 3, name: 'Anthropic', cost: 0, currency: 'USD', dueDate: null, status: 'active', url: 'https://console.anthropic.com' },
+                { id: 4, name: 'DeepSeek', cost: 0, currency: 'USD', dueDate: null, status: 'active', url: 'https://platform.deepseek.com' },
+                { id: 5, name: 'Google AI Studio', cost: 0, currency: 'BRL', dueDate: null, status: 'free', url: 'https://aistudio.google.com' },
+                { id: 6, name: 'GitHub Copilot', cost: 50, currency: 'BRL', dueDate: '2026-03-20', status: 'active', url: 'https://github.com/settings/copilot' },
+                { id: 7, name: 'luminadashboards.dev.br', cost: 40, currency: 'BRL', dueDate: '2026-06-01', status: 'active', url: 'https://registro.br' },
+                { id: 8, name: 'domotika.net.br', cost: 40, currency: 'BRL', dueDate: '2026-06-01', status: 'active', url: 'https://registro.br' },
+                { id: 9, name: 'Vercel', cost: 0, currency: 'BRL', dueDate: null, status: 'free', url: 'https://vercel.com/dashboard' },
+            ],
+            projects: [
+                { id: 1, name: 'Lumina Cloud', version: 'v1.5.8', status: 'online', url: 'https://lumina-cloud-c8d21.web.app', icon: '☁️' },
+                { id: 2, name: 'luminadashboards', version: 'v1.0', status: 'checking', url: 'https://cloud.luminadashboards.dev.br', icon: '💡' },
+                { id: 3, name: 'R69 Schwilo', version: '-', status: 'offline', url: null, icon: '📺' },
+                { id: 4, name: 'OpenClaw', version: 'latest', status: 'online', url: null, icon: '🐱' },
+            ],
+            quickLinks: [
+                { id: 1, name: 'Hubitat', url: 'http://192.168.100.5', icon: '🏠' },
+                { id: 2, name: 'Firebase', url: 'https://console.firebase.google.com', icon: '🔥' },
+                { id: 3, name: 'GitHub', url: 'https://github.com/Domotika', icon: '🐙' },
+                { id: 4, name: 'OpenRouter', url: 'https://openrouter.ai/activity', icon: '📊' },
+                { id: 5, name: 'Anthropic', url: 'https://console.anthropic.com/settings/billing', icon: '🧠' },
+            ],
+            openRouterData: null
+        };
+
+        let data = loadData();
+
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            return saved ? { ...DEFAULT_DATA, ...JSON.parse(saved) } : DEFAULT_DATA;
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // OpenRouter API
+        async function fetchOpenRouterUsage() {
+            const apiKey = localStorage.getItem(OPENROUTER_KEY_STORAGE);
+            if (!apiKey) {
+                document.getElementById('openRouterStats').innerHTML = '<div class="text-center py-6 text-white/30 text-sm">Configure a API Key em ⚙️</div>';
+                return;
+            }
+
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('animate-spin');
+
+            try {
+                const response = await fetch('https://openrouter.ai/api/v1/auth/key', {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                if (!response.ok) throw new Error('API Error');
+                const result = await response.json();
+                data.openRouterData = result.data;
+                saveData();
+                renderOpenRouterStats();
+                document.getElementById('lastUpdate').textContent = `Atualizado: ${new Date().toLocaleTimeString('pt-BR')}`;
+            } catch (e) {
+                document.getElementById('openRouterStats').innerHTML = '<div class="text-center py-6 text-red-400 text-sm">❌ Erro - Verifique a API Key</div>';
+            }
+
+            btn.classList.remove('animate-spin');
+        }
+
+        function renderOpenRouterStats() {
+            const stats = data.openRouterData;
+            if (!stats) return;
+
+            const usage = stats.usage || 0;
+            const limit = stats.limit || 0;
+            const remaining = stats.limit_remaining ?? (limit - usage);
+            const isUnlimited = stats.is_free_tier === false && limit === 0;
+            const usagePercent = limit > 0 ? (usage / limit * 100) : 0;
+            const barColor = usagePercent > 80 ? 'from-red-500 to-red-600' : usagePercent > 50 ? 'from-yellow-500 to-amber-600' : 'from-emerald-500 to-teal-600';
+
+            document.getElementById('openRouterStats').innerHTML = `
+                <div class="text-center">
+                    <p class="text-4xl font-bold text-emerald-400">$${usage.toFixed(2)}</p>
+                    <p class="text-[10px] text-white/40 mt-1 uppercase tracking-wider">usado</p>
+                </div>
+                ${!isUnlimited ? `
+                <div class="mt-4">
+                    <div class="flex justify-between text-[10px] text-white/50 mb-1">
+                        <span>${usagePercent.toFixed(0)}%</span>
+                        <span>$${limit.toFixed(2)}</span>
+                    </div>
+                    <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r ${barColor} transition-all" style="width: ${usagePercent}%"></div>
+                    </div>
+                    <p class="text-center text-lg font-light text-white/70 mt-3">$${remaining.toFixed(2)} <span class="text-[10px] text-white/40">restante</span></p>
+                </div>
+                ` : '<p class="text-center text-cyan-400 mt-4">♾️ Pay-as-you-go</p>'}
+            `;
+        }
+
+        function saveOpenRouterKey() {
+            const key = document.getElementById('openRouterKey').value.trim();
+            if (!key) return alert('Digite a API Key!');
+            localStorage.setItem(OPENROUTER_KEY_STORAGE, key);
+            fetchOpenRouterUsage();
+            closeSettings();
+        }
+
+        function render() {
+            renderServices();
+            renderProjects();
+            renderQuickLinks();
+            renderAlerts();
+            renderOpenRouterStats();
+            updateClock();
+            const savedKey = localStorage.getItem(OPENROUTER_KEY_STORAGE);
+            if (savedKey) document.getElementById('openRouterKey').value = savedKey;
+        }
+
+        function renderServices() {
+            const container = document.getElementById('servicesList');
+            let totalBRL = 0;
+            const USD_TO_BRL = 5.5;
+
+            container.innerHTML = data.services.map(service => {
+                const iconData = SERVICE_ICONS[service.name] || SERVICE_ICONS['default'];
+                let cost = service.cost || 0;
+                let currencySymbol = service.currency === 'USD' ? '$' : 'R$';
+                totalBRL += service.currency === 'USD' ? cost * USD_TO_BRL : cost;
+                
+                const statusDot = service.status === 'free' ? 'bg-blue-500' : service.status === 'active' ? 'bg-emerald-500' : 'bg-red-500';
+                const daysUntil = service.dueDate ? getDaysUntil(service.dueDate) : null;
+                const dueBadge = daysUntil !== null && daysUntil <= 7 && daysUntil >= 0 ? 
+                    `<span class="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded text-[9px] ml-2">${daysUntil}d</span>` : '';
+
+                return `
+                    <div class="glass-card rounded-xl p-3 flex items-center justify-between cursor-pointer group" onclick="window.open('${service.url}', '_blank')">
+                        <div class="flex items-center gap-3">
+                            <div class="icon-box bg-gradient-to-br ${iconData.gradient} text-sm">${iconData.icon}</div>
+                            <div>
+                                <p class="font-medium text-sm text-white/90">${service.name}${dueBadge}</p>
+                                ${service.dueDate ? `<p class="text-[10px] text-white/40">${formatDate(service.dueDate)}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-mono text-sm ${cost === 0 ? 'text-white/30' : 'text-white/80'}">${cost === 0 ? '-' : currencySymbol + cost.toFixed(2)}</span>
+                            <span class="w-2 h-2 rounded-full ${statusDot}"></span>
+                            <button onclick="event.stopPropagation(); removeService(${service.id})" class="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all">✕</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('totalCost').textContent = `R$ ${totalBRL.toFixed(0)}`;
+        }
+
+        function renderProjects() {
+            const container = document.getElementById('projectsList');
+            container.innerHTML = data.projects.map(project => {
+                const statusColor = project.status === 'online' ? 'bg-emerald-500' : project.status === 'checking' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500';
+                return `
+                    <div class="glass-card rounded-xl p-4 ${project.url ? 'cursor-pointer' : ''} group" ${project.url ? `onclick="window.open('${project.url}', '_blank')"` : ''}>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xl">${project.icon}</span>
+                            <span class="w-2 h-2 rounded-full ${statusColor}"></span>
+                        </div>
+                        <p class="font-medium text-sm truncate">${project.name}</p>
+                        <p class="text-[10px] text-white/40">${project.version}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderQuickLinks() {
+            const container = document.getElementById('quickLinks');
+            container.innerHTML = data.quickLinks.map(link => `
+                <a href="${link.url}" target="_blank" class="glass-card rounded-xl px-4 py-2.5 flex items-center gap-2 hover:bg-white/10 transition-all group">
+                    <span>${link.icon}</span>
+                    <span class="text-sm">${link.name}</span>
+                    <button onclick="event.preventDefault(); event.stopPropagation(); removeQuickLink(${link.id})" class="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 ml-1 transition-all">✕</button>
+                </a>
+            `).join('');
+        }
+
+        function renderAlerts() {
+            const container = document.getElementById('alertsList');
+            const alerts = [];
+
+            data.services.forEach(s => {
+                if (s.dueDate) {
+                    const days = getDaysUntil(s.dueDate);
+                    if (days <= 7 && days >= 0) alerts.push({ type: days <= 3 ? 'urgent' : 'warning', message: `${s.name}: ${days}d`, icon: '⏰' });
+                    else if (days < 0) alerts.push({ type: 'urgent', message: `${s.name}: vencido!`, icon: '🚨' });
+                }
+            });
+
+            if (data.openRouterData) {
+                const percent = data.openRouterData.limit > 0 ? (data.openRouterData.usage / data.openRouterData.limit) * 100 : 0;
+                if (percent >= 90) alerts.push({ type: 'urgent', message: `OpenRouter: ${percent.toFixed(0)}%`, icon: '⚡' });
+                else if (percent >= 75) alerts.push({ type: 'warning', message: `OpenRouter: ${percent.toFixed(0)}%`, icon: '⚡' });
+            }
+
+            data.projects.forEach(p => {
+                if (p.status === 'offline') alerts.push({ type: 'warning', message: `${p.name}: offline`, icon: '📴' });
+            });
+
+            if (alerts.length === 0) {
+                container.innerHTML = '<p class="text-white/30 text-sm text-center py-6">✅ Tudo OK</p>';
+                return;
+            }
+
+            container.innerHTML = alerts.map(a => `
+                <div class="p-2.5 rounded-lg border ${a.type === 'urgent' ? 'bg-red-500/10 border-red-500/30 text-red-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'} text-xs flex items-center gap-2">
+                    <span>${a.icon}</span><span class="truncate">${a.message}</span>
+                </div>
+            `).join('');
+        }
+
+        function formatDate(d) { return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); }
+        function getDaysUntil(d) { const t = new Date(); t.setHours(0,0,0,0); const x = new Date(d); x.setHours(0,0,0,0); return Math.ceil((x-t)/(1000*60*60*24)); }
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('date').textContent = now.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+
+        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); document.getElementById('settingsModal').classList.add('flex'); }
+        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); document.getElementById('settingsModal').classList.remove('flex'); }
+
+        function addService() {
+            const name = document.getElementById('newServiceName').value.trim();
+            if (!name) return alert('Nome obrigatório!');
+            data.services.push({ id: Date.now(), name, cost: parseFloat(document.getElementById('newServiceCost').value) || 0, currency: 'BRL', dueDate: document.getElementById('newServiceDue').value || null, url: document.getElementById('newServiceUrl').value.trim() || '#', status: 'active' });
+            saveData(); render();
+            ['newServiceName','newServiceCost','newServiceDue','newServiceUrl'].forEach(id => document.getElementById(id).value = '');
+        }
+
+        function removeService(id) { if(confirm('Remover?')) { data.services = data.services.filter(s => s.id !== id); saveData(); render(); } }
+
+        function addProject() {
+            const name = document.getElementById('newProjectName').value.trim();
+            if (!name) return alert('Nome obrigatório!');
+            data.projects.push({ id: Date.now(), name, version: document.getElementById('newProjectVersion').value.trim() || '-', status: 'checking', url: document.getElementById('newProjectUrl').value.trim() || null, icon: '📁' });
+            saveData(); render(); checkAllProjects();
+            ['newProjectName','newProjectVersion','newProjectUrl'].forEach(id => document.getElementById(id).value = '');
+        }
+
+        function addQuickLink() {
+            const name = document.getElementById('newLinkName').value.trim();
+            const url = document.getElementById('newLinkUrl').value.trim();
+            if (!name || !url) return alert('Nome e URL obrigatórios!');
+            data.quickLinks.push({ id: Date.now(), name, url, icon: document.getElementById('newLinkIcon').value.trim() || '🔗' });
+            saveData(); render();
+            ['newLinkIcon','newLinkName','newLinkUrl'].forEach(id => document.getElementById(id).value = '');
+        }
+
+        function removeQuickLink(id) { data.quickLinks = data.quickLinks.filter(l => l.id !== id); saveData(); render(); }
+
+        async function checkAllProjects() {
+            for (const p of data.projects) {
+                if (p.url) {
+                    p.status = 'checking'; render();
+                    try {
+                        const c = new AbortController();
+                        const t = setTimeout(() => c.abort(), 5000);
+                        await fetch(p.url, { mode: 'no-cors', signal: c.signal });
+                        clearTimeout(t);
+                        p.status = 'online';
+                    } catch { p.status = 'offline'; }
+                }
+            }
+            saveData(); render();
+        }
+
+        // Init
+        render();
+        setInterval(updateClock, 1000);
+        if (localStorage.getItem(OPENROUTER_KEY_STORAGE)) { fetchOpenRouterUsage(); setInterval(fetchOpenRouterUsage, REFRESH_INTERVAL); }
+        setTimeout(checkAllProjects, 2000);
+        setInterval(checkAllProjects, REFRESH_INTERVAL);
+    </script>
+</body>
+</html>

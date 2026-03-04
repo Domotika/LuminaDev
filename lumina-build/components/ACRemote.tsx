@@ -87,10 +87,8 @@ export const ACRemote: React.FC<ACRemoteProps> = ({ device, onUpdate, allDevices
           const target = allDevices.find(d => d.id === mappedTargetId);
           if (target) {
               const cmd = (target.type === DeviceType.SWITCH || target.type === DeviceType.LIGHT) ? 'on' : 'push';
-              await sendHubitatCommand({
-                  deviceId: target.hubitatId,
-                  command: cmd
-              });
+              // CORRIGIDO: Parâmetros posicionais
+              await sendHubitatCommand(target.hubitatId, cmd);
               return; 
           }
       }
@@ -151,11 +149,8 @@ export const ACRemote: React.FC<ACRemoteProps> = ({ device, onUpdate, allDevices
   };
   
   const sendCommand = async (command: string, args: (string|number)[] = []) => {
-      await sendHubitatCommand({
-          deviceId: device.hubitatId,
-          command: command,
-          arguments: args
-      });
+      // CORRIGIDO: Parâmetros posicionais
+      await sendHubitatCommand(device.hubitatId, command, args.length > 0 ? args : undefined);
   };
 
   const handlePower = async () => {

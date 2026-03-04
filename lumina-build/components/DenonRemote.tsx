@@ -92,10 +92,8 @@ export const DenonRemote: React.FC<DenonRemoteProps> = ({ device, onUpdate, allD
           const target = allDevices.find(d => d.id === mappedTargetId);
           if (target) {
               const cmd = (target.type === DeviceType.SWITCH || target.type === DeviceType.LIGHT) ? 'on' : 'push';
-              await sendHubitatCommand({
-                  deviceId: target.hubitatId,
-                  command: cmd
-              });
+              // CORRIGIDO: Parâmetros posicionais
+              await sendHubitatCommand(target.hubitatId, cmd);
               return;
           }
       }
@@ -150,47 +148,34 @@ export const DenonRemote: React.FC<DenonRemoteProps> = ({ device, onUpdate, allD
   const handlePower = async () => {
       const newState = !device.state.isOn;
       onUpdate(device.id, { isOn: newState });
-      await sendHubitatCommand({
-          deviceId: device.hubitatId,
-          command: newState ? 'on' : 'off'
-      });
+      // CORRIGIDO: Parâmetros posicionais
+      await sendHubitatCommand(device.hubitatId, newState ? 'on' : 'off');
   };
 
   const handleMute = async () => {
       const newState = !device.state.mute;
       onUpdate(device.id, { mute: newState });
-      await sendHubitatCommand({
-          deviceId: device.hubitatId,
-          command: newState ? 'mute' : 'unmute'
-      });
+      // CORRIGIDO: Parâmetros posicionais
+      await sendHubitatCommand(device.hubitatId, newState ? 'mute' : 'unmute');
   };
 
   const handleVolumeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const vol = parseInt(e.target.value);
       onUpdate(device.id, { level: vol });
-      await sendHubitatCommand({
-          deviceId: device.hubitatId,
-          command: 'setLevel',
-          arguments: [vol]
-      });
+      // CORRIGIDO: Parâmetros posicionais
+      await sendHubitatCommand(device.hubitatId, 'setLevel', [vol]);
   };
 
   const handleInputSelect = async (inputValue: string) => {
       onUpdate(device.id, { input: inputValue });
-      await sendHubitatCommand({
-          deviceId: device.hubitatId,
-          command: 'SetInput',
-          arguments: [inputValue]
-      });
+      // CORRIGIDO: Parâmetros posicionais
+      await sendHubitatCommand(device.hubitatId, 'SetInput', [inputValue]);
   };
 
   const handleModeSelect = async (modeValue: string) => {
       onUpdate(device.id, { audioMode: modeValue });
-      await sendHubitatCommand({
-          deviceId: device.hubitatId,
-          command: 'SetAudioMode',
-          arguments: [modeValue]
-      });
+      // CORRIGIDO: Parâmetros posicionais
+      await sendHubitatCommand(device.hubitatId, 'SetAudioMode', [modeValue]);
   };
 
   return (

@@ -14,6 +14,11 @@ export enum DeviceType {
   PRESENCE = 'PRESENCE',
   WATER = 'WATER',
   SMOKE = 'SMOKE',
+  IR_REMOTE = 'IR_REMOTE',    // Molsmart GW8 IR/RF Remote (parent device)
+  BUTTON = 'BUTTON',          // Generic button / Child button from IR remote
+  CAMERA = 'CAMERA',          // IP Camera with snapshot/stream
+  ENERGY = 'ENERGY',          // Energy meter (power, consumption)
+  SOUNDSMART = 'SOUNDSMART',  // Molsmart/SoundSmart Multiroom Audio Player
 }
 
 export interface HubitatCommand {
@@ -82,6 +87,33 @@ export interface Device {
     valve?: string; // open, closed
     waterConsumed?: number; // Liters
     timerTimeLeft?: number; // seconds/minutes
+
+    // Campos para IR Remote (Molsmart GW8)
+    numberOfButtons?: number; // Total de botões do controle
+    lastAction?: string; // Última ação executada
+    parentDeviceId?: string; // ID do dispositivo pai (para child buttons)
+
+    // Campos para Câmeras (NOVO v1.6)
+    snapshotUrl?: string; // URL para imagem estática
+    streamUrl?: string; // URL para stream RTSP/MJPEG
+    lastSnapshot?: number; // Timestamp do último snapshot
+
+    // Campos para SoundSmart/Multiroom Audio (NOVO v1.6)
+    volume?: number; // 0-100
+    mute?: string; // muted, unmuted
+    status?: string; // stopped, playing, paused, loading
+    trackname?: string; // Nome da faixa atual
+    trackDescription?: string; // Descrição HTML com capa
+    URLLargeCoverFile?: string; // URL da capa do álbum
+    ImageLargeCover?: string; // HTML da capa grande
+
+    // Campos para Medidores de Energia (NOVO v1.6)
+    power?: number; // Watts (consumo instantâneo)
+    energy?: number; // kWh (consumo acumulado)
+    voltage?: number; // Volts
+    current?: number; // Amperes
+    energyToday?: number; // kWh hoje
+    energyCost?: number; // Custo estimado
   };
 }
 
@@ -96,4 +128,153 @@ export interface AppState {
   currentRoomId: string | null; // null means 'Home/Overview'
   rooms: Room[];
   devices: Record<string, Device>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  NOVAS INTERFACES v1.6 - Beta Features
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Favoritos / Quick Actions
+export interface Favorite {
+  deviceId: string;
+  order: number;
+}
+
+// Notificações / Alertas
+export interface Notification {
+  id: string;
+  deviceId: string;
+  type: 'alert' | 'warning' | 'info';
+  message: string;
+  timestamp: number;
+  read: boolean;
+}
+
+// Histórico de Eventos
+export interface EventLog {
+  id: string;
+  deviceId: string;
+  deviceName: string;
+  action: string;
+  value?: string | number;
+  timestamp: number;
+}
+
+// Configurações do Modo Kiosk
+export interface KioskConfig {
+  enabled: boolean;
+  hideSettingsAfter: number; // segundos, 0 = nunca
+  requirePinForSettings: boolean;
+  pin?: string;
+  autoRefresh: boolean;
+  refreshInterval: number; // segundos
+}
+
+// Configurações de Energia
+export interface EnergyConfig {
+  currency: string; // BRL, USD, EUR
+  kwhPrice: number; // Preço por kWh
+  showCost: boolean;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CÂMERAS IP - Sistema Independente (não são devices Hubitat)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type CameraStreamType = 'mjpeg' | 'snapshot' | 'rtsp';
+
+export interface IPCamera {
+  id: string;
+  name: string;
+  url: string; // URL principal (MJPEG, HTTP snapshot, ou RTSP)
+  streamType: CameraStreamType;
+  refreshInterval: number; // segundos (para snapshot)
+  snapshotUrl?: string; // URL opcional de snapshot para preview (útil para RTSP)
+  roomId?: string; // opcional: associar a um cômodo
+  order: number; // ordem de exibição
+}
+
+export interface CamerasConfig {
+  cameras: IPCamera[];
+  maxCameras: number; // máximo permitido (4)
+  showOnHome: boolean; // exibir na tela inicial
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  HOME WIDGETS - Widgets personalizáveis para tela inicial
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type HomeWidgetType = 
+  | 'clock'      // Relógio e data
+  | 'weather'    // Clima
+  | 'favorites'  // Favoritos
+  | 'energy'     // Consumo de energia
+  | 'cameras'    // Câmeras IP
+  | 'rss'        // Feed RSS
+  | 'youtube'    // Player YouTube
+  | 'spotify'    // Spotify Connect
+  | 'calendar'   // Google Calendar
+  | 'shortcuts'  // Atalhos rápidos
+  | 'iframe'     // iFrame customizado
+  | 'slideshow'  // Slideshow de fotos (URLs)
+  | 'qrcode'     // Gerador de QR Code
+  | 'text'       // Texto/Notas
+  | 'video';     // Embed de vídeo (YouTube, etc)
+
+export interface HomeWidget {
+  id: string;
+  type: HomeWidgetType;
+  title?: string;
+  enabled: boolean;
+  config: Record<string, any>; // Configurações específicas por tipo
+  // Grid position (react-grid-layout)
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  minW?: number;
+  minH?: number;
+}
+
+export interface HomeWidgetsConfig {
+  widgets: HomeWidget[];
+  gridCols: number;
+  rowHeight: number;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  WIDGET CONFIGS - Configurações específicas por tipo de widget
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface SlideshowConfig {
+  images: string[]; // URLs das imagens
+  interval: number; // segundos entre transições
+  transition: 'fade' | 'slide' | 'none';
+  showCaption: boolean;
+  captions?: string[]; // legendas opcionais
+}
+
+export interface QRCodeConfig {
+  content: string; // URL ou texto para gerar QR
+  size: number; // tamanho em pixels
+  label?: string; // texto abaixo do QR
+  foreground?: string; // cor do QR
+  background?: string; // cor de fundo
+}
+
+export interface TextWidgetConfig {
+  content: string; // conteúdo (suporta markdown básico)
+  fontSize: 'sm' | 'md' | 'lg' | 'xl';
+  textAlign: 'left' | 'center' | 'right';
+  scrolling: boolean; // ticker/marquee style
+  scrollSpeed?: number; // pixels por segundo
+}
+
+export interface VideoWidgetConfig {
+  url: string; // URL do YouTube ou embed
+  autoplay: boolean;
+  muted: boolean;
+  loop: boolean;
+  showControls: boolean;
 }

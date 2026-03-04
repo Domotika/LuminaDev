@@ -1,0 +1,7 @@
+{
+  "name": "Lumina Backgrounds",
+  "description": "A beautiful, interactive dashboard with dynamic backgrounds, weather, and AI-powered insights for your smart home display.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

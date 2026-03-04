@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Responsive, WidthProvider } from 'react-grid-layout';
-import { MOCK_DEVICES, MOCK_ROOMS } from './constants';
-import { AppState, Device, DeviceType, Room, HubitatConfig } from './types';
+import { MOCK_DEVICES, MOCK_ROOMS, OFFLINE_GRADIENTS } from './constants';
+import { AppState, Device, DeviceType, Room, HubitatConfig, Favorite, Notification, IPCamera, HomeWidget, SlideshowConfig, QRCodeConfig, TextWidgetConfig, VideoWidgetConfig } from './types';
 import { GlassCard } from './components/GlassCard';
 import { DeviceControl } from './components/DeviceControl';
 import { ImageEditorModal } from './components/ImageEditorModal';
@@ -18,8 +18,25 @@ import {
     saveBackgroundMapping, getBackgroundMapping, saveRoomImageMapping, getRoomImageMapping,
     saveRooms, getSavedRooms, saveLayouts, getLayouts, GridItem,
     syncToHubitat, syncFromHubitat, exportFullConfig, importFullConfig,
-    saveCustomDevice, getCustomDevices, removeCustomDevice
+    saveCustomDevice, getCustomDevices, removeCustomDevice,
+    // v1.6 Premium
+    getFavorites, saveFavorites, getNotifications, addNotification, getEnergyConfig,
+    // Câmeras IP
+    getCameras, addCamera, updateCamera, removeCamera, getCamerasByRoom,
+    // Home Widgets
+    getHomeWidgets, saveHomeWidgets, addHomeWidget, removeHomeWidget, updateHomeWidget,
+    // Room Import
+    fetchHubitatRooms, importRoomsFromHubitat
 } from './services/hubitatService';
+import { CameraCard } from './components/CameraCard';
+import { AddCameraModal } from './components/AddCameraModal';
+import { EnergyCard } from './components/EnergyCard';
+import { FavoritesBar } from './components/FavoritesBar';
+import { NotificationsPanel } from './components/NotificationsPanel';
+import { 
+    SlideshowWidget, QRCodeWidget, TextWidget, VideoWidget,
+    SlideshowEditor, QRCodeEditor, TextEditor, VideoEditor 
+} from './components/HomeWidgets';
 import { 
     generateInstallId, validateLicense, saveLicense, isAppRegistered 
 } from './services/licenseService';
@@ -27,7 +44,7 @@ import {
   getWeather, searchCity, getSavedWeatherConfig, saveWeatherConfig, getWeatherInfo, getDayName,
   WeatherConfig, WeatherData 
 } from './services/weatherService';
-import { ArrowLeft, Home, Grid, Settings, Zap, Shield, Thermometer, Save, X, LayoutDashboard, CloudSun, Droplets, Wind, Sun, CheckCircle, AlertTriangle, Wifi, Globe, Lock, WifiOff, Copy, Sliders, EyeOff, ChevronRight, Image as ImageIcon, Trash2, Upload, PenLine, Camera, Plus, LayoutTemplate, RefreshCcw, Cloud, Download,Terminal, MapPin, Search, Ban, Tv, Blinds, Layout, Layers } from 'lucide-react';
+import { ArrowLeft, Home, Grid, Settings, Zap, Shield, Thermometer, Save, X, LayoutDashboard, CloudSun, Droplets, Wind, Sun, CheckCircle, AlertTriangle, Wifi, Globe, Lock, WifiOff, Copy, Sliders, EyeOff, ChevronRight, ChevronUp, ChevronDown, Image as ImageIcon, Trash2, Upload, PenLine, Camera, Plus, LayoutTemplate, RefreshCcw, Cloud, Download, Terminal, MapPin, Search, Ban, Tv, Blinds, Layout, Layers, Bell, Star } from 'lucide-react';
 import { getIconForDevice } from './components/Icons';
 
 // Initialize React Grid Layout
@@ -44,7 +61,7 @@ const App = () => {
   // --- State ---
   const [isLocked, setIsLocked] = useState(() => {
     const saved = getConfig();
-    return saved?.enableLock !== false; // Default true
+    return saved?.enableLock === true; // Default false
   });
   const [state, setState] = useState<AppState>({
     currentRoomId: null,
@@ -73,7 +90,9 @@ const App = () => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pollingPaused = useRef(false);
-const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cloudSyncDone = useRef(false);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Settings State
   const [configForm, setConfigForm] = useState<HubitatConfig>({
@@ -109,6 +128,21 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [registrationKey, setRegistrationKey] = useState('');
   const [installId, setInstallId] = useState('');
 
+  // --- v1.6 Premium State ---
+  const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  
+  // --- Câmeras IP State ---
+  const [cameras, setCameras] = useState<IPCamera[]>([]);
+  const [showAddCameraModal, setShowAddCameraModal] = useState(false);
+  const [editingCamera, setEditingCamera] = useState<IPCamera | null>(null);
+
+  // --- Home Widgets State ---
+  const [homeWidgets, setHomeWidgets] = useState<HomeWidget[]>([]);
+  const [showAddWidgetMenu, setShowAddWidgetMenu] = useState(false);
+  const [editingWidget, setEditingWidget] = useState<{ type: string; widget?: HomeWidget } | null>(null);
+
   // --- Effects ---
   useEffect(() => {
     // Check Protocol and Origin
@@ -117,6 +151,42 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Clock Timer
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+
+    // AUTO-SETUP: Check URL for ?config= parameter (generated by Lumina Installer)
+    const urlParams = new URLSearchParams(window.location.search);
+    const configParam = urlParams.get('config');
+    if (configParam) {
+      try {
+        const decoded = decodeURIComponent(escape(atob(configParam)));
+        const setupConfig = JSON.parse(decoded);
+        console.log('[Lumina] Auto-setup: Config received from URL!');
+        
+        // Apply connection settings
+        if (setupConfig.hubIp && setupConfig.appId && setupConfig.accessToken) {
+          const newConfig: HubitatConfig = {
+            hubIp: setupConfig.hubIp,
+            appId: setupConfig.appId,
+            accessToken: setupConfig.accessToken,
+            hubUuid: setupConfig.hubUuid || '',
+            useCloud: false
+          };
+          saveConfig(newConfig);
+          setConfigForm(newConfig);
+          console.log('[Lumina] Auto-setup: Connection configured!');
+          
+          // Apply license if provided
+          if (setupConfig.license) {
+            saveLicense(setupConfig.license, newConfig.accessToken);
+            console.log('[Lumina] Auto-setup: License applied!');
+          }
+        }
+        
+        // Clean URL to hide config param (security)
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (e) {
+        console.error('[Lumina] Auto-setup: Invalid config parameter', e);
+      }
+    }
 
     // Load config on startup
     const savedConfig = getConfig();
@@ -163,6 +233,16 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
         }));
     }
 
+    // v1.6 Premium: Load Favorites and Notifications
+    setFavorites(getFavorites());
+    setNotifications(getNotifications());
+    
+    // v1.6: Load IP Cameras
+    setCameras(getCameras());
+
+    // v1.6: Load Home Widgets
+    setHomeWidgets(getHomeWidgets());
+
     return () => clearInterval(timer);
   }, []);
 
@@ -190,14 +270,96 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   loadRealDevices(true);
 
   const interval = setInterval(() => {
-    if (!pollingPaused.current) {   // ← ÚNICA linha adicionada
+    if (!pollingPaused.current) {
       loadRealDevices(true);
     }
   }, 2000); 
 
   return () => clearInterval(interval);
 }, [configForm.hubIp, configForm.useCloud, showDeviceManager]);
- 
+
+  // AUTO-SYNC: Load config from Hubitat on first successful connection
+  useEffect(() => {
+    const autoLoadFromCloud = async () => {
+      if (cloudSyncDone.current) return;
+      const config = getConfig();
+      if (!config || !config.accessToken) return;
+      
+      // Try to load from Hubitat
+      console.log('[Lumina] Auto-sync: Loading config from Hubitat...');
+      const result = await syncFromHubitat('LuminaData');
+      
+      if (result.success) {
+        console.log('[Lumina] Auto-sync: Config loaded from Hubitat!');
+        // Reload state after import
+        setState(prev => ({ ...prev, rooms: getSavedRooms() || MOCK_ROOMS }));
+        setCustomBackgrounds(getBackgroundMapping());
+        setCustomRoomImages(getRoomImageMapping());
+        setLayouts(getLayouts());
+      } else {
+        console.log('[Lumina] Auto-sync: No cloud config found, using local.');
+      }
+      cloudSyncDone.current = true;
+    };
+    
+    // Only run after connection is established
+    if (!isOffline && configForm.accessToken) {
+      autoLoadFromCloud();
+    }
+  }, [isOffline, configForm.accessToken]);
+
+  // AUTO-SAVE: Debounced save to Hubitat when config changes
+  const triggerAutoSave = () => {
+    if (!configForm.accessToken) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    
+    autoSaveTimer.current = setTimeout(async () => {
+      console.log('[Lumina] Auto-sync: Saving config to Hubitat...');
+      const result = await syncToHubitat('LuminaData');
+      if (result.success) {
+        console.log('[Lumina] Auto-sync: Config saved!');
+      }
+    }, 5000); // 5 seconds debounce
+  };
+
+  // v1.6 Premium: Previous sensor states for comparison
+  const prevSensorStates = useRef<Record<string, boolean>>({});
+
+  // v1.6 Premium: Auto-notifications for security sensors
+  useEffect(() => {
+    const securityTypes = [DeviceType.WATER, DeviceType.SMOKE, DeviceType.MOTION, DeviceType.PRESENCE, DeviceType.LOCK];
+    const securityDevices = Object.values(state.devices).filter(d => securityTypes.includes(d.type));
+    
+    securityDevices.forEach(device => {
+      const prevState = prevSensorStates.current[device.id];
+      let currentAlertState = false;
+      let alertMessage = '';
+      let alertType: 'alert' | 'warning' | 'info' = 'info';
+      
+      // Check for alert conditions
+      if (device.type === DeviceType.WATER && device.state.water === 'wet') {
+        currentAlertState = true;
+        alertMessage = `💧 ${device.name}: Vazamento detectado!`;
+        alertType = 'alert';
+      } else if (device.type === DeviceType.SMOKE && (device.state.smoke === 'detected' || device.state.carbonMonoxide === 'detected')) {
+        currentAlertState = true;
+        alertMessage = `🔥 ${device.name}: ${device.state.smoke === 'detected' ? 'Fumaça' : 'CO'} detectado!`;
+        alertType = 'alert';
+      } else if (device.type === DeviceType.LOCK && device.state.isLocked === false) {
+        currentAlertState = true;
+        alertMessage = `🔓 ${device.name}: Destrancada`;
+        alertType = 'warning';
+      }
+      
+      // Create notification only when state changes to alert
+      if (currentAlertState && prevState === false) {
+        addNotification({ deviceId: device.id, type: alertType, message: alertMessage });
+        setNotifications(getNotifications());
+      }
+      
+      prevSensorStates.current[device.id] = currentAlertState;
+    });
+  }, [state.devices]);
 
   // Close Menu when clicking outside
   useEffect(() => {
@@ -282,6 +444,21 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
       return room.image;
   };
 
+  // Helper para formatar backgroundImage (suporta gradientes CSS e URLs)
+  // Quando é URL, adiciona gradiente como fallback (aparece se imagem não carregar)
+  const formatBgImage = (imageOrGradient: string) => {
+      if (!imageOrGradient) return OFFLINE_GRADIENTS.default;
+      // Se começa com linear-gradient, radial-gradient, etc - usar diretamente
+      if (imageOrGradient.startsWith('linear-gradient') || 
+          imageOrGradient.startsWith('radial-gradient') ||
+          imageOrGradient.startsWith('conic-gradient')) {
+          return imageOrGradient;
+      }
+      // Se é URL (http/https ou data:), adiciona gradiente como fallback
+      // CSS multiple backgrounds: imagem na frente, gradiente atrás
+      return `url(${imageOrGradient}), ${OFFLINE_GRADIENTS.default}`;
+  };
+
   // --- Handlers ---
   const handleRoomSelect = (roomId: string) => {
     setState(prev => ({ ...prev, currentRoomId: roomId }));
@@ -319,7 +496,9 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   };
 
   const handleSaveSettings = async () => {
+    console.log('[Lumina] Saving config:', JSON.stringify(configForm));
     saveConfig(configForm);
+    console.log('[Lumina] Saved! Verify:', localStorage.getItem('lumina_hubitat_config'));
     
     if (configForm.enableLock === false) {
         setIsLocked(false);
@@ -409,6 +588,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
       const updatedLayouts = { ...layouts, [layoutKey]: newLayout };
       setLayouts(updatedLayouts);
       saveLayouts(updatedLayouts);
+      triggerAutoSave();
   };
 
   const generateDefaultLayout = (devices: any[], keyPrefix: string) => {
@@ -417,7 +597,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
           x: (index % 4) * 1, // Standard 4 columns
           y: Math.floor(index / 4),
           w: 1,
-          h: (d.type === DeviceType.AC || d.type === DeviceType.AVR || d.type === DeviceType.TV) ? 2 : 1 // Remotes are taller
+          h: (d.type === DeviceType.AC || d.type === DeviceType.AVR || d.type === DeviceType.TV || d.type === DeviceType.IR_REMOTE) ? 2 : 1 // Remotes are taller
       }));
   };
 
@@ -432,6 +612,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
      const currentMapping = getDeviceMapping();
      currentMapping[deviceId] = newRoomId;
      saveDeviceMapping(currentMapping);
+     triggerAutoSave();
   };
 
   const handleDuplicateDevice = (device: Device) => {
@@ -450,6 +631,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     saveDeviceMapping(currentMapping);
     
     if (newId.startsWith('virtual_')) saveCustomDevice(newDevice);
+    triggerAutoSave();
   };
 
   const handleDeleteDevice = (deviceId: string) => {
@@ -460,6 +642,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
             delete newDevices[deviceId];
             setState(prev => ({ ...prev, devices: newDevices }));
             removeCustomDevice(deviceId);
+            triggerAutoSave();
         }
     } else {
         // Just hide it
@@ -485,6 +668,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
           currentMapping[deviceId] = targetId;
       }
       saveActionMapping(currentMapping);
+      triggerAutoSave();
   };
 
   const handleRenameDevice = (deviceId: string, newName: string) => {
@@ -507,6 +691,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
           const d = state.devices[deviceId];
           if(d) saveCustomDevice({ ...d, name: newName });
       }
+      triggerAutoSave();
   };
 
   // --- Virtual Device Creation ---
@@ -541,6 +726,12 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
       } else if (type === DeviceType.PRESENCE) {
           name = 'Novo Sensor de Presença';
           initialState = { isOn: false, presence: 'not present' } as any;
+      } else if (type === DeviceType.WATER) {
+          name = 'Novo Sensor de Inundação';
+          initialState = { isOn: false, water: 'dry' } as any;
+      } else if (type === DeviceType.SMOKE) {
+          name = 'Novo Sensor de Fumaça';
+          initialState = { isOn: false, smoke: 'clear' } as any;
       }
 
       const newDevice: Device = {
@@ -560,7 +751,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
       } else if (activeTab === 'devices') {
           if (type === DeviceType.AC || type === DeviceType.THERMOSTAT) layoutKey = 'devices_climate';
           else if (type === DeviceType.BLIND) layoutKey = 'devices_blinds';
-          else if (type === DeviceType.LOCK) layoutKey = 'devices_security';
+          else if (type === DeviceType.LOCK || type === DeviceType.WATER || type === DeviceType.SMOKE || type === DeviceType.MOTION || type === DeviceType.PRESENCE) layoutKey = 'devices_security';
       } else if (activeTab === 'media') {
           layoutKey = 'media';
       }
@@ -574,7 +765,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
               x: 0,
               y: maxY,
               w: 1,
-              h: (type === DeviceType.AC || type === DeviceType.TV || type === DeviceType.AVR) ? 2 : 1
+              h: (type === DeviceType.AC || type === DeviceType.TV || type === DeviceType.AVR || type === DeviceType.IR_REMOTE) ? 2 : 1
           };
 
           const newLayouts = {
@@ -596,6 +787,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
       mapping[newId] = roomId;
       saveDeviceMapping(mapping);
       saveCustomDevice(newDevice);
+      triggerAutoSave();
 
       setShowMenu(false);
   };
@@ -613,6 +805,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     setState(prev => ({ ...prev, rooms: updatedRooms }));
     saveRooms(updatedRooms);
     setNewRoomName('');
+    triggerAutoSave();
   };
 
   const handleDeleteRoom = (roomId: string) => {
@@ -620,6 +813,51 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
         const updatedRooms = state.rooms.filter(r => r.id !== roomId);
         setState(prev => ({ ...prev, rooms: updatedRooms }));
         saveRooms(updatedRooms);
+        triggerAutoSave();
+    }
+  };
+
+  const [importingRooms, setImportingRooms] = useState(false);
+  const handleImportRooms = async () => {
+    if (!getConfig()) {
+      alert('Configure a conexão com o Hubitat primeiro!');
+      return;
+    }
+    if (!confirm('Importar ambientes do Hubitat? Isso criará novos ambientes baseados nos rooms configurados no seu hub.')) return;
+    setImportingRooms(true);
+    try {
+      // 1. Buscar rooms do Hubitat
+      const hubitatData = await fetchHubitatRooms();
+      if (!hubitatData || hubitatData.rooms.length === 0) {
+        alert('❌ Nenhum room encontrado no Hubitat.\n\nVerifique se seus dispositivos têm rooms atribuídos no Hubitat.');
+        return;
+      }
+      
+      // 2. Importar rooms
+      const { newRooms, updatedDeviceMapping } = await importRoomsFromHubitat(
+        hubitatData.rooms,
+        hubitatData.deviceRoomMap,
+        state.rooms
+      );
+      
+      if (newRooms.length === 0) {
+        alert('ℹ️ Todos os ambientes do Hubitat já existem no Lumina.');
+        return;
+      }
+      
+      // 3. Atualizar estado
+      const allRooms = [...state.rooms, ...newRooms];
+      setState(prev => ({ ...prev, rooms: allRooms }));
+      saveRooms(allRooms);
+      saveDeviceMapping(updatedDeviceMapping);
+      triggerAutoSave();
+      
+      const devicesMapped = Object.keys(updatedDeviceMapping).length;
+      alert(`✅ Importação concluída!\n\n🏠 Ambientes criados: ${newRooms.length}\n📱 Dispositivos mapeados: ${devicesMapped}`);
+    } catch (e: any) {
+      alert(`Erro ao importar: ${e.message}`);
+    } finally {
+      setImportingRooms(false);
     }
   };
 
@@ -633,6 +871,125 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     }
   };
   const handleRemoveLogo = () => { setCustomLogo(null); saveLogo(null); };
+
+  // v1.6 Premium: Favorites Handler
+  const handleToggleFavorite = (deviceId: string) => {
+    const currentFavorites = [...favorites];
+    const existingIndex = currentFavorites.findIndex(f => f.deviceId === deviceId);
+    
+    if (existingIndex >= 0) {
+      // Remove from favorites
+      currentFavorites.splice(existingIndex, 1);
+    } else {
+      // Add to favorites (max 5)
+      if (currentFavorites.length >= 5) {
+        alert('Máximo de 5 favoritos. Remova um antes de adicionar outro.');
+        return;
+      }
+      currentFavorites.push({ deviceId, order: currentFavorites.length });
+    }
+    
+    setFavorites(currentFavorites);
+    saveFavorites(currentFavorites);
+    triggerAutoSave();
+  };
+
+  const isFavorite = (deviceId: string) => favorites.some(f => f.deviceId === deviceId);
+
+  // v1.6: Reorder Favorites
+  const handleMoveFavorite = (deviceId: string, direction: 'up' | 'down') => {
+    const currentFavorites = [...favorites];
+    const index = currentFavorites.findIndex(f => f.deviceId === deviceId);
+    if (index === -1) return;
+    
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= currentFavorites.length) return;
+    
+    // Swap positions
+    [currentFavorites[index], currentFavorites[newIndex]] = [currentFavorites[newIndex], currentFavorites[index]];
+    
+    // Update order numbers
+    currentFavorites.forEach((fav, i) => fav.order = i);
+    
+    setFavorites(currentFavorites);
+    saveFavorites(currentFavorites);
+    triggerAutoSave();
+  };
+
+  // v1.6: Camera Handlers
+  const handleAddCamera = (cameraData: Omit<IPCamera, 'id' | 'order'>) => {
+    if (editingCamera) {
+      // Editing existing camera
+      updateCamera(editingCamera.id, cameraData);
+      setCameras(getCameras());
+      setEditingCamera(null);
+      triggerAutoSave();
+    } else {
+      // Adding new camera
+      const newCamera = addCamera(cameraData);
+      if (newCamera) {
+        setCameras(getCameras());
+        triggerAutoSave();
+      } else {
+        alert('Limite de 4 câmeras atingido.');
+      }
+    }
+  };
+
+  const handleEditCamera = (camera: IPCamera) => {
+    setEditingCamera(camera);
+    setShowAddCameraModal(true);
+  };
+
+  const handleCloseAddCameraModal = () => {
+    setShowAddCameraModal(false);
+    setEditingCamera(null);
+  };
+
+  const handleRemoveCamera = (cameraId: string) => {
+    if (confirm('Remover esta câmera?')) {
+      removeCamera(cameraId);
+      setCameras(getCameras());
+      triggerAutoSave();
+    }
+  };
+
+  // v1.6: Home Widget Handlers
+  const handleAddWidget = (type: string) => {
+    const defaultConfigs: Record<string, any> = {
+      slideshow: { images: [], interval: 10, transition: 'fade', showCaption: false },
+      qrcode: { content: '', size: 150, label: '' },
+      text: { content: '', fontSize: 'md', textAlign: 'left', scrolling: false },
+      video: { url: '', autoplay: false, muted: true, loop: false, showControls: true }
+    };
+    
+    const newWidget = addHomeWidget({
+      type: type as any,
+      enabled: true,
+      config: defaultConfigs[type] || {},
+      x: 0, y: 0, w: 2, h: 2
+    });
+    setHomeWidgets(getHomeWidgets());
+    setShowAddWidgetMenu(false);
+    // Open editor immediately
+    setEditingWidget({ type, widget: newWidget });
+    triggerAutoSave();
+  };
+
+  const handleUpdateWidget = (widgetId: string, config: any) => {
+    updateHomeWidget(widgetId, { config });
+    setHomeWidgets(getHomeWidgets());
+    setEditingWidget(null);
+    triggerAutoSave();
+  };
+
+  const handleRemoveWidget = (widgetId: string) => {
+    if (confirm('Remover este widget?')) {
+      removeHomeWidget(widgetId);
+      setHomeWidgets(getHomeWidgets());
+      triggerAutoSave();
+    }
+  };
 
   const handleCitySearch = async () => {
       if (!citySearchQuery || citySearchQuery.length < 3) return;
@@ -692,6 +1049,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
       }
       setIsImageEditorOpen(false);
       setEditingTarget(null);
+      triggerAutoSave();
   };
 
   // Render Grid Wrapper
@@ -760,6 +1118,16 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
                                 onAssignAction={handleRoomAssignmentChange}
                                 onDelete={handleDeleteDevice}
                                 onBeforeCommand={() => pausePolling(4000)}
+                            />
+                        ) : device.type === DeviceType.CAMERA ? (
+                            <CameraCard 
+                                device={device}
+                                onUpdate={handleDeviceUpdate}
+                            />
+                        ) : device.type === DeviceType.ENERGY ? (
+                            <EnergyCard 
+                                device={device}
+                                onUpdate={handleDeviceUpdate}
                             />
                         ) : (
                             <DeviceControl 
@@ -892,24 +1260,217 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Main Content Renderer ---
   const renderContent = () => {
-    // 1. Home View
+    // 1. Home View (v1.6 Premium - with Favorites and Energy Summary)
     if (activeTab === 'home') {
+        // Get energy devices for summary
+        const energyDevices = allDevices.filter(d => d.type === DeviceType.ENERGY);
+        const totalPower = energyDevices.reduce((sum, d) => sum + (d.state.power || 0), 0);
+        
         return (
-            <div className="flex flex-col items-center justify-center h-[75vh] w-full animate-in fade-in duration-700 gap-16 md:gap-32 relative">
-                <div className="text-center relative">
-                   <h1 className="text-5xl md:text-7xl font-thin tracking-tighter text-white drop-shadow-2xl">
-                     {currentTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                   </h1>
-                   <div className="flex items-center justify-center gap-2 mt-2">
-                        <div className="h-px w-6 bg-white/30" />
-                        <p className="text-xs font-light text-white/80 tracking-[0.2em] uppercase">
-                            {currentTime.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                        </p>
-                        <div className="h-px w-6 bg-white/30" />
-                   </div>
-                   <p className="absolute -bottom-8 left-0 right-0 text-center text-[10px] text-white/50 font-light">
-                       {activeDevicesCount} dispositivos ativos
-                   </p>
+            <div className="flex flex-col items-center w-full animate-in fade-in duration-700 pt-8">
+                {/* Favorites Bar (v1.6 Premium) */}
+                {favorites.length > 0 && (
+                    <div className="w-full max-w-4xl px-4 mb-8">
+                        <FavoritesBar 
+                            favorites={favorites}
+                            devices={state.devices}
+                            onDeviceUpdate={handleDeviceUpdate}
+                        />
+                    </div>
+                )}
+
+                {/* Clock & Date */}
+                <div className="flex flex-col items-center justify-center flex-1 gap-8">
+                    <div className="text-center relative">
+                       <h1 className="text-5xl md:text-7xl font-thin tracking-tighter text-white drop-shadow-2xl">
+                         {currentTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                       </h1>
+                       <div className="flex items-center justify-center gap-2 mt-2">
+                            <div className="h-px w-6 bg-white/30" />
+                            <p className="text-xs font-light text-white/80 tracking-[0.2em] uppercase">
+                                {currentTime.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </p>
+                            <div className="h-px w-6 bg-white/30" />
+                       </div>
+                       <p className="mt-4 text-[10px] text-white/50 font-light">
+                           {activeDevicesCount} dispositivos ativos
+                       </p>
+                    </div>
+
+                    {/* Weather Widget (Home) */}
+                    {weatherData && (
+                        <div 
+                            onClick={() => setShowWeatherSettings(true)}
+                            className="flex items-center gap-4 px-6 py-3 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 cursor-pointer hover:bg-white/10 transition-all"
+                        >
+                            {(() => {
+                                const info = getWeatherInfo(weatherData.current.code, weatherData.current.isDay);
+                                const WeatherIcon = info.icon;
+                                return (
+                                    <>
+                                        <WeatherIcon size={32} className={`${info.color} drop-shadow-lg`} strokeWidth={1.5} />
+                                        <div className="flex flex-col">
+                                            <span className="text-2xl font-light tracking-tight leading-none">
+                                                {weatherData.current.temperature}°
+                                            </span>
+                                            <span className="text-[9px] uppercase tracking-widest text-white/50 mt-0.5">
+                                                {info.label}
+                                            </span>
+                                        </div>
+                                        <div className="h-8 w-px bg-white/10 mx-2" />
+                                        <div className="flex flex-col items-start">
+                                            <span className="text-xs font-medium">{weatherConfig?.city || '--'}</span>
+                                            <div className="flex gap-2 text-[10px] text-white/40">
+                                                <span>↑ {weatherData.daily[0]?.max}°</span>
+                                                <span>↓ {weatherData.daily[0]?.min}°</span>
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    )}
+
+                    {/* Energy Summary Widget (v1.6 Premium) */}
+                    {energyDevices.length > 0 && totalPower > 0 && (
+                        <div className="flex items-center gap-3 px-4 py-2 bg-white/5 backdrop-blur-lg rounded-full border border-white/10">
+                            <Zap size={16} className="text-yellow-400" />
+                            <span className="text-sm text-white/80">
+                                {totalPower.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} W
+                            </span>
+                            <span className="text-[10px] text-white/40">consumo atual</span>
+                        </div>
+                    )}
+                </div>
+                
+                {/* v1.6: IP Cameras Grid */}
+                {cameras.length > 0 && (
+                    <div className="w-full max-w-6xl px-4 mt-8">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Camera size={16} className="text-blue-400" />
+                            <h3 className="text-sm font-medium text-white/80">Câmeras</h3>
+                        </div>
+                        <div className={`grid gap-4 ${cameras.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : cameras.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-2'}`}>
+                            {cameras.map(cam => (
+                                <CameraCard 
+                                    key={cam.id} 
+                                    camera={cam} 
+                                    compact={cameras.length > 2}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* v1.6: Home Widgets Grid */}
+                {homeWidgets.length > 0 && (
+                    <div className="w-full max-w-6xl px-4 mt-8">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <LayoutTemplate size={16} className="text-purple-400" />
+                                <h3 className="text-sm font-medium text-white/80">Widgets</h3>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {homeWidgets.map(widget => (
+                                <div key={widget.id} className="relative group h-48">
+                                    {widget.type === 'slideshow' && (
+                                        <SlideshowWidget 
+                                            config={widget.config as SlideshowConfig}
+                                            onEdit={() => setEditingWidget({ type: 'slideshow', widget })}
+                                        />
+                                    )}
+                                    {widget.type === 'qrcode' && (
+                                        <QRCodeWidget 
+                                            config={widget.config as QRCodeConfig}
+                                            onEdit={() => setEditingWidget({ type: 'qrcode', widget })}
+                                        />
+                                    )}
+                                    {widget.type === 'text' && (
+                                        <TextWidget 
+                                            config={widget.config as TextWidgetConfig}
+                                            onEdit={() => setEditingWidget({ type: 'text', widget })}
+                                        />
+                                    )}
+                                    {widget.type === 'video' && (
+                                        <VideoWidget 
+                                            config={widget.config as VideoWidgetConfig}
+                                            onEdit={() => setEditingWidget({ type: 'video', widget })}
+                                        />
+                                    )}
+                                    {/* Delete button */}
+                                    <button
+                                        onClick={() => handleRemoveWidget(widget.id)}
+                                        className="absolute top-2 left-2 p-1.5 bg-red-500/80 hover:bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all z-20"
+                                    >
+                                        <Trash2 size={12} className="text-white" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Add Widget Button */}
+                <div className="w-full max-w-6xl px-4 mt-8 pb-24">
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowAddWidgetMenu(!showAddWidgetMenu)}
+                            className="w-full py-4 border-2 border-dashed border-white/20 hover:border-white/40 rounded-2xl flex items-center justify-center gap-2 text-white/40 hover:text-white/60 transition-all"
+                        >
+                            <Plus size={20} />
+                            <span className="text-sm">Adicionar Widget</span>
+                        </button>
+                        
+                        {/* Widget Type Menu */}
+                        {showAddWidgetMenu && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900/95 border border-white/10 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white/40 border-b border-white/5">
+                                    Escolha o tipo
+                                </div>
+                                <button
+                                    onClick={() => handleAddWidget('slideshow')}
+                                    className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-3"
+                                >
+                                    <ImageIcon size={18} className="text-blue-400" />
+                                    <div>
+                                        <div className="font-medium">Slideshow</div>
+                                        <div className="text-[10px] text-white/40">Fotos rotativas com transição</div>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => handleAddWidget('video')}
+                                    className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-3"
+                                >
+                                    <Tv size={18} className="text-red-400" />
+                                    <div>
+                                        <div className="font-medium">Vídeo</div>
+                                        <div className="text-[10px] text-white/40">YouTube embed</div>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => handleAddWidget('qrcode')}
+                                    className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-3"
+                                >
+                                    <Grid size={18} className="text-green-400" />
+                                    <div>
+                                        <div className="font-medium">QR Code</div>
+                                        <div className="text-[10px] text-white/40">Gerador de QR Code</div>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => handleAddWidget('text')}
+                                    className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex items-center gap-3"
+                                >
+                                    <LayoutDashboard size={18} className="text-yellow-400" />
+                                    <div>
+                                        <div className="font-medium">Texto</div>
+                                        <div className="text-[10px] text-white/40">Notas e avisos</div>
+                                    </div>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -936,7 +1497,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
                             >
                                 <div 
                                     className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-                                    style={{ backgroundImage: `url(${bgImage})` }}
+                                    style={{ backgroundImage: formatBgImage(bgImage) }}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                                 <button
@@ -972,11 +1533,14 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
         return <>{renderHeader("Cenas")}{renderGridLayout(scenes)}</>;
     }
 
-    // 4. UNIFIED DEVICES TAB (Climate + Security + Blinds)
+    // 4. UNIFIED DEVICES TAB (Climate + Security + Blinds + Cameras + Energy)
     if (activeTab === 'devices') {
         const climateDevices = allDevices.filter(d => (d.type === DeviceType.THERMOSTAT || d.type === DeviceType.AC) && d.roomId !== 'hidden');
         const blindDevices = allDevices.filter(d => d.type === DeviceType.BLIND && d.roomId !== 'hidden');
-        const securityDevices = allDevices.filter(d => (d.type === DeviceType.LOCK || d.type === DeviceType.MOTION || d.type === DeviceType.PRESENCE) && d.roomId !== 'hidden');
+        const securityDevices = allDevices.filter(d => (d.type === DeviceType.LOCK || d.type === DeviceType.MOTION || d.type === DeviceType.PRESENCE || d.type === DeviceType.WATER || d.type === DeviceType.SMOKE) && d.roomId !== 'hidden');
+        // v1.6 Premium: Cameras and Energy
+        const cameraDevices = allDevices.filter(d => d.type === DeviceType.CAMERA && d.roomId !== 'hidden');
+        const energyDevices = allDevices.filter(d => d.type === DeviceType.ENERGY && d.roomId !== 'hidden');
         
         const currentWeatherInfo = weatherData ? getWeatherInfo(weatherData.current.code, weatherData.current.isDay) : { icon: Sun, label: '--', color: 'text-white' };
         const CurrentIcon = currentWeatherInfo.icon;
@@ -1025,6 +1589,18 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
                                 >
                                     <Shield size={14} className="text-orange-400" /> Adicionar Sensor Pres.
                                 </button>
+                                <button 
+                                    onClick={() => handleAddVirtualDevice(DeviceType.WATER)}
+                                    className="w-full text-left px-4 py-3 text-xs text-white hover:bg-white/10 flex items-center gap-2"
+                                >
+                                    💧 Adicionar Sensor Inundação
+                                </button>
+                                <button 
+                                    onClick={() => handleAddVirtualDevice(DeviceType.SMOKE)}
+                                    className="w-full text-left px-4 py-3 text-xs text-white hover:bg-white/10 flex items-center gap-2"
+                                >
+                                    🔥 Adicionar Sensor Fumaça
+                                </button>
                             </div>
                         )}
                     </div>
@@ -1040,41 +1616,6 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
                         >
                             <Settings size={16} />
                         </button>
-
-                        {/* Weather Settings Overlay */}
-                        {showWeatherSettings && (
-                            <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-xl rounded-3xl p-6 flex flex-col animate-in fade-in zoom-in-95">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-sm font-bold uppercase tracking-widest text-white/70 flex items-center gap-2"><MapPin size={14}/> Definir Local</h3>
-                                    <button onClick={() => setShowWeatherSettings(false)}><X size={18} className="text-white/50 hover:text-white" /></button>
-                                </div>
-                                <div className="flex gap-2 mb-4">
-                                    <input 
-                                        type="text" 
-                                        value={citySearchQuery}
-                                        onChange={(e) => setCitySearchQuery(e.target.value)}
-                                        placeholder="Buscar cidade..."
-                                        onKeyDown={(e) => e.key === 'Enter' && handleCitySearch()}
-                                        className="flex-1 bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30"
-                                    />
-                                    <button onClick={handleCitySearch} className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-500/30 px-3 rounded-lg flex items-center justify-center">
-                                        {isSearchingCity ? <RefreshCcw size={16} className="animate-spin"/> : <Search size={16} />}
-                                    </button>
-                                </div>
-                                <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2">
-                                    {citySearchResults.map((city, idx) => (
-                                        <button 
-                                            key={idx}
-                                            onClick={() => handleSelectCity(city)}
-                                            className="text-left px-3 py-2 rounded hover:bg-white/10 text-xs flex flex-col"
-                                        >
-                                            <span className="font-bold text-white">{city.name}</span>
-                                            <span className="text-white/50">{city.admin1}, {city.country}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
 
                         {/* Current Weather Row */}
                         <div className="flex flex-row items-center justify-between gap-5 mb-6">
@@ -1155,7 +1696,29 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
                     </div>
                 )}
 
-                {climateDevices.length === 0 && blindDevices.length === 0 && securityDevices.length === 0 && (
+                {/* v1.6 Premium: Cameras Grid */}
+                {cameraDevices.length > 0 && (
+                    <div className="mb-10">
+                        <div className="flex items-center gap-2 mb-4 px-1 opacity-70">
+                            <Camera size={16} />
+                            <h2 className="text-sm font-medium uppercase tracking-widest">Câmeras</h2>
+                        </div>
+                        {renderGridLayout(cameraDevices, 'cameras')}
+                    </div>
+                )}
+
+                {/* v1.6 Premium: Energy Grid */}
+                {energyDevices.length > 0 && (
+                    <div className="mb-10">
+                        <div className="flex items-center gap-2 mb-4 px-1 opacity-70">
+                            <Zap size={16} />
+                            <h2 className="text-sm font-medium uppercase tracking-widest">Energia</h2>
+                        </div>
+                        {renderGridLayout(energyDevices, 'energy')}
+                    </div>
+                )}
+
+                {climateDevices.length === 0 && blindDevices.length === 0 && securityDevices.length === 0 && cameraDevices.length === 0 && energyDevices.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-20 text-white/30">
                         <p>Nenhum dispositivo encontrado.</p>
                         <p className="text-xs mt-1">Adicione-os nos menus de cada ambiente.</p>
@@ -1167,7 +1730,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Media Tab
     if (activeTab === 'media') {
-        const mediaDevices = allDevices.filter(d => (d.type === DeviceType.MEDIA || d.type === DeviceType.AVR || d.type === DeviceType.TV) && d.roomId !== 'hidden');
+        const mediaDevices = allDevices.filter(d => (d.type === DeviceType.MEDIA || d.type === DeviceType.AVR || d.type === DeviceType.TV || d.type === DeviceType.IR_REMOTE) && d.roomId !== 'hidden');
         return (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
                 {renderHeader("Mídia", "Áudio e Vídeo", (
@@ -1192,6 +1755,12 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
                                     className="w-full text-left px-4 py-3 text-xs text-white hover:bg-white/10 flex items-center gap-2"
                                 >
                                     <Tv size={14} className="text-orange-400" /> Adicionar Receiver
+                                </button>
+                                <button 
+                                    onClick={() => handleAddVirtualDevice(DeviceType.IR_REMOTE)}
+                                    className="w-full text-left px-4 py-3 text-xs text-white hover:bg-white/10 flex items-center gap-2"
+                                >
+                                    <Tv size={14} className="text-purple-400" /> Adicionar Controle IR
                                 </button>
                             </div>
                         )}
@@ -1256,7 +1825,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
                 <div className="flex justify-center mt-6">
                     <GlassCard className="w-full max-w-lg p-8 bg-white/5 border-white/10">
                          <h2 className="text-xl font-light mb-6 flex items-center gap-2"><Zap size={20} /> Conexão Maker API</h2>
-                        {isHttps && (<div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-200 text-xs"><p className="flex items-center gap-2 font-bold mb-2 text-red-100"><Lock size={14} /> HTTPS Detectado</p><button onClick={handleSwitchToHttp} className="w-full bg-red-500/20 hover:bg-red-500/30 text-white border border-red-500/30 py-2 rounded px-4 transition-colors flex items-center justify-center gap-2"><Globe size={14} /> Mudar para HTTP (Recomendado)</button></div>)}
+                        {isHttps && !configForm.useCloud && !window.location.hostname.includes('web.app') && !window.location.hostname.includes('firebaseapp.com') && (<div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-200 text-xs"><p className="flex items-center gap-2 font-bold mb-2 text-red-100"><Lock size={14} /> HTTPS Detectado</p><button onClick={handleSwitchToHttp} className="w-full bg-red-500/20 hover:bg-red-500/30 text-white border border-red-500/30 py-2 rounded px-4 transition-colors flex items-center justify-center gap-2"><Globe size={14} /> Mudar para HTTP (Recomendado)</button></div>)}
                         <div className="space-y-4 mb-6">
                             {/* CONNECTION MODE TOGGLE */}
                             <div className="flex items-center gap-2 mb-4 bg-black/20 p-1 rounded-lg border border-white/5">
@@ -1357,7 +1926,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
                         <div className="space-y-4 mb-8 border-b border-white/10 pb-8">
                             <h2 className="text-xl font-light flex items-center gap-2"><Cloud size={20} /> Nuvem & Backup</h2>
                             <p className="text-[10px] text-white/60 leading-relaxed">
-                                Para sincronizar, crie as variáveis <strong>LuminaData</strong>, <strong>LuminaData_0</strong>, <strong>LuminaData_1</strong>, <strong>LuminaData_2</strong>, <strong>LuminaData_3</strong> e <strong>LuminaData_4</strong> no Hubitat e habilite-as no Maker API.
+                                Para sincronizar, instale o <strong>Lumina Installer</strong> no Hubitat e clique em <strong>"🔧 Configurar Auto-Sync"</strong> para criar as variáveis automaticamente.
                             </p>
                             <div className="flex gap-2 mt-3">
                                 <button onClick={handleCloudUpload} className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-200 border border-blue-500/20 p-3 rounded-lg flex flex-col items-center gap-1 transition-colors"><Upload size={16} /><span className="text-[9px] uppercase font-bold">Enviar p/ Hub</span></button>
@@ -1366,10 +1935,127 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
                             </div>
                             {syncStatus && <p className="text-center text-xs text-white/80 animate-pulse mt-2">{syncStatus}</p>}
                         </div>
-                        <div className="space-y-4 mb-8 border-b border-white/10 pb-8"><h2 className="text-xl font-light flex items-center gap-2"><LayoutTemplate size={20} /> Ambientes</h2><div className="flex gap-2"><input type="text" value={newRoomName} onChange={(e) => setNewRoomName(e.target.value)} placeholder="Novo ambiente..." className="flex-1 bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-white/30 text-sm" /><button onClick={handleAddRoom} className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-lg border border-white/5"><Plus size={20} /></button></div><div className="space-y-2 mt-4 max-h-40 overflow-y-auto custom-scrollbar">{state.rooms.map(room => (<div key={room.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5"><span className="text-sm">{room.name}</span><button onClick={() => handleDeleteRoom(room.id)} className="text-white/30 hover:text-red-300 p-1"><Trash2 size={14} /></button></div>))}</div></div>
+                        <div className="space-y-4 mb-8 border-b border-white/10 pb-8"><h2 className="text-xl font-light flex items-center gap-2"><LayoutTemplate size={20} /> Ambientes</h2><div className="flex gap-2"><input type="text" value={newRoomName} onChange={(e) => setNewRoomName(e.target.value)} placeholder="Novo ambiente..." className="flex-1 bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-white/30 text-sm" /><button onClick={handleAddRoom} className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-lg border border-white/5"><Plus size={20} /></button></div><button onClick={handleImportRooms} disabled={importingRooms} className="w-full mt-3 bg-gradient-to-r from-green-600/20 to-emerald-400/20 border border-green-400/20 text-green-200 font-medium text-sm py-3 rounded-xl flex items-center justify-center gap-2 hover:from-green-600/30 hover:to-emerald-400/30 transition-all disabled:opacity-50">{importingRooms ? <RefreshCcw size={16} className="animate-spin" /> : <Download size={16} />}<span>{importingRooms ? 'Importando...' : 'Importar do Hubitat'}</span></button><div className="space-y-2 mt-4 max-h-40 overflow-y-auto custom-scrollbar">{state.rooms.map(room => (<div key={room.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5"><span className="text-sm">{room.name}</span><button onClick={() => handleDeleteRoom(room.id)} className="text-white/30 hover:text-red-300 p-1"><Trash2 size={14} /></button></div>))}</div></div>
                         <div className="space-y-4"><h2 className="text-xl font-light flex items-center gap-2"><Sliders size={20} /> Personalização</h2><button onClick={() => setShowDeviceManager(true)} className="w-full bg-gradient-to-r from-blue-600/20 to-blue-400/20 border border-blue-400/20 text-white font-medium text-sm py-4 rounded-xl flex items-center justify-between px-6"><span className="flex flex-col items-start"><span>Gerenciar Dispositivos</span><span className="text-[10px] text-white/60 font-normal">Atribuir cômodos e ocultar itens</span></span><ChevronRight size={16} /></button><div className="bg-white/5 border border-white/10 rounded-xl p-4"><div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><ImageIcon size={16} className="text-white/60" /><p className="font-medium text-sm">Logo da Empresa</p></div>{customLogo && <button onClick={handleRemoveLogo} className="p-2 bg-red-500/20 text-red-200 rounded-lg"><Trash2 size={16} /></button>}</div><label className="w-full border border-dashed border-white/20 bg-black/20 rounded-lg h-24 flex flex-col items-center justify-center cursor-pointer hover:bg-black/30 transition-all group">{customLogo ? (<img src={customLogo} alt="Logo" className="h-16 object-contain opacity-80 group-hover:opacity-100" />) : (<><Upload size={20} className="text-white/40 mb-2 group-hover:text-white" /><span className="text-[10px] uppercase text-white/40">Clique para enviar (PNG)</span></>)}<input type="file" accept="image/png" onChange={handleLogoUpload} className="hidden" /></label></div></div>
+                        
+                        {/* v1.6 Premium: Favorites Editor */}
+                        <div className="space-y-4 mt-8 border-t border-white/10 pt-8">
+                            <h2 className="text-xl font-light flex items-center gap-2"><Star size={20} className="text-yellow-400" /> Favoritos</h2>
+                            <p className="text-[10px] text-white/60">Selecione até 5 dispositivos para acesso rápido na tela inicial. Use as setas para reordenar.</p>
+                            
+                            {/* Current Favorites with Reorder */}
+                            {favorites.length > 0 && (
+                                <div className="space-y-2 mb-4">
+                                    <p className="text-[10px] uppercase tracking-widest text-white/40">Favoritos Atuais ({favorites.length}/5)</p>
+                                    {favorites.map((fav, index) => {
+                                        const device = state.devices[fav.deviceId];
+                                        if (!device) return null;
+                                        return (
+                                            <div key={fav.deviceId} className="flex items-center justify-between p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                                                <div className="flex items-center gap-3">
+                                                    {/* Reorder Buttons */}
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <button 
+                                                            onClick={() => handleMoveFavorite(fav.deviceId, 'up')}
+                                                            disabled={index === 0}
+                                                            className={`p-0.5 rounded ${index === 0 ? 'text-white/20 cursor-not-allowed' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+                                                        >
+                                                            <ChevronUp size={12} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleMoveFavorite(fav.deviceId, 'down')}
+                                                            disabled={index === favorites.length - 1}
+                                                            className={`p-0.5 rounded ${index === favorites.length - 1 ? 'text-white/20 cursor-not-allowed' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+                                                        >
+                                                            <ChevronDown size={12} />
+                                                        </button>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm text-yellow-200">{device.name}</span>
+                                                        <span className="text-[9px] text-white/40 block">{device.type}</span>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => handleToggleFavorite(fav.deviceId)} className="text-red-400 hover:text-red-300 p-1"><X size={14} /></button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            
+                            {/* Add Favorites - Expanded device types */}
+                            {favorites.length < 5 && (
+                                <div className="space-y-2">
+                                    <p className="text-[10px] uppercase tracking-widest text-white/40">Adicionar aos Favoritos</p>
+                                    <div className="max-h-64 overflow-y-auto custom-scrollbar space-y-1">
+                                        {Object.values(state.devices)
+                                            .filter(d => d.roomId !== 'hidden' && !isFavorite(d.id))
+                                            .sort((a, b) => a.name.localeCompare(b.name))
+                                            .map(device => (
+                                                <button 
+                                                    key={device.id}
+                                                    onClick={() => handleToggleFavorite(device.id)}
+                                                    className="w-full flex items-center justify-between p-2 bg-white/5 rounded hover:bg-white/10 transition-colors"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-white/80">{device.name}</span>
+                                                        <span className="text-[8px] text-white/30 uppercase">{device.type}</span>
+                                                    </div>
+                                                    <Star size={12} className="text-white/30" />
+                                                </button>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* v1.6: Câmeras IP */}
+                        <div className="space-y-4 mt-8 border-t border-white/10 pt-8">
+                            <h2 className="text-xl font-light flex items-center gap-2"><Camera size={20} className="text-blue-400" /> Câmeras IP</h2>
+                            <p className="text-[10px] text-white/60">Adicione até 4 câmeras IP com MJPEG ou snapshot HTTP.</p>
+                            
+                            {/* Lista de Câmeras */}
+                            {cameras.length > 0 && (
+                                <div className="space-y-2 mb-4">
+                                    <p className="text-[10px] uppercase tracking-widest text-white/40">Câmeras Configuradas ({cameras.length}/4)</p>
+                                    {cameras.map(cam => (
+                                        <div key={cam.id} className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                                            <div className="flex-1 min-w-0">
+                                                <span className="text-sm text-blue-200 block truncate">{cam.name}</span>
+                                                <span className="text-[9px] text-white/40 block truncate">{cam.url}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 ml-2">
+                                                <span className="px-2 py-0.5 bg-white/10 rounded text-[8px] uppercase">{cam.streamType}</span>
+                                                <button onClick={() => handleEditCamera(cam)} className="text-blue-400 hover:text-blue-300 p-1"><PenLine size={14} /></button>
+                                                <button onClick={() => handleRemoveCamera(cam.id)} className="text-red-400 hover:text-red-300 p-1"><Trash2 size={14} /></button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            
+                            {/* Botão Adicionar Câmera */}
+                            {cameras.length < 4 && (
+                                <button 
+                                    onClick={() => { setEditingCamera(null); setShowAddCameraModal(true); }}
+                                    className="w-full bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-200 py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                                >
+                                    <Plus size={16} />
+                                    Adicionar Câmera IP
+                                </button>
+                            )}
+                        </div>
                     </GlassCard>
                 </div>
+                
+                {/* Add Camera Modal */}
+                <AddCameraModal 
+                    isOpen={showAddCameraModal}
+                    onClose={handleCloseAddCameraModal}
+                    onSave={handleAddCamera}
+                    rooms={state.rooms}
+                    editingCamera={editingCamera || undefined}
+                />
             </div>
         );
     }
@@ -1388,7 +2074,7 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     return (
       <div className="relative min-h-screen w-full text-white font-sans selection:bg-white/30">
-        <div className="fixed inset-0 bg-cover bg-center z-0 transition-all duration-700 ease-in-out scale-105" style={{ backgroundImage: `url(${roomBg})` }} />
+        <div className="fixed inset-0 bg-cover bg-center z-0 transition-all duration-700 ease-in-out scale-105" style={{ backgroundImage: formatBgImage(roomBg) }} />
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-0" />
         {customLogo && (<img src={customLogo} alt="Brand Logo" className="fixed bottom-8 right-8 w-24 h-auto object-contain z-50 opacity-80 pointer-events-none" />)}
         <ImageEditorModal isOpen={isImageEditorOpen} onClose={() => setIsImageEditorOpen(false)} onSave={handleSaveImage} currentImage={editingTarget?.type === 'room' && editingTarget.id === currentRoom.id ? roomBg : undefined} defaultImage={currentRoom.image} title={editingTarget?.type === 'room' ? 'Editar Fundo do Quarto' : 'Editar Fundo'} />
@@ -1451,6 +2137,14 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
                              >   
                                  🔥 Adicionar Sensor de Fumaça
                             </button>
+                            
+                            <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white/40 border-b border-white/5 border-t mt-1">Câmeras</div>
+                            <button 
+                               onClick={() => { setShowMenu(false); setEditingCamera(null); setShowAddCameraModal(true); }}
+                               className="w-full text-left px-4 py-3 text-xs text-white hover:bg-white/10 flex items-center gap-2"
+                             >   
+                                <Camera size={14} className="text-blue-400" /> Adicionar Câmera IP
+                            </button>
                         </div>
                     )}
                 </div>
@@ -1458,17 +2152,49 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
             <main className="flex-1 overflow-y-auto px-6 pb-24">
                 <div className="max-w-5xl mx-auto">
-                    {roomDevices.length === 0 ? (
+                    {roomDevices.length === 0 && cameras.filter(c => c.roomId === currentRoom.id).length === 0 ? (
                          <div className="flex flex-col items-center justify-center h-64 text-white/40"><EyeOff size={32} className="mb-4 opacity-50" /><p>Nenhum dispositivo neste ambiente.</p><p className="text-xs mt-2">Use o menu de configurações (⚙️) para criar controles.</p></div>
                     ) : (
-                        <div className="mb-8">
-                            <h2 className="text-white/80 text-xs uppercase tracking-widest mb-4 font-medium pl-1 drop-shadow-sm">Controles</h2>
-                            {renderGridLayout(roomDevices)}
-                        </div>
+                        <>
+                            {roomDevices.length > 0 && (
+                                <div className="mb-8">
+                                    <h2 className="text-white/80 text-xs uppercase tracking-widest mb-4 font-medium pl-1 drop-shadow-sm">Controles</h2>
+                                    {renderGridLayout(roomDevices)}
+                                </div>
+                            )}
+                            
+                            {/* Room Cameras */}
+                            {cameras.filter(c => c.roomId === currentRoom.id).length > 0 && (
+                                <div className="mb-8">
+                                    <h2 className="text-white/80 text-xs uppercase tracking-widest mb-4 font-medium pl-1 drop-shadow-sm flex items-center gap-2">
+                                        <Camera size={14} className="text-blue-400" /> Câmeras
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {cameras.filter(c => c.roomId === currentRoom.id).map(cam => (
+                                            <CameraCard 
+                                                key={cam.id} 
+                                                camera={cam}
+                                                onRemove={handleRemoveCamera}
+                                                onEdit={handleEditCamera}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </main>
         </div>
+        
+        {/* Add Camera Modal (Room Context) */}
+        <AddCameraModal 
+            isOpen={showAddCameraModal}
+            onClose={handleCloseAddCameraModal}
+            onSave={(camData) => handleAddCamera({ ...camData, roomId: currentRoom?.id })}
+            rooms={state.rooms}
+            editingCamera={editingCamera || undefined}
+        />
       </div>
     );
   }
@@ -1476,10 +2202,22 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Final Render (Main Tabs)
   return (
     <div className="relative min-h-screen w-full bg-black text-white font-sans overflow-hidden">
-      <div className={`fixed inset-0 bg-cover bg-center z-0 transition-all duration-1000 ease-in-out ${activeTab === 'home' ? 'blur-[4px]' : 'blur-0'}`} style={{ backgroundImage: `url(${getActiveBackgroundImage()})` }} />
+      <div className={`fixed inset-0 bg-cover bg-center z-0 transition-all duration-1000 ease-in-out ${activeTab === 'home' ? 'blur-[4px]' : 'blur-0'}`} style={{ backgroundImage: formatBgImage(getActiveBackgroundImage()) }} />
       
       {/* Top Right Controls */}
       <div className="fixed top-6 right-6 z-20 flex gap-3">
+          {/* Notification Bell (v1.6 Premium) */}
+          <button 
+            onClick={() => setShowNotifications(true)}
+            className="relative p-2 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/10 text-white/50 hover:text-white transition-all"
+          >
+            <Bell size={20} />
+            {notifications.filter(n => !n.read).length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">
+                {notifications.filter(n => !n.read).length}
+              </span>
+            )}
+          </button>
           {activeTab !== 'home' && activeTab !== 'settings' && (
               <button 
                 onClick={() => setIsEditMode(!isEditMode)}
@@ -1493,7 +2231,114 @@ const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
           </button>
       </div>
 
+      {/* Notifications Panel (v1.6 Premium) */}
+      {showNotifications && (
+        <NotificationsPanel 
+          notifications={notifications}
+          onUpdate={() => setNotifications(getNotifications())}
+          onClose={() => setShowNotifications(false)}
+        />
+      )}
+
+      {/* Weather Settings Modal (Global) */}
+      {showWeatherSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-md bg-zinc-900/95 border border-white/10 rounded-2xl p-6 animate-in zoom-in-95">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium flex items-center gap-2">
+                <MapPin size={18} className="text-blue-400" />
+                Configurar Local
+              </h3>
+              <button onClick={() => setShowWeatherSettings(false)} className="p-1 hover:bg-white/10 rounded-full">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex gap-2 mb-4">
+              <input 
+                type="text" 
+                value={citySearchQuery}
+                onChange={(e) => setCitySearchQuery(e.target.value)}
+                placeholder="Buscar cidade..."
+                onKeyDown={(e) => e.key === 'Enter' && handleCitySearch()}
+                className="flex-1 bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/50"
+              />
+              <button 
+                onClick={handleCitySearch} 
+                className="bg-blue-600 hover:bg-blue-500 text-white px-4 rounded-lg flex items-center justify-center transition-colors"
+              >
+                {isSearchingCity ? <RefreshCcw size={18} className="animate-spin"/> : <Search size={18} />}
+              </button>
+            </div>
+            
+            {weatherConfig && (
+              <div className="mb-4 p-3 bg-white/5 rounded-lg border border-white/5">
+                <p className="text-[10px] uppercase tracking-widest text-white/40 mb-1">Local Atual</p>
+                <p className="text-sm font-medium">{weatherConfig.city}</p>
+              </div>
+            )}
+            
+            <div className="max-h-64 overflow-y-auto custom-scrollbar flex flex-col gap-1">
+              {citySearchResults.length > 0 ? (
+                citySearchResults.map((city, idx) => (
+                  <button 
+                    key={idx}
+                    onClick={() => handleSelectCity(city)}
+                    className="text-left px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    <span className="font-medium text-white block">{city.name}</span>
+                    <span className="text-xs text-white/50">{city.admin1}, {city.country}</span>
+                  </button>
+                ))
+              ) : (
+                <p className="text-center text-white/40 text-sm py-4">
+                  Digite o nome de uma cidade e pressione Enter
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <ImageEditorModal isOpen={isImageEditorOpen} onClose={() => setIsImageEditorOpen(false)} onSave={handleSaveImage} currentImage={editingTarget?.type === 'tab' ? getActiveBackgroundImage() : undefined} defaultImage={editingTarget?.type === 'tab' ? getDefaultBackgroundImage(editingTarget.id) : ''} title={editingTarget?.type === 'tab' ? `Fundo: ${activeTab}` : 'Editar Imagem'} />
+
+      {/* Widget Editors */}
+      {editingWidget?.type === 'slideshow' && (
+        <SlideshowEditor
+          isOpen={true}
+          onClose={() => setEditingWidget(null)}
+          onSave={(config) => editingWidget.widget && handleUpdateWidget(editingWidget.widget.id, config)}
+          config={(editingWidget.widget?.config as SlideshowConfig) || { images: [], interval: 10, transition: 'fade', showCaption: false }}
+          title="Configurar Slideshow"
+        />
+      )}
+      {editingWidget?.type === 'qrcode' && (
+        <QRCodeEditor
+          isOpen={true}
+          onClose={() => setEditingWidget(null)}
+          onSave={(config) => editingWidget.widget && handleUpdateWidget(editingWidget.widget.id, config)}
+          config={(editingWidget.widget?.config as QRCodeConfig) || { content: '', size: 150, label: '' }}
+          title="Configurar QR Code"
+        />
+      )}
+      {editingWidget?.type === 'text' && (
+        <TextEditor
+          isOpen={true}
+          onClose={() => setEditingWidget(null)}
+          onSave={(config) => editingWidget.widget && handleUpdateWidget(editingWidget.widget.id, config)}
+          config={(editingWidget.widget?.config as TextWidgetConfig) || { content: '', fontSize: 'md', textAlign: 'left', scrolling: false }}
+          title="Configurar Texto"
+        />
+      )}
+      {editingWidget?.type === 'video' && (
+        <VideoEditor
+          isOpen={true}
+          onClose={() => setEditingWidget(null)}
+          onSave={(config) => editingWidget.widget && handleUpdateWidget(editingWidget.widget.id, config)}
+          config={(editingWidget.widget?.config as VideoWidgetConfig) || { url: '', autoplay: false, muted: true, loop: false, showControls: true }}
+          title="Configurar Vídeo"
+        />
+      )}
       <div className="fixed inset-0 bg-gradient-to-t from-black via-black/40 to-black/20 z-0" />
       {customLogo && (<img src={customLogo} alt="Brand Logo" className="fixed bottom-8 right-8 w-24 h-auto object-contain z-50 opacity-80 pointer-events-none" />)}
 
