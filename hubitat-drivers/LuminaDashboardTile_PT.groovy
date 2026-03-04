@@ -39,8 +39,10 @@ metadata {
     preferences {
         input name: "luminaFile", type: "enum", title: "📁 Arquivo Lumina", 
             options: [
-                "LuminaHighline_v1.5.html": "v1.5 Estável",
-                "LuminaHighline_v1.6-beta.html": "v1.6 Beta",
+                "LuminaHighline_v1.5.html": "v1.5 Estável (Free)",
+                "LuminaHighline_v2.0-PRO.html": "v2.0 PRO (Premium)",
+                "github-v15": "v1.5 via GitHub (Remoto)",
+                "github-v20": "v2.0 PRO via GitHub (Remoto)",
                 "custom": "URL Personalizada"
             ], 
             defaultValue: "LuminaHighline_v1.5.html", 
@@ -50,8 +52,8 @@ metadata {
             description: "URL completa incluindo http://", 
             required: false
             
-        input name: "useCloud", type: "bool", title: "☁️ Usar URL do Hubitat Cloud", 
-            description: "Ative para acesso remoto via Hubitat Cloud", 
+        input name: "useCloud", type: "bool", title: "☁️ Usar URL do Hubitat Cloud (apenas p/ arquivos locais)", 
+            description: "Ative para acesso remoto via Hubitat Cloud (não necessário para GitHub)", 
             defaultValue: false
             
         input name: "tileHeight", type: "enum", title: "📐 Altura da Tile", 
@@ -128,6 +130,14 @@ def setUrl(String url) {
 def buildLuminaUrl() {
     if (luminaFile == "custom" && customUrl) {
         return customUrl
+    }
+    
+    // GitHub Pages - Acesso Remoto Garantido
+    if (luminaFile == "github-v15") {
+        return "https://domotika.github.io/LuminaDev/LuminaHighline_v1.5.html"
+    }
+    if (luminaFile == "github-v20") {
+        return "https://domotika.github.io/LuminaDev/LuminaHighline_v2.0-PRO.html"
     }
     
     def fileName = luminaFile ?: "LuminaHighline_v1.5.html"
