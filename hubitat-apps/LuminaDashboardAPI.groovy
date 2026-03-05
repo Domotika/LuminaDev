@@ -302,8 +302,10 @@ def getHubInfo() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 def getAllSelectedDevices() {
-    // Retorna todos os dispositivos do hub
-    return getAllDevices()
+    // Se nenhum dispositivo selecionado, retorna lista vazia
+    // O usuário DEVE selecionar os dispositivos nas preferências
+    log.warn "Nenhum dispositivo selecionado. Vá em Apps → Lumina Dashboard API e selecione os dispositivos."
+    return []
 }
 
 def findDevice(deviceId) {
