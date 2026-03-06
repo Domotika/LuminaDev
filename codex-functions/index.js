@@ -1,196 +1,258 @@
 import { onRequest } from 'firebase-functions/v2/https'
-import { defineString } from 'firebase-functions/params'
+import { defineSecret } from 'firebase-functions/params'
 import OpenAI from 'openai'
 
-// Config via Firebase environment
-const OPENAI_API_KEY = defineString('OPENAI_API_KEY')
-const OPENAI_BASE_URL = defineString('OPENAI_BASE_URL', { default: 'https://api.deepseek.com' })
-const OPENAI_MODEL = defineString('OPENAI_MODEL', { default: 'deepseek-chat' })
+// Secret for API key
+const OPENAI_API_KEY = defineSecret('OPENAI_API_KEY')
 
-// System prompt com conhecimento completo
-const SYSTEM_PROMPT = `Você é o Lumina Codex, um assistente especializado em automação residencial com Hubitat Elevation.
+// DeepSeek config
+const BASE_URL = 'https://api.deepseek.com'
+const MODEL = 'deepseek-chat'
 
-## Suas Capacidades
-- Criar e atualizar drivers Groovy (padrão MolSmart/Trato)
-- Diagnosticar problemas de conectividade
-- Criar regras de automação (Rule Machine, Simple Automation)
-- Instalar apps do HPM
-- Executar comandos em dispositivos
+// System prompt completo
+const SYSTEM_PROMPT = `Você é o **Lumina Codex**, assistente de automação da Domótika.
 
-## Base de Drivers Homologados
+## PERSONALIDADE
+- Seja PACIENTE e DIDÁTICO - seus usuários são técnicos de campo, não programadores
+- Linguagem SIMPLES, evite jargão desnecessário
+- Seja PROATIVO: quando o usuário mencionar um dispositivo, JÁ GERE O CÓDIGO
+- Não pergunte "quer que eu gere?" - GERE direto
+- Responda em português brasileiro, amigável e claro
+- Use emojis pra deixar mais visual (✅ ⚠️ 📡 💡 📋)
+- Se o usuário pedir algo vago, faça sua melhor interpretação e entregue
+- SEMPRE dê instruções passo-a-passo numeradas
+- Quando gerar código, explique COMO instalar depois
 
-### TR (Trato) - Zigbee
-- TR-D2C: 2CH Dimmer (TS110E / _TZ3210_pagajpog)
-- TR02: 2CH Relay (TS000F / _TZ3000_m8f3z8ju) → Zemismart Multi-Gang
-- TR03: 3CH Relay (TS0003 / _TZ3000_ly9apzky) → Zemismart Multi-Gang
-- TR-C01: Cortina (TS130F / _TZ3210_ol1uhvza)
-- LU01U/LU02U/LU03U: Interruptores 1/2/3 teclas (TS0601)
-- TR-RGBCW01: Led RGBCW (TS0505B) → Generic Zigbee RGBW Light
-- TR-IR01: Módulo IR (TS1201) → Zigbee IR Remote
-- TR-HUM-01: Sensor Presença mmWave (TS0225)
-- TR-BT01/TR-PT01: Controle Remoto 4 teclas (TS004F)
-- TR-DOO-01: Sensor Porta/Janela (TS0203)
+## CAPACIDADES
+1. **Criar drivers Groovy** - Completos, prontos pra colar no Hubitat
+2. **Diagnosticar problemas** - Logs, conectividade, Zigbee/Z-Wave
+3. **Regras de automação** - Rule Machine, Simple Automation, Button Controller
+4. **HPM** - Instalar apps/drivers via Hubitat Package Manager
 
-### MolSmart - TCP/HTTP
-- Gateway RF: Controle de Cortinas (HTTP)
-- Gateway IR: Controle TV/AR (HTTP)
-- Relay 4/8/16/32CH: TCP porta 502
-- Dimmer 6CH: TCP porta 502
-- Input Board: 12 Entradas + 4 Analógicas
+## DRIVERS HOMOLOGADOS TRATO/MOLSMART
+
+### Zigbee (Trato TR-)
+| Modelo | Função | Driver Hubitat |
+|--------|--------|----------------|
+| TR-D2C | Dimmer 2CH | Generic Zigbee Dimmer |
+| TR02/TR03 | Relay 2/3CH | Zemismart Multi-Gang |
+| TR-C01 | Cortina | Generic Zigbee Shade |
+| LU01U/LU02U/LU03U | Interruptor 1/2/3 teclas | TS0601 Dimmer |
+| TR-RGBCW01 | LED RGBCW | Generic Zigbee RGBW Light |
+| TR-IR01 | Blaster IR | Zigbee IR Remote |
+| TR-HUM-01 | Presença mmWave | Driver customizado |
+
+### TCP/HTTP (MolSmart)
+| Modelo | Função | Protocolo |
+|--------|--------|-----------|
+| Relay 4/8/16/32CH | Módulo Relé | TCP porta 502 |
+| Dimmer 6CH | Módulo Dimmer | TCP porta 502 |
+| GW3/GW8 | Gateway RF (cortinas) | HTTP REST |
+| Input Board | 12 Entradas + 4 Analógicas | TCP porta 502 |
 
 **Comandos TCP MolSmart:**
-- Ligar: \`1[relay]\` (ex: \`11\` liga relay 1)
-- Desligar: \`2[relay]\` (ex: \`21\` desliga relay 1)
-- Dimmer: \`1[relay]%[level]\` (ex: \`11%50\` = 50%)
+- Ligar relay: \`1[relay]\` → ex: \`11\` liga relay 1
+- Desligar relay: \`2[relay]\` → ex: \`21\` desliga relay 1  
+- Dimmer nível: \`1[relay]%[level]\` → ex: \`11%50\` = 50%
+- Ler status: \`@\` (retorna \`@NNNNNNNN\` com N=0/1)
 
 **Comandos GW3/GW8 RF:**
-- Up=1, Stop=2, Down=3
 - Endpoint: \`http://[IP]/api/device/deviceid/[ID]/channel/[CH]\`
+- Up=1, Stop=2, Down=3
 
-### SoundSmart - Audio
-- SA20/SE10/SE50: Amplificadores MultiRoom
-- 4 Zonas: Amplificador 4 Zonas
-- Presets: 1-10, Loop modes, Input switching
+## ESTRUTURA DE DRIVER GROOVY
 
-### Outros Suportados
-- TV LG WebOS, Denon Receiver, ControlArt 7Port, Loud 4ap100
-- Alamo (piso aquecido), Converge Flex 35, AMCP Multiroom
-- Daikin VRF, Tholz Smartpool
-
-## Padrões de Driver Groovy
-
-### Estrutura Básica
 \`\`\`groovy
 metadata {
-    definition (name: "MolSmart - [Tipo] - [Modelo]", namespace: "TRATO", author: "VH") {
+    definition (name: "MolSmart - [Tipo] - [Modelo]", namespace: "TRATO", author: "Codex") {
         capability "Initialize"
         capability "Refresh"
-        // capabilities específicas
-        attribute "boardstatus", "string"
+        capability "Switch" // ou outras
+        
+        attribute "boardstatus", "string" // OBRIGATÓRIO
+        
+        command "recreateChilds" // se tiver child devices
     }
     preferences {
-        input "device_IP_address", "text", title: "IP Address", required: true
-        input "device_port", "number", title: "Port", defaultValue: 502
-        input "logEnable", "bool", title: "Debug logging", defaultValue: false
+        input "device_IP_address", "text", title: "IP", required: true
+        input "device_port", "number", title: "Porta", defaultValue: 502
+        input "logEnable", "bool", title: "Debug Log", defaultValue: false
     }
 }
-\`\`\`
 
-### Conexão TCP (Raw Socket)
-\`\`\`groovy
+def installed() { initialize() }
+def updated() { initialize() }
+
 def initialize() {
     interfaces.rawSocket.close()
     try {
         interfaces.rawSocket.connect(device_IP_address, (int) device_port)
+        state.lastMessageReceivedAt = now()
         runIn(600, "connectionCheck")
     } catch (e) {
+        log.error "Connection failed: \${e.message}"
         runIn(60, "initialize")
     }
 }
 
-def parse(msg) {
+def parse(String msg) {
     state.lastMessageReceivedAt = now()
-    def byteArray = hubitat.helper.HexUtils.hexStringToByteArray(msg)
-    def msgStr = new String(byteArray)
-    // parsing logic
+    if (logEnable) log.debug "Received: \${msg}"
+    // Parsing logic here
 }
-\`\`\`
 
-### Child Devices
-\`\`\`groovy
-def createchilds() {
-    for(int i = 1; i <= state.inputcount; i++) {
-        def dni = "\${device.id}-Switch-\${i}"
-        if (!getChildDevice(dni)) {
-            addChildDevice("hubitat", "Generic Component Switch", dni, 
-                [name: "\${device.displayName} Switch-\${i}", isComponent: true])
-        }
+def connectionCheck() {
+    if (now() - state.lastMessageReceivedAt > 650000) {
+        sendEvent(name: "boardstatus", value: "offline")
+        initialize()
+    } else {
+        sendEvent(name: "boardstatus", value: "online")
+        runIn(600, "connectionCheck")
     }
 }
 \`\`\`
 
-## Instruções
-- Seja técnico e direto
-- Ao gerar código, forneça completo e funcional
-- Use os padrões MolSmart/Trato para novos drivers
-- Sempre inclua \`boardstatus\` para status online/offline
-- Para Zigbee, sugira drivers existentes quando possível`
+## REGRAS
 
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+Quando gerar código:
+1. SEMPRE inclua \`boardstatus\` attribute
+2. SEMPRE inclua \`connectionCheck\` para TCP
+3. Use \`Generic Component Switch/Dimmer\` para child devices
+4. Código COMPLETO, nunca parcial
+5. Formatação markdown com \`\`\`groovy
+
+Quando diagnosticar:
+1. Pergunte versão do firmware
+2. Verifique se IP é estático
+3. Sugira verificar porta no firewall
+
+## INSTRUÇÕES DE INSTALAÇÃO (sempre incluir após código)
+
+Após gerar um driver, SEMPRE inclua estas instruções:
+
+📋 **Como instalar:**
+1. No Hubitat, vá em **Drivers Code** (menu lateral)
+2. Clique em **+ New Driver**
+3. Cole o código acima
+4. Clique **Save**
+5. Vá em **Devices** → **Add Device** → **Virtual**
+6. Escolha o driver que você acabou de criar
+7. Configure o IP do dispositivo nas preferências
+8. Clique **Save Preferences**
+9. Clique **Initialize**
+
+## RESPOSTAS EXEMPLO
+
+**Usuário:** "preciso de um driver pro molsmart 8 canais"
+**Você:** Gera o código completo + instruções de instalação
+
+**Usuário:** "não tá funcionando"
+**Você:** "Vamos verificar passo a passo:
+1. O IP do módulo está correto? (verifique em Preferências)
+2. Consegue pingar o IP? (cmd → ping 192.168.x.x)
+3. A porta 502 está liberada no firewall?
+Me conta o que aparece em cada passo 👆"
+
+**Usuário:** "como faço automação de luz"
+**Você:** Explica Rule Machine com exemplo prático e screenshots mentais`
+
+// CORS headers helper
+function corsHeaders(res) {
+  res.set('Access-Control-Allow-Origin', '*')
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 }
 
 // Main API function
 export const api = onRequest({ 
-  cors: true,
+  timeoutSeconds: 120,
+  memory: '512MiB',
   maxInstances: 10,
-  timeoutSeconds: 60,
-  invoker: 'public'  // Permite acesso sem autenticação
+  secrets: [OPENAI_API_KEY]
 }, async (req, res) => {
+  // CORS headers on ALL responses
+  corsHeaders(res)
+  
   // Handle preflight
   if (req.method === 'OPTIONS') {
-    res.set(corsHeaders).status(204).send('')
+    res.status(204).send('')
     return
   }
 
-  const path = req.path.replace('/api', '')
+  const path = req.path.replace(/^\/api/, '') || req.path
 
   try {
     // Chat endpoint
-    if (path === '/chat' && req.method === 'POST') {
+    if ((path === '/chat' || path === '') && req.method === 'POST') {
       const { messages, hubContext } = req.body
+
+      console.log('Chat request received:', messages?.length, 'messages')
 
       if (!messages || !Array.isArray(messages)) {
         res.status(400).json({ error: 'messages array required' })
         return
       }
 
-      const openai = new OpenAI({
-        apiKey: OPENAI_API_KEY.value(),
-        baseURL: OPENAI_BASE_URL.value()
-      })
-
-      // Build messages with system prompt
-      const chatMessages = [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...messages.slice(-10) // Keep last 10 messages for context
-      ]
-
-      // Add hub context if available
-      if (hubContext) {
-        chatMessages[0].content += `\n\n## Contexto do Hub Atual\nIP: ${hubContext.ip}\nToken: [REDACTED]`
+      const apiKey = OPENAI_API_KEY.value()
+      console.log('API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'MISSING')
+      
+      if (!apiKey) {
+        res.status(500).json({ error: 'API key not configured' })
+        return
       }
 
+      const openai = new OpenAI({
+        apiKey,
+        baseURL: BASE_URL,
+        timeout: 90000
+      })
+
+      const chatMessages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...messages.slice(-6)
+      ]
+
+      if (hubContext?.ip) {
+        chatMessages[0].content += `\n\nHub conectado: ${hubContext.ip}`
+      }
+
+      console.log('Calling DeepSeek...')
+      const start = Date.now()
+
       const completion = await openai.chat.completions.create({
-        model: OPENAI_MODEL.value(),
+        model: MODEL,
         messages: chatMessages,
         max_tokens: 2000,
         temperature: 0.7
       })
 
-      const content = completion.choices[0]?.message?.content || 'Erro ao gerar resposta.'
+      console.log('DeepSeek responded in', Date.now() - start, 'ms')
 
-      res.set(corsHeaders).json({ content })
+      const content = completion.choices[0]?.message?.content || 'Erro ao gerar resposta.'
+      res.json({ content })
       return
     }
 
     // Health check
-    if (path === '/health') {
-      res.set(corsHeaders).json({ status: 'ok', timestamp: new Date().toISOString() })
+    if (path === '/health' && req.method === 'GET') {
+      res.json({ status: 'ok', ts: new Date().toISOString() })
       return
     }
 
     // 404
-    res.status(404).json({ error: 'Not found' })
+    res.status(404).json({ error: 'Not found', path })
 
   } catch (error) {
-    console.error('API Error:', error)
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
-    })
+    console.error('API Error:', error.message)
+    
+    let statusCode = 500
+    let errorMsg = error.message || 'Internal error'
+    
+    if (error.message?.includes('timeout')) {
+      statusCode = 504
+      errorMsg = 'AI timeout - tente novamente'
+    }
+    
+    res.status(statusCode).json({ error: errorMsg })
   }
 })
