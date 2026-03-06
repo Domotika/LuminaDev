@@ -132,8 +132,8 @@
             </p>
             
             <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <a href="#features" class="px-8 py-4 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-all shadow-xl hover:scale-105 flex items-center gap-2">
-                    Conhecer o Codex
+                <a href="#plans" class="px-8 py-4 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-all shadow-xl hover:scale-105 flex items-center gap-2">
+                    Ver Planos
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
                 </a>
                 <a href="#hardware" class="px-8 py-4 bg-slate-800 text-white font-medium rounded-xl hover:bg-slate-700 border border-slate-700 transition-all hover:scale-105 flex items-center gap-2">
@@ -183,6 +183,16 @@
         </div>
     </section>
 
+    <!-- Curated AI Banner -->
+    <section class="bg-gradient-to-r from-lumina-900/30 to-codex-dark border-y border-white/5 py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-lumina-200 text-sm md:text-base flex flex-col md:flex-row items-center justify-center gap-3">
+                <span class="bg-lumina-500/20 text-lumina-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Curadoria Domótika</span>
+                IA treinada com os repositórios mais usados por integradores no Brasil. Suporte humano especializado incluído.
+            </p>
+        </div>
+    </section>
+
     <!-- Features Section -->
     <section id="features" class="py-24 bg-slate-900/50 relative">
         <div class="container mx-auto px-6">
@@ -197,8 +207,8 @@
                     <div class="w-14 h-14 bg-lumina-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                         <svg class="w-8 h-8 text-lumina-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 text-white">Chat com IA Contextual</h3>
-                    <p class="text-slate-400">Converse naturalmente. O Codex entende o contexto da sua casa, seus dispositivos e cria soluções sob medida.</p>
+                    <h3 class="text-xl font-bold mb-3 text-white">Curadoria & Suporte</h3>
+                    <p class="text-slate-400">Modelo de IA refinado pela equipe Domótika. Se a IA não souber, nosso time de especialistas assume.</p>
                 </div>
 
                 <!-- Feature 2 -->
@@ -207,7 +217,7 @@
                         <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                     </div>
                     <h3 class="text-xl font-bold mb-3 text-white">Geração de Drivers</h3>
-                    <p class="text-slate-400">Precisa integrar um dispositivo novo? O Codex escreve o driver Groovy para você, testa e instala no Hub. Sem dor de cabeça.</p>
+                    <p class="text-slate-400">Precisa integrar um dispositivo novo? O Codex busca nos repositórios globais e brasileiros, instala e testa.</p>
                 </div>
 
                 <!-- Feature 3 -->
@@ -271,10 +281,6 @@
                             </div>
                         </li>
                     </ul>
-                    
-                    <button class="px-8 py-4 bg-gradient-to-r from-codex-accent to-lumina-600 text-white font-bold rounded-xl shadow-lg shadow-purple-900/50 hover:shadow-purple-700/50 hover:scale-105 transition-all w-full sm:w-auto">
-                        Quero o Lumina Box
-                    </button>
                 </div>
                 
                 <!-- Visual (Simulated Box) -->
@@ -318,6 +324,95 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="plans" class="py-24 bg-slate-900/50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Escolha seu Plano</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">Flexibilidade para integradores de todos os tamanhos.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- Plan 1: Software -->
+                <div class="glass-card p-8 rounded-3xl border-t-4 border-t-lumina-500 hover:-translate-y-2 transition-transform duration-300 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-lumina-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    <h3 class="text-2xl font-bold text-white mb-2">Lumina Codex</h3>
+                    <p class="text-lumina-400 text-sm font-bold uppercase tracking-wide mb-6">Somente Software</p>
+                    
+                    <div class="flex items-baseline mb-8">
+                        <span class="text-4xl font-bold text-white">R$ 350</span>
+                        <span class="text-slate-400 ml-2">/ mês</span>
+                    </div>
+
+                    <ul class="space-y-4 mb-8 text-slate-300">
+                        <li class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-lumina-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Chat com IA Especialista
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-lumina-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Geração de Drivers e Apps
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-lumina-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Curadoria Domótika + Suporte Humano
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-lumina-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Acesso via Web/Mobile
+                        </li>
+                    </ul>
+
+                    <a href="#" class="block w-full py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-center rounded-xl transition-all">
+                        Assinar Codex
+                    </a>
+                </div>
+
+                <!-- Plan 2: Hardware + Software -->
+                <div class="glass-card p-8 rounded-3xl border-t-4 border-t-codex-accent hover:-translate-y-2 transition-transform duration-300 relative overflow-hidden ring-1 ring-codex-accent/50">
+                    <div class="absolute top-0 right-0 bg-codex-accent text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-widest">Recomendado</div>
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-codex-accent/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    
+                    <h3 class="text-2xl font-bold text-white mb-2">Lumina Box</h3>
+                    <p class="text-codex-accent text-sm font-bold uppercase tracking-wide mb-6">Hardware + Software Pro</p>
+                    
+                    <div class="mb-2">
+                        <span class="text-sm text-slate-400">Setup Hardware:</span>
+                        <span class="text-xl font-bold text-white block">R$ 2.000,00 <span class="text-xs font-normal text-slate-500">(pagamento único)</span></span>
+                    </div>
+                    <div class="flex items-baseline mb-8 pt-2 border-t border-white/5">
+                        <span class="text-4xl font-bold text-white">R$ 250</span>
+                        <span class="text-slate-400 ml-2">/ mês</span>
+                        <span class="text-xs text-green-400 ml-2 bg-green-500/10 px-2 py-1 rounded-full">Economia na mensalidade</span>
+                    </div>
+
+                    <ul class="space-y-4 mb-8 text-slate-300">
+                        <li class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-codex-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <strong>Tudo do plano Codex</strong>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-codex-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Hardware Lumina Box Incluso
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-codex-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Diagnóstico de Rede Avançado
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-codex-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Acesso Remoto via Túnel Seguro
+                        </li>
+                    </ul>
+
+                    <a href="#" class="block w-full py-4 bg-gradient-to-r from-codex-accent to-lumina-600 hover:brightness-110 text-white font-bold text-center rounded-xl transition-all shadow-lg shadow-purple-900/20">
+                        Encomendar Box
+                    </a>
                 </div>
             </div>
         </div>
