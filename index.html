@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Codex - Inteligência Artificial para Automação Hubitat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        lumina: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        },
+                        codex: {
+                            accent: '#8b5cf6', // Violet
+                            dark: '#0f172a',   // Slate 900
+                            card: '#1e293b',   // Slate 800
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #38bdf8, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(139, 92, 246, 0.05) 50%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .code-block {
+            font-family: 'Fira Code', monospace;
+            background: #0f172a;
+            border: 1px solid #334155;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-lumina-500 selection:text-white">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 top-0 start-0 border-b border-white/5 bg-codex-dark/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between px-6 py-4">
+            <a href="#" class="flex items-center space-x-3 rtl:space-x-reverse group">
+                <!-- Logo Lumina Codex -->
+                <div class="relative w-10 h-10 flex items-center justify-center bg-gradient-to-br from-lumina-500 to-codex-accent rounded-xl shadow-lg group-hover:shadow-lumina-500/50 transition-all duration-300">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-codex-dark rounded-full flex items-center justify-center border border-white/10">
+                        <span class="block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    </div>
+                </div>
+                <span class="self-center text-2xl font-bold whitespace-nowrap tracking-tight">Lumina <span class="font-light text-lumina-400">Codex</span></span>
+            </a>
+            <div class="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+                <button type="button" class="text-white bg-lumina-600 hover:bg-lumina-700 focus:ring-4 focus:outline-none focus:ring-lumina-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-all shadow-lg shadow-lumina-900/50 hover:shadow-lumina-600/50">Acesso Antecipado</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center justify-center pt-24 pb-12 overflow-hidden">
+        <div class="hero-glow animate-pulse-slow"></div>
+        
+        <div class="container mx-auto px-6 relative z-10 text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lumina-500/10 border border-lumina-500/20 text-lumina-300 text-sm font-medium mb-8 animate-fade-in-up">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-lumina-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-lumina-500"></span>
+                </span>
+                Nova Era da Automação Hubitat
+            </div>
+            
+            <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
+                Sua Inteligência Artificial para <br>
+                <span class="gradient-text">Automação Residencial</span>
+            </h1>
+            
+            <p class="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed">
+                Gerencie, configure e automatize seu Hubitat com comandos de voz e chat natural. 
+                Deixe a IA criar drivers, regras complexas e diagnósticos de rede enquanto você foca no que importa.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="#features" class="px-8 py-4 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-all shadow-xl hover:scale-105 flex items-center gap-2">
+                    Conhecer o Codex
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                </a>
+                <a href="#hardware" class="px-8 py-4 bg-slate-800 text-white font-medium rounded-xl hover:bg-slate-700 border border-slate-700 transition-all hover:scale-105 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                    Conhecer Lumina Box
+                </a>
+            </div>
+
+            <!-- Chat Demo -->
+            <div class="mt-16 max-w-4xl mx-auto text-left animate-float">
+                <div class="glass-card rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50">
+                    <div class="bg-slate-900/80 px-4 py-3 border-b border-slate-700/50 flex items-center gap-2">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="ml-4 text-xs text-slate-400 font-mono">codex-terminal — bash — 80x24</div>
+                    </div>
+                    <div class="p-6 space-y-4 font-mono text-sm">
+                        <div class="flex gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-700 flex-shrink-0 flex items-center justify-center text-xs">USR</div>
+                            <div class="bg-slate-800/50 p-3 rounded-lg rounded-tl-none text-slate-300 max-w-[80%]">
+                                Crie uma regra para ligar as luzes do jardim se detectar movimento, mas só se for noite e o alarme estiver armado.
+                            </div>
+                        </div>
+                        <div class="flex gap-3 flex-row-reverse">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-lumina-500 to-codex-accent flex-shrink-0 flex items-center justify-center text-xs text-white">AI</div>
+                            <div class="bg-lumina-900/20 border border-lumina-500/20 p-3 rounded-lg rounded-tr-none text-lumina-100 max-w-[90%]">
+                                <p class="mb-2">Entendido. Criando App Groovy personalizado para essa automação...</p>
+                                <div class="code-block p-3 rounded text-xs text-green-400 overflow-x-auto">
+                                    <span class="text-purple-400">definition</span>(<br>
+                                    &nbsp;&nbsp;name: <span class="text-yellow-300">"Jardim Seguro"</span>,<br>
+                                    &nbsp;&nbsp;namespace: <span class="text-yellow-300">"lumina"</span>,<br>
+                                    &nbsp;&nbsp;author: <span class="text-yellow-300">"Lumina Codex"</span><br>
+                                    )
+                                </div>
+                                <div class="mt-2 flex items-center gap-2 text-xs text-slate-400">
+                                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    App instalado e configurado no Hubitat com sucesso.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 bg-slate-900/50 relative">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Poder Ilimitado para Integradores</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">Esqueça o Rule Machine complexo. Com o Lumina Codex, você fala e a automação acontece.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="glass-card p-8 rounded-2xl hover:bg-slate-800/80 transition-all group">
+                    <div class="w-14 h-14 bg-lumina-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <svg class="w-8 h-8 text-lumina-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">Chat com IA Contextual</h3>
+                    <p class="text-slate-400">Converse naturalmente. O Codex entende o contexto da sua casa, seus dispositivos e cria soluções sob medida.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass-card p-8 rounded-2xl hover:bg-slate-800/80 transition-all group">
+                    <div class="w-14 h-14 bg-purple-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">Geração de Drivers</h3>
+                    <p class="text-slate-400">Precisa integrar um dispositivo novo? O Codex escreve o driver Groovy para você, testa e instala no Hub. Sem dor de cabeça.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass-card p-8 rounded-2xl hover:bg-slate-800/80 transition-all group">
+                    <div class="w-14 h-14 bg-green-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">Instalação One-Click</h3>
+                    <p class="text-slate-400">Drivers, Apps e Regras instalados instantaneamente. O Lumina Bridge cuida da execução segura no seu Hubitat.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hardware Section (Lumina Box) -->
+    <section id="hardware" class="py-24 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-slate-900 to-black z-0"></div>
+        <div class="absolute right-0 top-0 w-1/2 h-full bg-lumina-900/10 skew-x-12 blur-3xl"></div>
+        
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="flex flex-col lg:flex-row items-center gap-16">
+                <!-- Text Content -->
+                <div class="lg:w-1/2">
+                    <div class="inline-block px-4 py-1 rounded-full bg-codex-accent/20 text-codex-accent border border-codex-accent/30 text-sm font-bold mb-6">
+                        HARDWARE PRO
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">
+                        Lumina <span class="text-transparent bg-clip-text bg-gradient-to-r from-codex-accent to-lumina-400">Box</span>
+                    </h2>
+                    <p class="text-xl text-slate-300 mb-8 font-light">
+                        A "Maleta de Ferramentas Digital" do integrador profissional. 
+                        Um hardware compacto (Raspberry Pi Zero 2W) que revoluciona seu diagnóstico e suporte.
+                    </p>
+                    
+                    <ul class="space-y-4 mb-10">
+                        <li class="flex items-start gap-3">
+                            <div class="mt-1 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white">Diagnóstico de Rede Profissional</h4>
+                                <p class="text-sm text-slate-400">Scan completo (nmap) para achar devices, IPs duplicados e problemas de Wi-Fi.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="mt-1 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white">Acesso Remoto Blindado</h4>
+                                <p class="text-sm text-slate-400">Túnel reverso seguro (sem abrir portas no roteador) para gestão total de qualquer lugar.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="mt-1 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white">Backup Local Infinito</h4>
+                                <p class="text-sm text-slate-400">Guarda configs, drivers e meses de logs offline. Seu Hubitat seguro contra falhas.</p>
+                            </div>
+                        </li>
+                    </ul>
+                    
+                    <button class="px-8 py-4 bg-gradient-to-r from-codex-accent to-lumina-600 text-white font-bold rounded-xl shadow-lg shadow-purple-900/50 hover:shadow-purple-700/50 hover:scale-105 transition-all w-full sm:w-auto">
+                        Quero o Lumina Box
+                    </button>
+                </div>
+                
+                <!-- Visual (Simulated Box) -->
+                <div class="lg:w-1/2 relative">
+                    <div class="absolute -inset-4 bg-gradient-to-r from-codex-accent to-lumina-500 rounded-3xl blur-2xl opacity-30"></div>
+                    <div class="relative bg-slate-900 border border-slate-700 rounded-3xl p-8 shadow-2xl">
+                        <!-- Box Image Placeholder / CSS Art -->
+                        <div class="aspect-video bg-slate-800 rounded-xl overflow-hidden relative group">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-48 h-32 bg-slate-900 rounded-lg border-2 border-slate-700 shadow-xl flex flex-col items-center justify-center relative">
+                                    <!-- LED Indicator -->
+                                    <div class="absolute top-3 right-3 w-2 h-2 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)] animate-pulse"></div>
+                                    <!-- Logo on Box -->
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <svg class="w-8 h-8 text-lumina-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                        <span class="text-white font-bold tracking-wider">LUMINA</span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-500 font-mono tracking-[0.2em] mt-2">PROFESSIONAL SERIES</div>
+                                    <!-- Ports -->
+                                    <div class="absolute bottom-0 left-0 w-full h-4 bg-slate-950 rounded-b-lg flex justify-center gap-4 px-4 items-center">
+                                        <div class="w-8 h-2 bg-slate-700 rounded-sm"></div>
+                                        <div class="w-8 h-2 bg-slate-700 rounded-sm"></div>
+                                        <div class="w-4 h-2 bg-slate-700 rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Overlay Info -->
+                            <div class="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-md p-4 rounded-lg border border-white/10">
+                                <div class="flex justify-between items-center text-xs font-mono">
+                                    <span class="text-green-400">● SYSTEM ONLINE</span>
+                                    <span class="text-slate-400">UPTIME: 42d 12h</span>
+                                </div>
+                                <div class="mt-2 h-1 bg-slate-700 rounded-full overflow-hidden">
+                                    <div class="h-full bg-green-500 w-3/4"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                                    <span>CPU: 12%</span>
+                                    <span>MEM: 450MB</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section class="py-20 text-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-lumina-900/20 z-0"></div>
+        <div class="container mx-auto px-6 relative z-10">
+            <h2 class="text-3xl md:text-5xl font-bold mb-8">Pronto para o Futuro da Automação?</h2>
+            <p class="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
+                Junte-se aos integradores que estão economizando horas de trabalho e entregando casas mais inteligentes com Lumina Codex.
+            </p>
+            <form class="max-w-md mx-auto flex gap-2">
+                <input type="email" placeholder="Seu melhor e-mail" class="flex-1 bg-slate-800 border border-slate-600 text-white px-6 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-lumina-500 transition-all placeholder-slate-500">
+                <button type="submit" class="bg-lumina-600 hover:bg-lumina-500 text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg">
+                    Entrar na Lista
+                </button>
+            </form>
+            <p class="text-xs text-slate-500 mt-4">Acesso limitado para parceiros Beta.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-12">
+        <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center gap-2 mb-4 md:mb-0">
+                <svg class="w-6 h-6 text-lumina-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <span class="text-xl font-bold">Lumina <span class="text-slate-500">Codex</span></span>
+            </div>
+            <div class="text-slate-500 text-sm">
+                &copy; 2026 Domótika Ambientes Inteligentes. Todos os direitos reservados.
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
