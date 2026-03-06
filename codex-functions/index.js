@@ -127,7 +127,8 @@ const corsHeaders = {
 export const api = onRequest({ 
   cors: true,
   maxInstances: 10,
-  timeoutSeconds: 60
+  timeoutSeconds: 60,
+  invoker: 'public'  // Permite acesso sem autenticação
 }, async (req, res) => {
   // Handle preflight
   if (req.method === 'OPTIONS') {
