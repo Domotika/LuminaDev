@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:pro": "vite build --config vite.config.pro.ts",
     "build:cloud": "vite build --config vite.config.cloud.ts",
     "preview": "vite preview"
   },
