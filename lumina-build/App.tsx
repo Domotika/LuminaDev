@@ -10,6 +10,7 @@ import { ImageEditorModal } from './components/ImageEditorModal';
 import { AuthLock } from './components/AuthLock';
 import { DenonRemote } from './components/DenonRemote';
 import { LGRemote } from './components/LGRemote';
+import { SamsungRemote } from './components/SamsungRemote';
 import { ACRemote } from './components/ACRemote';
 import { 
     saveConfig, getConfig, fetchHubitatDevices, testConnection, 
@@ -44,8 +45,12 @@ import {
   getWeather, searchCity, getSavedWeatherConfig, saveWeatherConfig, getWeatherInfo, getDayName,
   WeatherConfig, WeatherData 
 } from './services/weatherService';
-import { ArrowLeft, Home, Grid, Settings, Zap, Shield, Thermometer, Save, X, LayoutDashboard, CloudSun, Droplets, Wind, Sun, CheckCircle, AlertTriangle, Wifi, Globe, Lock, WifiOff, Copy, Sliders, EyeOff, ChevronRight, ChevronUp, ChevronDown, Image as ImageIcon, Trash2, Upload, PenLine, Camera, Plus, LayoutTemplate, RefreshCcw, Cloud, Download, Terminal, MapPin, Search, Ban, Tv, Blinds, Layout, Layers, Bell, Star } from 'lucide-react';
+import { ArrowLeft, Home, Grid, Settings, Zap, Shield, Thermometer, Save, X, LayoutDashboard, CloudSun, Droplets, Wind, Sun, CheckCircle, AlertTriangle, Wifi, Globe, Lock, WifiOff, Copy, Sliders, EyeOff, ChevronRight, ChevronUp, ChevronDown, Image as ImageIcon, Trash2, Upload, PenLine, Camera, Plus, LayoutTemplate, RefreshCcw, Cloud, Download, Terminal, MapPin, Search, Ban, Tv, Blinds, Layout, Layers, Bell, Star, Palette } from 'lucide-react';
 import { getIconForDevice } from './components/Icons';
+import { ThemeSelector } from './components/ThemeSelector';
+import { SidebarLayout } from './components/SidebarLayout';
+import { initTheme, loadSavedTheme, applyTheme, getTheme, THEMES } from './themes';
+import { FEATURES, IS_PRO, VERSION } from './features';
 
 // Initialize React Grid Layout
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -63,6 +68,12 @@ const App = () => {
     const saved = getConfig();
     return saved?.enableLock === true; // Default false
   });
+  
+  // Theme System
+  const [currentTheme, setCurrentTheme] = useState(() => {
+    return localStorage.getItem('lumina-theme') || 'highline';
+  });
+  
   const [state, setState] = useState<AppState>({
     currentRoomId: null,
     rooms: getSavedRooms() || MOCK_ROOMS,
@@ -144,6 +155,12 @@ const App = () => {
   const [editingWidget, setEditingWidget] = useState<{ type: string; widget?: HomeWidget } | null>(null);
 
   // --- Effects ---
+  
+  // Initialize Theme System on mount
+  useEffect(() => {
+    initTheme();
+  }, []);
+  
   useEffect(() => {
     // Check Protocol and Origin
     setIsHttps(window.location.protocol === 'https:');
@@ -1107,6 +1124,18 @@ const App = () => {
                                 onDelete={handleDeleteDevice}
                                 onBeforeCommand={() => pausePolling(4000)}
                             />
+                        ) : device.type === DeviceType.SAMSUNG_TV ? (
+                            <SamsungRemote 
+                                device={device}
+                                onUpdate={handleDeviceUpdate}
+                                allDevices={allDevices}
+                                rooms={state.rooms}
+                                onDuplicate={handleDuplicateDevice}
+                                onRename={handleRenameDevice}
+                                onAssignAction={handleRoomAssignmentChange}
+                                onDelete={handleDeleteDevice}
+                                onBeforeCommand={() => pausePolling(4000)}
+                            />
                         ) : device.type === DeviceType.AVR ? (
                             <DenonRemote 
                                 device={device} 
@@ -1257,6 +1286,24 @@ const App = () => {
   if (isLocked) {
       return <AuthLock onUnlock={() => setIsLocked(false)} />;
   }
+  
+  // --- 0.6 SIDEBAR LAYOUT (SmartHome Pro) - PRO ONLY ---
+  const currentThemeData = THEMES[currentTheme];
+  if (FEATURES.SIDEBAR_LAYOUT && currentThemeData?.layout === 'sidebar') {
+      return (
+          <SidebarLayout
+              rooms={state.rooms}
+              devices={state.devices}
+              currentRoomId={state.currentRoomId}
+              onRoomSelect={(roomId) => setState(s => ({ ...s, currentRoomId: roomId }))}
+              onSettingsClick={() => setActiveTab('settings')}
+              onDeviceUpdate={handleDeviceUpdate}
+              isConnected={connectionStatus.status === 'success'}
+              isDemoMode={!configForm.hubIp && !configForm.useCloud}
+              brandName="SMARTHOME PRO"
+          />
+      );
+  }
 
   // --- Main Content Renderer ---
   const renderContent = () => {
@@ -1268,8 +1315,8 @@ const App = () => {
         
         return (
             <div className="flex flex-col items-center w-full animate-in fade-in duration-700 pt-8">
-                {/* Favorites Bar (v1.6 Premium) */}
-                {favorites.length > 0 && (
+                {/* Favorites Bar (v1.6 Premium) - PRO ONLY */}
+                {FEATURES.FAVORITES && favorites.length > 0 && (
                     <div className="w-full max-w-4xl px-4 mb-8">
                         <FavoritesBar 
                             favorites={favorites}
@@ -1938,7 +1985,8 @@ const App = () => {
                         <div className="space-y-4 mb-8 border-b border-white/10 pb-8"><h2 className="text-xl font-light flex items-center gap-2"><LayoutTemplate size={20} /> Ambientes</h2><div className="flex gap-2"><input type="text" value={newRoomName} onChange={(e) => setNewRoomName(e.target.value)} placeholder="Novo ambiente..." className="flex-1 bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-white/30 text-sm" /><button onClick={handleAddRoom} className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-lg border border-white/5"><Plus size={20} /></button></div><button onClick={handleImportRooms} disabled={importingRooms} className="w-full mt-3 bg-gradient-to-r from-green-600/20 to-emerald-400/20 border border-green-400/20 text-green-200 font-medium text-sm py-3 rounded-xl flex items-center justify-center gap-2 hover:from-green-600/30 hover:to-emerald-400/30 transition-all disabled:opacity-50">{importingRooms ? <RefreshCcw size={16} className="animate-spin" /> : <Download size={16} />}<span>{importingRooms ? 'Importando...' : 'Importar do Hubitat'}</span></button><div className="space-y-2 mt-4 max-h-40 overflow-y-auto custom-scrollbar">{state.rooms.map(room => (<div key={room.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5"><span className="text-sm">{room.name}</span><button onClick={() => handleDeleteRoom(room.id)} className="text-white/30 hover:text-red-300 p-1"><Trash2 size={14} /></button></div>))}</div></div>
                         <div className="space-y-4"><h2 className="text-xl font-light flex items-center gap-2"><Sliders size={20} /> Personalização</h2><button onClick={() => setShowDeviceManager(true)} className="w-full bg-gradient-to-r from-blue-600/20 to-blue-400/20 border border-blue-400/20 text-white font-medium text-sm py-4 rounded-xl flex items-center justify-between px-6"><span className="flex flex-col items-start"><span>Gerenciar Dispositivos</span><span className="text-[10px] text-white/60 font-normal">Atribuir cômodos e ocultar itens</span></span><ChevronRight size={16} /></button><div className="bg-white/5 border border-white/10 rounded-xl p-4"><div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><ImageIcon size={16} className="text-white/60" /><p className="font-medium text-sm">Logo da Empresa</p></div>{customLogo && <button onClick={handleRemoveLogo} className="p-2 bg-red-500/20 text-red-200 rounded-lg"><Trash2 size={16} /></button>}</div><label className="w-full border border-dashed border-white/20 bg-black/20 rounded-lg h-24 flex flex-col items-center justify-center cursor-pointer hover:bg-black/30 transition-all group">{customLogo ? (<img src={customLogo} alt="Logo" className="h-16 object-contain opacity-80 group-hover:opacity-100" />) : (<><Upload size={20} className="text-white/40 mb-2 group-hover:text-white" /><span className="text-[10px] uppercase text-white/40">Clique para enviar (PNG)</span></>)}<input type="file" accept="image/png" onChange={handleLogoUpload} className="hidden" /></label></div></div>
                         
-                        {/* v1.6 Premium: Favorites Editor */}
+                        {/* v1.6 Premium: Favorites Editor - PRO ONLY */}
+                        {FEATURES.FAVORITES && (
                         <div className="space-y-4 mt-8 border-t border-white/10 pt-8">
                             <h2 className="text-xl font-light flex items-center gap-2"><Star size={20} className="text-yellow-400" /> Favoritos</h2>
                             <p className="text-[10px] text-white/60">Selecione até 5 dispositivos para acesso rápido na tela inicial. Use as setas para reordenar.</p>
@@ -2008,8 +2056,22 @@ const App = () => {
                                 </div>
                             )}
                         </div>
+                        )}
                         
-                        {/* v1.6: Câmeras IP */}
+                        {/* Tema Visual - PRO ONLY */}
+                        {FEATURES.THEME_SYSTEM && (
+                        <div className="space-y-4 mt-8 border-t border-white/10 pt-8">
+                            <h2 className="text-xl font-light flex items-center gap-2"><Palette size={20} className="text-purple-400" /> Tema Visual</h2>
+                            <p className="text-[10px] text-white/60">Escolha o estilo visual do dashboard.</p>
+                            <ThemeSelector 
+                                currentTheme={currentTheme}
+                                onThemeChange={(themeId) => setCurrentTheme(themeId)}
+                            />
+                        </div>
+                        )}
+                        
+                        {/* v1.6: Câmeras IP - PRO ONLY */}
+                        {FEATURES.CAMERAS_IP && (
                         <div className="space-y-4 mt-8 border-t border-white/10 pt-8">
                             <h2 className="text-xl font-light flex items-center gap-2"><Camera size={20} className="text-blue-400" /> Câmeras IP</h2>
                             <p className="text-[10px] text-white/60">Adicione até 4 câmeras IP com MJPEG ou snapshot HTTP.</p>
@@ -2045,6 +2107,7 @@ const App = () => {
                                 </button>
                             )}
                         </div>
+                        )}
                     </GlassCard>
                 </div>
                 

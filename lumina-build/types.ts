@@ -8,7 +8,8 @@ export enum DeviceType {
   LOCK = 'LOCK',
   MEDIA = 'MEDIA',
   AVR = 'AVR',
-  TV = 'TV',
+  TV = 'TV',               // LG TV (webOS)
+  SAMSUNG_TV = 'SAMSUNG_TV', // Samsung TV (WOL + WebSocket)
   SCENE = 'SCENE',
   MOTION = 'MOTION',
   PRESENCE = 'PRESENCE',
@@ -67,6 +68,7 @@ export interface Device {
 
     // Campos para Persianas
     windowShade?: string; // open, closed, opening, closing, unknown
+    gwOnline?: string; // online, offline, unknown (MolSmart GW3/GW8)
 
     // Campos para Sensores
     motion?: string; // active, inactive

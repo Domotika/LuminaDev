@@ -471,6 +471,11 @@ export const mapAttributesToState = (attributes: any[]) => {
       state.isOn = ['open', 'opening', 'partially open'].includes(valStr);
     }
     
+    // MolSmart GW3/GW8 online status
+    if (name === 'gw3Online' || name === 'gw8Online') {
+      state.gwOnline = valStr; // online, offline, unknown
+    }
+    
     if (name === 'temperature') state.temperature = value;
     if (name === 'thermostatSetpoint' || name === 'coolingSetpoint') state.setpoint = value;
     if (name === 'thermostatMode') {
@@ -642,8 +647,14 @@ export const mapHubitatTypeToAppType = (capabilities: string[] | string, name: s
   // 4. MULTIMÍDIA - TV (ANTES de AC, pois TVs podem ter sensores de temperatura)
   // IMPORTANTE: Só detectar como TV se tiver capability de TV ou audiovolume
   // Switches simples com "TV" no nome (ex: "TV Mute", "TV Netflix") devem ser SWITCH, não TV
-  if (caps.includes('tv') || caps.includes('samsungtv')) return DeviceType.TV;
-  if (caps.includes('audiovolume') && (lowerName.includes('tv') || lowerName.includes('samsung') || lowerName.includes('lg'))) return DeviceType.TV;
+  
+  // 4a. Samsung TV - detectar primeiro (usa WOL para ligar)
+  if (caps.includes('samsungtv')) return DeviceType.SAMSUNG_TV;
+  if (caps.includes('audiovolume') && lowerName.includes('samsung')) return DeviceType.SAMSUNG_TV;
+  
+  // 4b. LG TV - webOS (padrão para outros TVs também)
+  if (caps.includes('tv')) return DeviceType.TV;
+  if (caps.includes('audiovolume') && (lowerName.includes('tv') || lowerName.includes('lg'))) return DeviceType.TV;
   
   // 5. SoundSmart/Multiroom Audio Players (NOVO v1.6)
   if (lowerName.includes('soundsmart') || lowerName.includes('molsmart audio') || 
@@ -666,6 +677,8 @@ export const mapHubitatTypeToAppType = (capabilities: string[] | string, name: s
   // 8. Iluminação
   // Dimmers
   if (caps.includes('switchlevel') || caps.includes('changelevel')) return DeviceType.DIMMER;
+  // Detecção por nome para child devices de dimmer
+  if (caps.includes('switch') && lowerName.includes('dimmer')) return DeviceType.DIMMER;
   // Luzes RGB/CCT
   if (caps.includes('colorcontrol') || caps.includes('colortemperature')) return DeviceType.LIGHT;
   // Luzes por nome
