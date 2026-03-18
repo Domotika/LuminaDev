@@ -2,6 +2,402 @@ import { HubitatCommand, HubitatConfig, Device, DeviceType, Room, Favorite, Noti
 import { MOCK_DEVICES } from '../constants';
 
 // ============================================================
+// LUMINA BACKUP SYSTEM - Integração direta no dashboard
+// ============================================================
+class LuminaBackupService {
+  private hubitatService: HubitatService | null = null;
+  private backupDriverId: string | null = null;
+
+  constructor() {
+    this.init();
+  }
+
+  async init() {
+    // Aguarda a inicialização do DOM
+    setTimeout(() => {
+      this.findBackupDriver();
+    }, 2000);
+  }
+
+  // Implementação simples de sendCommand usando fetch direto
+  async sendCommand(deviceId: string, command: string, ...parameters: any[]) {
+    try {
+      const config = getConfig();
+      if (!config || !config.hubIP || !config.accessToken) {
+        throw new Error('Configuração do Hubitat não encontrada');
+      }
+
+      const baseUrl = config.cloudUrl || `http://${config.hubIP}/apps/api/`;
+      const params = parameters.length > 0 ? `/${parameters.join('/')}` : '';
+      const url = `${baseUrl}${config.appId}/devices/${deviceId}/${command}${params}?access_token=${config.accessToken}`;
+
+      const response = await fetch(url, { method: 'GET' });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erro no sendCommand:', error);
+      throw error;
+    }
+  }
+
+  async findBackupDriver() {
+    try {
+      const devices = await this.getDevices();
+      const backupDriver = devices.find((d: any) => 
+        d.name?.toLowerCase().includes('lumina backup') ||
+        d.label?.toLowerCase().includes('lumina backup')
+      );
+      
+      if (backupDriver) {
+        this.backupDriverId = backupDriver.id;
+        console.log('✅ Lumina Backup Driver encontrado:', backupDriver.id);
+        this.addBackupButton();
+      } else {
+        console.log('⚠️ Lumina Backup Driver não encontrado - funcionalidade desabilitada');
+      }
+    } catch (error) {
+      console.warn('Erro ao procurar backup driver:', error);
+    }
+  }
+
+  // Função para obter devices usando fetch direto
+  async getDevices() {
+    try {
+      const config = getConfig();
+      if (!config || !config.hubIP || !config.accessToken) {
+        throw new Error('Configuração do Hubitat não encontrada');
+      }
+
+      const baseUrl = config.cloudUrl || `http://${config.hubIP}/apps/api/`;
+      const url = `${baseUrl}${config.appId}/devices/all?access_token=${config.accessToken}`;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erro ao obter devices:', error);
+      return [];
+    }
+  }
+
+  private addBackupButton() {
+    // Aguarda DOM carregar
+    setTimeout(() => {
+      const backupBtn = document.createElement('button');
+      backupBtn.innerHTML = '💾 Backup';
+      backupBtn.className = 'lumina-backup-btn';
+      backupBtn.onclick = () => this.showBackupModal();
+      backupBtn.title = 'Backup completo da configuração';
+      
+      // Adiciona CSS inline
+      const style = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        padding: 10px 15px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: all 0.2s;
+      `;
+      backupBtn.style.cssText = style;
+      
+      // Hover effect
+      backupBtn.onmouseenter = () => {
+        backupBtn.style.background = '#1e7e34';
+        backupBtn.style.transform = 'translateY(-1px)';
+      };
+      backupBtn.onmouseleave = () => {
+        backupBtn.style.background = '#28a745';
+        backupBtn.style.transform = 'translateY(0)';
+      };
+      
+      document.body.appendChild(backupBtn);
+    }, 3000);
+  }
+
+  private showBackupModal() {
+    const modal = document.createElement('div');
+    modal.className = 'lumina-backup-modal';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>🗄️ Backup Lumina Dashboard</h3>
+          <button class="close-btn" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+        </div>
+        <div class="backup-actions">
+          <button class="action-btn primary" onclick="window.luminaBackup.saveConfigBackup()">
+            💾 Backup Configuração
+          </button>
+          <button class="action-btn success" onclick="window.luminaBackup.saveFullBackup()">
+            📦 Backup Completo
+          </button>
+          <button class="action-btn info" onclick="window.luminaBackup.showConnectionForm()">
+            🔗 Dados de Conexão
+          </button>
+          <button class="action-btn secondary" onclick="window.luminaBackup.showInfo()">
+            ℹ️ Informações
+          </button>
+        </div>
+        <div id="backup-content"></div>
+      </div>
+    `;
+
+    // CSS inline para o modal
+    const modalStyle = document.createElement('style');
+    modalStyle.textContent = `
+      .lumina-backup-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      .lumina-backup-modal .modal-content {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        min-width: 500px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      }
+      .lumina-backup-modal .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 15px;
+      }
+      .lumina-backup-modal h3 {
+        margin: 0;
+        color: #333;
+      }
+      .lumina-backup-modal .close-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+      }
+      .lumina-backup-modal .backup-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .lumina-backup-modal .action-btn {
+        padding: 12px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+      .lumina-backup-modal .action-btn.primary { background: #007bff; color: white; }
+      .lumina-backup-modal .action-btn.success { background: #28a745; color: white; }
+      .lumina-backup-modal .action-btn.info { background: #17a2b8; color: white; }
+      .lumina-backup-modal .action-btn.secondary { background: #6c757d; color: white; }
+      .lumina-backup-modal .action-btn:hover { transform: translateY(-1px); opacity: 0.9; }
+      #backup-content {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+      }
+    `;
+    document.head.appendChild(modalStyle);
+    document.body.appendChild(modal);
+
+    // Registra métodos globais
+    (window as any).luminaBackup = this;
+  }
+
+  async saveConfigBackup() {
+    try {
+      if (!this.backupDriverId) {
+        alert('❌ Driver de backup não disponível');
+        return;
+      }
+
+      const config = this.getCurrentConfig();
+      const configJson = JSON.stringify(config, null, 2);
+      
+      await this.sendCommand(this.backupDriverId, 'saveConfig', configJson);
+      alert('✅ Backup da configuração salvo com sucesso!');
+      
+    } catch (error) {
+      console.error('Erro ao salvar backup:', error);
+      alert('❌ Erro ao salvar backup: ' + (error as Error).message);
+    }
+  }
+
+  async saveFullBackup() {
+    try {
+      if (!this.backupDriverId) {
+        alert('❌ Driver de backup não disponível');
+        return;
+      }
+
+      const config = this.getCurrentConfig();
+      const configJson = JSON.stringify(config, null, 2);
+      
+      await this.sendCommand(this.backupDriverId, 'saveFullConfig', configJson);
+      alert('✅ Backup completo salvo (configuração + dados de conexão)!');
+      
+    } catch (error) {
+      console.error('Erro ao salvar backup completo:', error);
+      alert('❌ Erro ao salvar backup completo: ' + (error as Error).message);
+    }
+  }
+
+  showConnectionForm() {
+    const content = document.getElementById('backup-content');
+    if (!content) return;
+
+    content.innerHTML = `
+      <h4 style="margin-top: 0;">🔗 Gerenciar Dados de Conexão</h4>
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Hub IP:</label>
+        <input type="text" id="hubIp" placeholder="192.168.1.100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${this.getCurrentHubIp()}">
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Maker API Token:</label>
+        <input type="text" id="makerToken" placeholder="abc123..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${this.getCurrentToken()}">
+      </div>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Cloud URL (opcional):</label>
+        <input type="text" id="cloudUrl" placeholder="https://cloud.hubitat.com/api/..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${this.getCurrentCloudUrl()}">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="window.luminaBackup.saveConnectionData()" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">💾 Salvar</button>
+        <button onclick="window.luminaBackup.loadConnectionData()" style="flex: 1; padding: 10px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;">📥 Carregar</button>
+      </div>
+    `;
+  }
+
+  async saveConnectionData() {
+    try {
+      if (!this.backupDriverId) {
+        alert('❌ Driver de backup não disponível');
+        return;
+      }
+
+      const hubIp = (document.getElementById('hubIp') as HTMLInputElement)?.value;
+      const makerToken = (document.getElementById('makerToken') as HTMLInputElement)?.value;
+      const cloudUrl = (document.getElementById('cloudUrl') as HTMLInputElement)?.value || '';
+
+      if (!hubIp || !makerToken) {
+        alert('❌ Hub IP e Maker Token são obrigatórios!');
+        return;
+      }
+
+      await this.sendCommand(this.backupDriverId, 'saveConnectionData', hubIp, makerToken, cloudUrl);
+      alert('✅ Dados de conexão salvos!');
+      
+    } catch (error) {
+      console.error('Erro ao salvar dados de conexão:', error);
+      alert('❌ Erro ao salvar: ' + (error as Error).message);
+    }
+  }
+
+  async loadConnectionData() {
+    try {
+      if (!this.backupDriverId) {
+        alert('❌ Driver de backup não disponível');
+        return;
+      }
+
+      await this.sendCommand(this.backupDriverId, 'getConnectionData');
+      
+      // Simula carregamento (na implementação real, recuperaria do device)
+      setTimeout(() => {
+        alert('✅ Use o "Re-detect Types" nas configurações para carregar os dados salvos');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      alert('❌ Erro ao carregar: ' + (error as Error).message);
+    }
+  }
+
+  showInfo() {
+    const content = document.getElementById('backup-content');
+    if (!content) return;
+
+    content.innerHTML = `
+      <h4 style="margin-top: 0;">ℹ️ Informações do Sistema de Backup</h4>
+      <div style="padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #007bff;">
+        <p><strong>📦 Driver:</strong> ${this.backupDriverId ? 'Conectado ✅' : 'Não encontrado ❌'}</p>
+        <p><strong>💾 Funcionalidades:</strong></p>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li>Backup de configuração (rooms, devices, settings)</li>
+          <li>Backup completo (configuração + dados de conexão)</li>
+          <li>Dados de conexão salvos permanentemente</li>
+          <li>Arquivos salvos no File Manager do Hubitat</li>
+          <li>Limpeza automática de backups antigos</li>
+        </ul>
+        <p><strong>📁 Localização:</strong> Hubitat → Settings → File Manager</p>
+        <p><strong>🔧 Instalação:</strong> Instale o driver "Lumina Backup Driver" e adicione à Maker API</p>
+      </div>
+    `;
+  }
+
+  private getCurrentConfig() {
+    return {
+      rooms: (window as any).rooms || [],
+      settings: (window as any).settings || {},
+      devices: (window as any).devices || [],
+      favorites: (window as any).favorites || [],
+      timestamp: new Date().toISOString(),
+      version: '1.6.0',
+      hubitatConfig: getConfig() || {}
+    };
+  }
+
+  private getCurrentHubIp(): string {
+    return localStorage.getItem('lumina_hub_ip') || (window as any).hubIP || '';
+  }
+
+  private getCurrentToken(): string {
+    return localStorage.getItem('lumina_maker_token') || (window as any).makerToken || '';
+  }
+
+  private getCurrentCloudUrl(): string {
+    return localStorage.getItem('lumina_cloud_url') || (window as any).cloudUrl || '';
+  }
+}
+
+// Inicializa sistema de backup
+const luminaBackup = new LuminaBackupService();
+(window as any).luminaBackup = luminaBackup;
+// ============================================================
+
+// ============================================================
 // PROXY PARA CORS - Intercepta requests quando em hosting externo
 // ============================================================
 // Proxy CORS (Hetzner)
