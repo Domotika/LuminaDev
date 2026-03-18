@@ -11,6 +11,8 @@ import { AuthLock } from './components/AuthLock';
 import { DenonRemote } from './components/DenonRemote';
 import { LGRemote } from './components/LGRemote';
 import { SamsungRemote } from './components/SamsungRemote';
+import { SoundSmartRemote } from './components/SoundSmartRemote';
+import { DimmerRemote } from './components/DimmerRemote';
 import { ACRemote } from './components/ACRemote';
 import { 
     saveConfig, getConfig, fetchHubitatDevices, testConnection, 
@@ -18,7 +20,7 @@ import {
     saveActionMapping, getActionMapping, getNameMapping, saveNameMapping,
     saveBackgroundMapping, getBackgroundMapping, saveRoomImageMapping, getRoomImageMapping,
     saveRooms, getSavedRooms, saveLayouts, getLayouts, GridItem,
-    syncToHubitat, syncFromHubitat, exportFullConfig, importFullConfig,
+    syncToHubitat, syncFromHubitat, exportFullConfig, importFullConfig, clearDeviceTypeCache,
     saveCustomDevice, getCustomDevices, removeCustomDevice,
     // v1.6 Premium
     getFavorites, saveFavorites, getNotifications, addNotification, getEnergyConfig,
@@ -102,6 +104,7 @@ const App = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const pollingPaused = useRef(false);
   const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lockedDevices = useRef<Set<string>>(new Set());
   const cloudSyncDone = useRef(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -388,7 +391,7 @@ const App = () => {
     if (showMenu) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu]);
-  const pausePolling = (ms = 4000) => {
+  const pausePolling = (ms = 6000) => {
   pollingPaused.current = true;
   if (pollingPauseTimer.current) clearTimeout(pollingPauseTimer.current);
   pollingPauseTimer.current = setTimeout(() => {
@@ -412,10 +415,22 @@ const App = () => {
           }
       });
 
-      setState(prev => ({
-        ...prev,
-        devices: mergedDevices
-      }));
+      setState(prev => {
+        // Preserve state of locked devices (recently commanded)
+        const finalDevices = { ...mergedDevices };
+        lockedDevices.current.forEach(lockedId => {
+          if (prev.devices[lockedId] && finalDevices[lockedId]) {
+            finalDevices[lockedId] = {
+              ...finalDevices[lockedId],
+              state: prev.devices[lockedId].state
+            };
+          }
+        });
+        return {
+          ...prev,
+          devices: finalDevices
+        };
+      });
       if (!silent) setLoading(false);
       return true;
     } else {
@@ -486,6 +501,12 @@ const App = () => {
   };
 
   const handleDeviceUpdate = (deviceId: string, newState: Partial<Device['state']>) => {
+    // Lock this device for 6 seconds to prevent polling from overwriting
+    lockedDevices.current.add(deviceId);
+    setTimeout(() => {
+      lockedDevices.current.delete(deviceId);
+    }, 6000);
+    
     setState(prev => ({
       ...prev,
       devices: {
@@ -513,9 +534,7 @@ const App = () => {
   };
 
   const handleSaveSettings = async () => {
-    console.log('[Lumina] Saving config:', JSON.stringify(configForm));
     saveConfig(configForm);
-    console.log('[Lumina] Saved! Verify:', localStorage.getItem('lumina_hubitat_config'));
     
     if (configForm.enableLock === false) {
         setIsLocked(false);
@@ -614,7 +633,7 @@ const App = () => {
           x: (index % 4) * 1, // Standard 4 columns
           y: Math.floor(index / 4),
           w: 1,
-          h: (d.type === DeviceType.AC || d.type === DeviceType.AVR || d.type === DeviceType.TV || d.type === DeviceType.IR_REMOTE) ? 2 : 1 // Remotes are taller
+          h: (d.type === DeviceType.AC || d.type === DeviceType.AVR || d.type === DeviceType.TV || d.type === DeviceType.IR_REMOTE || d.type === DeviceType.DIMMER || d.type === DeviceType.SOUNDSMART) ? 2 : 1 // Remotes are taller
       }));
   };
 
@@ -782,7 +801,7 @@ const App = () => {
               x: 0,
               y: maxY,
               w: 1,
-              h: (type === DeviceType.AC || type === DeviceType.TV || type === DeviceType.AVR || type === DeviceType.IR_REMOTE) ? 2 : 1
+              h: (type === DeviceType.AC || type === DeviceType.TV || type === DeviceType.AVR || type === DeviceType.IR_REMOTE || type === DeviceType.DIMMER || type === DeviceType.SOUNDSMART) ? 2 : 1
           };
 
           const newLayouts = {
@@ -1110,7 +1129,7 @@ const App = () => {
                                 onRename={handleRenameDevice}
                                 onAssignAction={handleRoomAssignmentChange}
                                 onDelete={handleDeleteDevice}
-                                onBeforeCommand={() => pausePolling(4000)}
+                                onBeforeCommand={() => pausePolling(6000)}
                             />
                         ) : device.type === DeviceType.TV ? (
                             <LGRemote 
@@ -1122,7 +1141,7 @@ const App = () => {
                                 onRename={handleRenameDevice}
                                 onAssignAction={handleRoomAssignmentChange}
                                 onDelete={handleDeleteDevice}
-                                onBeforeCommand={() => pausePolling(4000)}
+                                onBeforeCommand={() => pausePolling(6000)}
                             />
                         ) : device.type === DeviceType.SAMSUNG_TV ? (
                             <SamsungRemote 
@@ -1134,7 +1153,7 @@ const App = () => {
                                 onRename={handleRenameDevice}
                                 onAssignAction={handleRoomAssignmentChange}
                                 onDelete={handleDeleteDevice}
-                                onBeforeCommand={() => pausePolling(4000)}
+                                onBeforeCommand={() => pausePolling(6000)}
                             />
                         ) : device.type === DeviceType.AVR ? (
                             <DenonRemote 
@@ -1146,7 +1165,31 @@ const App = () => {
                                 onRename={handleRenameDevice}
                                 onAssignAction={handleRoomAssignmentChange}
                                 onDelete={handleDeleteDevice}
-                                onBeforeCommand={() => pausePolling(4000)}
+                                onBeforeCommand={() => pausePolling(6000)}
+                            />
+                        ) : device.type === DeviceType.SOUNDSMART ? (
+                            <SoundSmartRemote 
+                                device={device} 
+                                onUpdate={handleDeviceUpdate}
+                                allDevices={allDevices}
+                                rooms={state.rooms}
+                                onDuplicate={handleDuplicateDevice}
+                                onRename={handleRenameDevice}
+                                onAssignAction={handleRoomAssignmentChange}
+                                onDelete={handleDeleteDevice}
+                                onBeforeCommand={() => pausePolling(6000)}
+                            />
+                        ) : device.type === DeviceType.DIMMER ? (
+                            <DimmerRemote 
+                                device={device} 
+                                onUpdate={handleDeviceUpdate}
+                                allDevices={allDevices}
+                                rooms={state.rooms}
+                                onDuplicate={handleDuplicateDevice}
+                                onRename={handleRenameDevice}
+                                onAssignAction={handleRoomAssignmentChange}
+                                onDelete={handleDeleteDevice}
+                                onBeforeCommand={() => pausePolling(6000)}
                             />
                         ) : device.type === DeviceType.CAMERA ? (
                             <CameraCard 
@@ -1167,7 +1210,7 @@ const App = () => {
                                 onDelete={handleDeleteDevice}
                                 onAssignAction={handleAssignAction}
                                 onRename={handleRenameDevice}
-                                onBeforeCommand={() => pausePolling(4000)}
+                                onBeforeCommand={() => pausePolling(6000)}
                                 className="h-full"
                                 
                             />
@@ -1980,6 +2023,7 @@ const App = () => {
                                 <button onClick={handleCloudDownload} className="flex-1 bg-green-500/10 hover:bg-green-500/20 text-green-200 border border-green-500/20 p-3 rounded-lg flex flex-col items-center gap-1 transition-colors"><Download size={16} /><span className="text-[9px] uppercase font-bold">Baixar do Hub</span></button>
                                 <button onClick={handleGenerateBackup} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 p-3 rounded-lg flex flex-col items-center gap-1 transition-colors"><Settings size={16} /><span className="text-[9px] uppercase font-bold">Manual</span></button>
                             </div>
+                            <button onClick={() => { clearDeviceTypeCache(); alert('Cache de tipos limpo! Clique em "Atualizar" para re-detectar os dispositivos.'); }} className="w-full mt-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-200 border border-orange-500/20 p-3 rounded-lg flex items-center justify-center gap-2 transition-colors"><RefreshCcw size={16} /><span className="text-xs font-medium">Re-detectar Tipos de Dispositivos</span></button>
                             {syncStatus && <p className="text-center text-xs text-white/80 animate-pulse mt-2">{syncStatus}</p>}
                         </div>
                         <div className="space-y-4 mb-8 border-b border-white/10 pb-8"><h2 className="text-xl font-light flex items-center gap-2"><LayoutTemplate size={20} /> Ambientes</h2><div className="flex gap-2"><input type="text" value={newRoomName} onChange={(e) => setNewRoomName(e.target.value)} placeholder="Novo ambiente..." className="flex-1 bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-white/30 text-sm" /><button onClick={handleAddRoom} className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-lg border border-white/5"><Plus size={20} /></button></div><button onClick={handleImportRooms} disabled={importingRooms} className="w-full mt-3 bg-gradient-to-r from-green-600/20 to-emerald-400/20 border border-green-400/20 text-green-200 font-medium text-sm py-3 rounded-xl flex items-center justify-center gap-2 hover:from-green-600/30 hover:to-emerald-400/30 transition-all disabled:opacity-50">{importingRooms ? <RefreshCcw size={16} className="animate-spin" /> : <Download size={16} />}<span>{importingRooms ? 'Importando...' : 'Importar do Hubitat'}</span></button><div className="space-y-2 mt-4 max-h-40 overflow-y-auto custom-scrollbar">{state.rooms.map(room => (<div key={room.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5"><span className="text-sm">{room.name}</span><button onClick={() => handleDeleteRoom(room.id)} className="text-white/30 hover:text-red-300 p-1"><Trash2 size={14} /></button></div>))}</div></div>

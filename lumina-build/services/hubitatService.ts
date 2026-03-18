@@ -4,12 +4,13 @@ import { MOCK_DEVICES } from '../constants';
 // ============================================================
 // PROXY PARA CORS - Intercepta requests quando em hosting externo
 // ============================================================
-const PROXY_URL = 'https://us-central1-lumina-cloud-c8d21.cloudfunctions.net/hubitat';
+// Proxy CORS (Hetzner)
+const PROXY_URL = 'https://reservas.residencialpousadaacauan.com.br/hubitat';
 
 const isExternalHosting = (): boolean => {
   if (typeof window === 'undefined') return false;
   const host = window.location.hostname;
-  return host.includes('web.app') || host.includes('firebaseapp.com') || host.includes('domotika.com');
+  return host.includes('web.app') || host.includes('firebaseapp.com') || host.includes('domotika.com') || host.includes('luminadashboards');
 };
 
 // Intercepta fetch para usar proxy quando necessário
@@ -28,17 +29,15 @@ if (isExternalHosting()) {
         
         if (uuid && path && token) {
           const proxyUrl = `${PROXY_URL}?uuid=${uuid}&path=${encodeURIComponent(path)}&token=${encodeURIComponent(token)}`;
-          console.log('[Lumina Proxy]', path);
           return originalFetch(proxyUrl, init);
         }
       } catch (e) {
-        console.error('[Lumina Proxy Error]', e);
+        // Silently fall through to original fetch
       }
     }
     
     return originalFetch(input, init);
   };
-  console.log('[Lumina] Proxy mode enabled for external hosting');
 }
 // ============================================================
 
@@ -403,6 +402,15 @@ export const importFullConfig = (jsonString: string): boolean => {
     }
 };
 
+/**
+ * Limpa apenas o cache de tipos de dispositivos (força re-detecção)
+ * Mantém: conexão, layouts, nomes, backgrounds, etc.
+ * Remove: mapeamento de tipos (dm) para forçar nova detecção
+ */
+export const clearDeviceTypeCache = (): void => {
+    localStorage.removeItem(MAPPING_STORAGE_KEY);
+};
+
 export const syncToHubitat = async (variableName: string = 'LuminaData'): Promise<{success: boolean, message: string}> => {
     const config = getConfig();
     if (!config) return { success: false, message: 'Não configurado' };
@@ -456,144 +464,177 @@ export const syncFromHubitat = async (variableName: string = 'LuminaData'): Prom
 /**
  * Mapeia os atributos crus do Hubitat para o estado da aplicação
  */
-export const mapAttributesToState = (attributes: any[]) => {
+export const mapAttributesToState = (attributes: any[] | any) => {
   const state: Device['state'] = {};
-  attributes.forEach(attr => {
-    const name = attr.name;
-    const value = attr.currentValue;
-    const valStr = String(value).toLowerCase();
-
-    if (name === 'switch') state.isOn = valStr === 'on';
-    if (name === 'level' || name === 'position') state.level = typeof value === 'number' ? value : parseInt(value);
-    
-    if (name === 'windowShade') {
-      state.windowShade = valStr;
-      state.isOn = ['open', 'opening', 'partially open'].includes(valStr);
-    }
-    
-    // MolSmart GW3/GW8 online status
-    if (name === 'gw3Online' || name === 'gw8Online') {
-      state.gwOnline = valStr; // online, offline, unknown
-    }
-    
-    if (name === 'temperature') state.temperature = value;
-    if (name === 'thermostatSetpoint' || name === 'coolingSetpoint') state.setpoint = value;
-    if (name === 'thermostatMode') {
-      state.mode = valStr === 'off' ? 'off' : valStr;
-      state.isOn = !['off', 'emergency heat'].includes(valStr);
-    }
-    if (name === 'thermostatFanMode') state.fanMode = valStr;
-    
-    if (name === 'lock') {
-      state.isLocked = valStr === 'locked';
-      state.isOn = valStr === 'unlocked';
-    }
-    
-    if (name === 'volume') {
-      state.volume = typeof value === 'number' ? value : parseInt(value);
-      state.level = state.volume;
-    }
-    if (name === 'mute') state.mute = valStr;
-    
-    // SoundSmart/Multiroom Audio
-    if (name === 'status') state.status = valStr; // playing, paused, stopped, loading
-    if (name === 'trackname') state.trackname = value;
-    if (name === 'trackDescription') state.trackDescription = value;
-    if (name === 'URLLargeCoverFile') state.URLLargeCoverFile = value;
-    if (name === 'ImageLargeCover') state.ImageLargeCover = value;
-    
-    // Media & TV
-    if (name === 'Input') state.input = value;
-    if (name === 'AudioMode') state.audioMode = value;
-    if (name === 'transportStatus') state.transportStatus = valStr;
-    if (name === 'currentActivity') state.currentApp = value;
-    if (name === 'channelName') state.channelName = value;
-
-    // Sensors
-    if (name === 'motion') {
-      state.motion = valStr;
-      state.isOn = valStr === 'active';
-    }
-    if (name === 'occupancy') {
-      state.motion = valStr === 'occupied' ? 'active' : 'inactive';
-      state.isOn = state.motion === 'active';
-    }
-    if (name === 'presence') {
-      state.presence = valStr;
-      state.isOn = valStr === 'present';
-    }
-    if (name === 'humanMotionState') {
-       if (['moving', 'small', 'large', 'static', 'present', 'occupied', 'active'].includes(valStr)) {
-          state.isOn = true; state.motion = 'active';
-       } else if (['none', 'inactive', 'not present'].includes(valStr)) {
-          state.isOn = false; state.motion = 'inactive';
-       }
-    }
-    
-    if (name === 'illuminance') state.illuminance = typeof value === 'number' ? value : parseInt(value);
-    if (name === 'battery') state.battery = typeof value === 'number' ? value : parseInt(value);
-
-    // Water & Smoke
-    if (name === 'water') {
-        state.water = valStr;
-        state.isOn = valStr === 'wet';
-    }
-    if (name === 'smoke') {
-        state.smoke = valStr;
-        state.isOn = valStr === 'detected';
-    }
-    if (name === 'carbonMonoxide') {
-        state.carbonMonoxide = valStr;
-        state.isOn = valStr === 'detected';
-    }
-    
-    // Valves
-    if (name === 'valve') {
-      state.valve = valStr;
-      state.isOn = valStr === 'open';
-    }
-    if (name === 'waterConsumed') state.waterConsumed = typeof value === 'number' ? value : parseFloat(value);
-    if (name === 'timerTimeLeft') state.timerTimeLeft = typeof value === 'number' ? value : parseInt(value);
-
-    // Vibration/Tilt
-    if (name === 'acceleration') {
-        state.acceleration = valStr;
-        if (valStr === 'active') state.motion = 'active';
-    }
-    if (name === 'tilt') state.tilt = valStr;
-    
-    // Radar
-    if (name === 'distance') state.distance = typeof value === 'number' ? value : parseFloat(value);
-
-    // IR Remote (Molsmart GW8)
-    if (name === 'numberOfButtons') state.numberOfButtons = typeof value === 'number' ? value : parseInt(value);
-    if (name === 'action' || name === 'lastAction') state.lastAction = value;
-
-    // Camera (NOVO v1.6)
-    if (name === 'image' || name === 'snapshot' || name === 'imageUrl') state.snapshotUrl = value;
-    if (name === 'stream' || name === 'streamUrl' || name === 'rtspUrl') state.streamUrl = value;
-
-    // Energy Meter (NOVO v1.6)
-    if (name === 'power') state.power = typeof value === 'number' ? value : parseFloat(value);
-    if (name === 'energy') state.energy = typeof value === 'number' ? value : parseFloat(value);
-    if (name === 'voltage') state.voltage = typeof value === 'number' ? value : parseFloat(value);
-    if (name === 'amperage' || name === 'current') state.current = typeof value === 'number' ? value : parseFloat(value);
-    if (name === 'energyToday') state.energyToday = typeof value === 'number' ? value : parseFloat(value);
-  });
+  if (!attributes) return state;
+  
+  if (Array.isArray(attributes)) {
+    attributes.forEach(attr => {
+      processAttribute(state, attr.name, attr.currentValue);
+    });
+  } else if (typeof attributes === 'object') {
+    Object.entries(attributes).forEach(([name, value]) => {
+      if (name === 'dataType' || name === 'values') return;
+      processAttribute(state, name, value);
+    });
+  }
+  
   return state;
+};
+
+const processAttribute = (state: Device['state'], name: string, value: any) => {
+  if (!name || value === undefined || value === null) return;
+  
+  const valStr = String(value).toLowerCase();
+
+  if (name === 'switch') state.isOn = valStr === 'on';
+  if (name === 'level' || name === 'position') state.level = typeof value === 'number' ? value : parseInt(value);
+  
+  if (name === 'windowShade') {
+    state.windowShade = valStr;
+    state.isOn = ['open', 'opening', 'partially open'].includes(valStr);
+  }
+  
+  // MolSmart GW3/GW8 online status
+  if (name === 'gw3Online' || name === 'gw8Online') {
+    state.gwOnline = valStr;
+  }
+  
+  if (name === 'temperature') state.temperature = value;
+  if (name === 'thermostatSetpoint' || name === 'coolingSetpoint') state.setpoint = value;
+  if (name === 'thermostatMode') {
+    state.mode = valStr === 'off' ? 'off' : valStr;
+    state.isOn = !['off', 'emergency heat'].includes(valStr);
+  }
+  if (name === 'thermostatFanMode') state.fanMode = valStr;
+  
+  if (name === 'lock') {
+    state.isLocked = valStr === 'locked';
+    state.isOn = valStr === 'unlocked';
+  }
+  
+  if (name === 'volume') {
+    state.volume = typeof value === 'number' ? value : parseInt(value);
+    state.level = state.volume;
+  }
+  if (name === 'mute') state.mute = valStr;
+  
+  // SoundSmart/Multiroom Audio
+  if (name === 'status') state.status = valStr;
+  if (name === 'trackname') state.trackname = value;
+  if (name === 'trackDescription') state.trackDescription = value;
+  if (name === 'URLLargeCoverFile') state.URLLargeCoverFile = value;
+  if (name === 'ImageLargeCover') state.ImageLargeCover = value;
+  
+  // Media & TV
+  if (name === 'Input') state.input = value;
+  if (name === 'AudioMode') state.audioMode = value;
+  if (name === 'transportStatus') state.transportStatus = valStr;
+  if (name === 'currentActivity') state.currentApp = value;
+  if (name === 'channelName') state.channelName = value;
+
+  // Sensors
+  if (name === 'motion') {
+    state.motion = valStr;
+    state.isOn = valStr === 'active';
+  }
+  if (name === 'occupancy') {
+    state.motion = valStr === 'occupied' ? 'active' : 'inactive';
+    state.isOn = state.motion === 'active';
+  }
+  if (name === 'presence') {
+    state.presence = valStr;
+    state.isOn = valStr === 'present';
+  }
+  if (name === 'humanMotionState') {
+    if (['moving', 'small', 'large', 'static', 'present', 'occupied', 'active'].includes(valStr)) {
+      state.isOn = true; state.motion = 'active';
+    } else if (['none', 'inactive', 'not present'].includes(valStr)) {
+      state.isOn = false; state.motion = 'inactive';
+    }
+  }
+  
+  if (name === 'illuminance') state.illuminance = typeof value === 'number' ? value : parseInt(value);
+  if (name === 'battery') state.battery = typeof value === 'number' ? value : parseInt(value);
+
+  // Water & Smoke
+  if (name === 'water') {
+    state.water = valStr;
+    state.isOn = valStr === 'wet';
+  }
+  if (name === 'smoke') {
+    state.smoke = valStr;
+    state.isOn = valStr === 'detected';
+  }
+  if (name === 'carbonMonoxide') {
+    state.carbonMonoxide = valStr;
+    state.isOn = valStr === 'detected';
+  }
+  
+  // Valves
+  if (name === 'valve') {
+    state.valve = valStr;
+    state.isOn = valStr === 'open';
+  }
+  if (name === 'waterConsumed') state.waterConsumed = typeof value === 'number' ? value : parseFloat(value);
+  if (name === 'timerTimeLeft') state.timerTimeLeft = typeof value === 'number' ? value : parseInt(value);
+
+  // Vibration/Tilt
+  if (name === 'acceleration') {
+    state.acceleration = valStr;
+    if (valStr === 'active') state.motion = 'active';
+  }
+  if (name === 'tilt') state.tilt = valStr;
+  
+  // Radar
+  if (name === 'distance') state.distance = typeof value === 'number' ? value : parseFloat(value);
+
+  // IR Remote (Molsmart GW8)
+  if (name === 'numberOfButtons') state.numberOfButtons = typeof value === 'number' ? value : parseInt(value);
+  if (name === 'action' || name === 'lastAction') state.lastAction = value;
+
+  // Camera
+  if (name === 'image' || name === 'snapshot' || name === 'imageUrl') state.snapshotUrl = value;
+  if (name === 'stream' || name === 'streamUrl' || name === 'rtspUrl') state.streamUrl = value;
+
+  // Energy Meter
+  if (name === 'power') state.power = typeof value === 'number' ? value : parseFloat(value);
+  if (name === 'energy') state.energy = typeof value === 'number' ? value : parseFloat(value);
+  if (name === 'voltage') state.voltage = typeof value === 'number' ? value : parseFloat(value);
+  if (name === 'amperage' || name === 'current') state.current = typeof value === 'number' ? value : parseFloat(value);
+  if (name === 'energyToday') state.energyToday = typeof value === 'number' ? value : parseFloat(value);
 };
 
 /**
  * Função unificada e robusta para detectar tipos de dispositivo
  * ORDEM CORRIGIDA: TV antes de AC, BLIND antes de SCENE
  */
-export const mapHubitatTypeToAppType = (capabilities: string[] | string, name: string, model?: string, manufacturer?: string): DeviceType => {
+export const mapHubitatTypeToAppType = (capabilities: string[] | string, name: string, model?: string, manufacturer?: string, attributes?: string[]): DeviceType => {
   const caps = Array.isArray(capabilities) 
     ? capabilities.map(c => c.toLowerCase()) 
     : (typeof capabilities === 'string' ? [capabilities.toLowerCase()] : []);
+  
+  // Atributos ajudam a detectar tipo quando capabilities não vêm
+  const attrs = attributes || [];
     
   const lowerName = name ? name.toLowerCase() : '';
   const lowerModel = model ? model.toLowerCase() : '';
+  
+  // Detecção por atributos (funciona mesmo sem capabilities)
+  const hasThermostatAttrs = attrs.some(a => 
+    a.includes('thermostatmode') || a.includes('thermostatsetpoint') || 
+    a.includes('coolingsetpoint') || a.includes('heatingsetpoint') ||
+    a.includes('thermostatfanmode') || a.includes('thermostatoperatingstate')
+  );
+  const hasTvAttrs = attrs.some(a => 
+    a.includes('channel') || a.includes('mediaplayerstatus') || 
+    a.includes('currentapp') || a.includes('transportstatus')
+  );
+  const hasLevelAttr = attrs.some(a => a === 'level' || a === 'switchlevel');
+  const hasMusicAttrs = attrs.some(a => 
+    a.includes('trackdata') || a.includes('trackdescription') || 
+    a.includes('status') && attrs.includes('volume')
+  );
 
   // 1. Modelos Específicos (Prioridade Máxima)
   if (lowerModel === 'sml001' || lowerModel === 'sml002') return DeviceType.MOTION;
@@ -653,8 +694,10 @@ export const mapHubitatTypeToAppType = (capabilities: string[] | string, name: s
   if (caps.includes('audiovolume') && lowerName.includes('samsung')) return DeviceType.SAMSUNG_TV;
   
   // 4b. LG TV - webOS (padrão para outros TVs também)
-  if (caps.includes('tv')) return DeviceType.TV;
+  if (caps.includes('tv') || hasTvAttrs) return DeviceType.TV;
   if (caps.includes('audiovolume') && (lowerName.includes('tv') || lowerName.includes('lg'))) return DeviceType.TV;
+  // Detectar TV por nome quando tem atributos de mídia
+  if ((lowerName.includes('tv ') || lowerName.includes(' tv') || lowerName.includes('lg ') || lowerName.includes('samsung')) && hasTvAttrs) return DeviceType.TV;
   
   // 5. SoundSmart/Multiroom Audio Players (NOVO v1.6)
   if (lowerName.includes('soundsmart') || lowerName.includes('molsmart audio') || 
@@ -666,17 +709,19 @@ export const mapHubitatTypeToAppType = (capabilities: string[] | string, name: s
   if (caps.includes('audiovolume') || caps.includes('musicplayer') || lowerName.includes('receiver') || lowerName.includes('avr') || lowerName.includes('sonos') || lowerName.includes('multiroom') || lowerName.includes('group -')) return DeviceType.AVR;
 
   // 6. Climatização (AC/Thermostat) - DEPOIS de TV
-  if (caps.includes('thermostat') || caps.includes('thermostatcooling') || caps.includes('thermostatheating')) return DeviceType.AC;
-  // Detectar AC por nome também
-  if ((lowerName.includes('ar ') || lowerName.includes(' ar') || lowerName.includes('ar-') || lowerName.includes('clima') || lowerName.includes('split')) && caps.includes('switch')) return DeviceType.AC;
+  // Detectar por capabilities OU atributos
+  if (caps.includes('thermostat') || caps.includes('thermostatmode') || caps.includes('thermostatcooling') || caps.includes('thermostatheating') || caps.includes('thermostatsetpoint') || caps.includes('thermostatfanmode') || hasThermostatAttrs) return DeviceType.AC;
+  // Detectar AC por nome + Temperature Measurement (drivers GW3 v2.3+ não têm Switch)
+  if ((lowerName.includes('ar ') || lowerName.includes(' ar') || lowerName.includes('ar-') || lowerName.includes('clima') || lowerName.includes('split') || lowerName.includes('ac ') || lowerName.includes(' ac')) && 
+      (caps.includes('switch') || caps.includes('temperaturemeasurement') || caps.includes('temperature measurement') || attrs.includes('temperature'))) return DeviceType.AC;
 
   // 7. Sensores de Movimento/Presença
   if (caps.includes('presencesensor') || caps.includes('presence sensor')) return DeviceType.PRESENCE;
   if (caps.includes('motionsensor') || caps.includes('motion sensor')) return DeviceType.MOTION;
 
   // 8. Iluminação
-  // Dimmers
-  if (caps.includes('switchlevel') || caps.includes('changelevel')) return DeviceType.DIMMER;
+  // Dimmers - detectar por capabilities OU atributo level
+  if (caps.includes('switchlevel') || caps.includes('changelevel') || hasLevelAttr) return DeviceType.DIMMER;
   // Detecção por nome para child devices de dimmer
   if (caps.includes('switch') && lowerName.includes('dimmer')) return DeviceType.DIMMER;
   // Luzes RGB/CCT
@@ -716,6 +761,13 @@ export const fetchHubitatRooms = async (): Promise<{ rooms: string[], deviceRoom
     if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
 
     const data = await response.json();
+    
+    // Validar que data é um array
+    if (!Array.isArray(data)) {
+      console.error('[Lumina] Invalid rooms response - expected array, got:', typeof data);
+      return null;
+    }
+    
     const roomsSet = new Set<string>();
     const deviceRoomMap: Record<string, string> = {};
 
@@ -808,19 +860,41 @@ export const fetchHubitatDevices = async (): Promise<Record<string, Device> | nu
     const ts = new Date().getTime();
 
     let url = '';
+    let data: any[] = [];
+    
     if (config.useLegacyApi) {
       url = `${buildBaseUrl(config)}/data?access_token=${config.accessToken}&_t=${ts}`;
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+      data = await response.json();
     } else {
-      url = `${buildBaseUrl(config)}/devices?access_token=${config.accessToken}&_t=${ts}`;
+      // Usar /devices/all que retorna capabilities completas
+      url = `${buildBaseUrl(config)}/devices/all?access_token=${config.accessToken}&_t=${ts}`;
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (response.ok) {
+          data = await response.json();
+        } else {
+          throw new Error('all endpoint failed');
+        }
+      } catch (e) {
+        // Fallback para /devices básico
+        const fallbackUrl = `${buildBaseUrl(config)}/devices?access_token=${config.accessToken}&_t=${ts}`;
+        const response = await fetch(fallbackUrl);
+        if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+        data = await response.json();
+      }
     }
 
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-
-    const data = await response.json();
     const devices: Record<string, Device> = {};
+    
+    // Validar que data é um array
+    if (!Array.isArray(data)) {
+      console.error('[Lumina] Invalid response - expected array, got:', typeof data, data);
+      return null;
+    }
     
     const roomMapping = getDeviceMapping();
     const actionMapping = getActionMapping();
@@ -837,8 +911,14 @@ export const fetchHubitatDevices = async (): Promise<Record<string, Device> | nu
       const attributes = item.attributes || [];
       const state = mapAttributesToState(attributes);
 
+      // Extrair nomes de atributos para ajudar na detecção
+      const attrNames = Array.isArray(attributes) 
+        ? attributes.map((a: any) => (a.name || '').toLowerCase())
+        : Object.keys(attributes || {}).map(k => k.toLowerCase());
+
       // Usar LABEL para detecção (nome amigável do usuário)
-      const type = mapHubitatTypeToAppType(capabilities, item.label || item.name, model, manufacturer);
+      // Passar atributos para detecção mais precisa quando capabilities não vêm
+      const type = mapHubitatTypeToAppType(capabilities, item.label || item.name, model, manufacturer, attrNames);
 
       devices[item.id] = {
         id: item.id,
@@ -913,7 +993,6 @@ export const sendHubitatCommand = async (deviceId: string | number, command: str
     }
     url += `?access_token=${config.accessToken}`;
 
-    console.log(`[Hubitat CMD] ${url}`);
     const response = await fetch(url);
     return response.ok;
   } catch (error) {
