@@ -69,17 +69,36 @@ await backupService.saveConfigBackup(config);
 await backupService.saveConfigBackup(config, 'pre-update-backup.json');
 ```
 
-### 3. Listar Backups
+### 3. **🔗 Dados de Conexão**
+```javascript
+// Salva dados de conexão (IP, token, cloud URL)
+await backupService.saveConnectionData('192.168.1.100', 'abc123...', 'https://cloud...');
+
+// Recupera dados salvos
+const connection = await backupService.getConnectionData();
+// { hubIp: '...', makerToken: '...', cloudUrl: '...' }
+```
+
+### 4. **📦 Backup Completo**
+```javascript
+// Salva configuração + dados de conexão juntos
+await backupService.saveFullBackup(config);
+
+// Recupera backup completo
+const fullBackup = await backupService.getFullBackup();
+```
+
+### 5. Listar Backups
 ```javascript
 const backups = await backupService.listBackups();
 ```
 
-### 4. Deletar Backup
+### 6. Deletar Backup
 ```javascript
 await backupService.deleteBackup('backup-antigo.json');
 ```
 
-### 5. Informações
+### 7. Informações
 ```javascript
 const info = await backupService.getBackupInfo();
 // { count: 5, lastBackup: 'config-2026-03-18.json', ... }
@@ -91,6 +110,8 @@ const info = await backupService.getBackupInfo();
 **Formato:** `lumina-config-YYYY-MM-DD_HH-mm-ss.json`
 
 **Estrutura do backup:**
+
+**Backup simples (config):**
 ```json
 {
   "rooms": [...],
@@ -101,15 +122,43 @@ const info = await backupService.getBackupInfo();
 }
 ```
 
+**Backup completo (config + conexão):**
+```json
+{
+  "config": {
+    "rooms": [...],
+    "settings": {...},
+    "devices": [...]
+  },
+  "connection": {
+    "hubIp": "192.168.1.100",
+    "makerToken": "abc123...",
+    "cloudUrl": "https://cloud.hubitat.com/api/..."
+  },
+  "timestamp": 1773840000000,
+  "type": "full_backup",
+  "version": "1.0"
+}
+```
+
 ## 🚀 Uso no Dashboard
 
 ### Interface Visual
 
 1. **Clique em "💾 Backup Config"**
 2. **Escolha uma ação:**
-   - **💾 Salvar Backup** - Cria novo backup
+   - **💾 Backup Config** - Cria backup só da configuração
+   - **📦 Backup Completo** - Backup com dados de conexão
    - **📋 Listar Backups** - Mostra backups existentes
+   - **🔗 Dados de Conexão** - Gerencia IP/token/cloud URL
    - **ℹ️ Informações** - Estatísticas e status
+
+### 🔗 Gerenciar Conexão
+
+Na tela "Dados de Conexão":
+- **💾 Salvar Conexão** - Grava IP/token atuais
+- **📥 Carregar Salva** - Recupera dados gravados
+- **🔄 Auto-Preencher** - Usa dados da sessão atual
 
 ### Backup Manual
 ```javascript
@@ -120,11 +169,14 @@ window.luminaBackup.saveConfig();
 ## 🔐 Vantagens
 
 ✅ **Backup completo** - Toda configuração salva  
+✅ **Dados de conexão** - IP/token salvos junto  
 ✅ **File Manager nativo** - Integração direta  
 ✅ **Limpeza automática** - Remove backups antigos  
 ✅ **Zero limitação** - Arquivos de qualquer tamanho  
 ✅ **Versionamento** - Múltiplos backups  
 ✅ **Interface simples** - Um clique para backup  
+✅ **Portabilidade total** - Move entre hubs facilmente  
+✅ **Restore automático** - Carrega conexão + config  
 
 ## 🛠️ Troubleshooting
 

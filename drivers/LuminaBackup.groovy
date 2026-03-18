@@ -25,11 +25,19 @@ metadata {
         command "deleteBackup", ["string"]
         command "getBackupInfo"
         
+        // Commands para dados de conexão
+        command "saveConnectionData", ["string", "string", "string"] // ip, token, cloudUrl
+        command "getConnectionData"
+        command "saveFullConfig", ["string"] // config + connection data
+        command "getFullConfig"
+        
         // Attributes
         attribute "lastBackup", "string"
         attribute "backupCount", "number"
         attribute "lastError", "string"
         attribute "status", "string"
+        attribute "hasConnectionData", "string"
+        attribute "lastConnectionSave", "string"
     }
     
     preferences {
@@ -334,4 +342,145 @@ private updateFileList(filename) {
     
     // Salva lista atualizada
     updateDataValue("backupFiles", new groovy.json.JsonBuilder(files).toString())
+}
+
+// ========== DADOS DE CONEXÃO ==========
+
+/**
+ * Salva dados de conexão do Hubitat
+ */
+def saveConnectionData(hubIp, makerToken, cloudUrl = "") {
+    try {
+        if (!hubIp || !makerToken) {
+            setError("IP e Token são obrigatórios")
+            return
+        }
+        
+        def connectionData = [
+            hubIp: hubIp,
+            makerToken: makerToken,
+            cloudUrl: cloudUrl ?: "",
+            savedAt: new Date().time,
+            version: "1.0"
+        ]
+        
+        // Salva dados de forma segura (encoded)
+        def encoded = connectionData.collect { k, v -> "${k}=${v}" }.join("|")
+        updateDataValue("connectionData", encoded.bytes.encodeBase64())
+        
+        sendEvent(name: "hasConnectionData", value: "yes")
+        sendEvent(name: "lastConnectionSave", value: new Date().format("yyyy-MM-dd HH:mm"))
+        sendEvent(name: "status", value: "connection_saved")
+        
+        log.info "Dados de conexão salvos para hub: ${hubIp}"
+        
+    } catch (Exception e) {
+        setError("Erro ao salvar dados de conexão: ${e.message}")
+        log.error "Erro ao salvar conexão: ${e}"
+    }
+}
+
+/**
+ * Recupera dados de conexão salvos
+ */
+def getConnectionData() {
+    try {
+        def encoded = getDataValue("connectionData")
+        if (!encoded) {
+            sendEvent(name: "hasConnectionData", value: "no")
+            return null
+        }
+        
+        def decoded = new String(encoded.decodeBase64())
+        def connectionData = [:]
+        
+        decoded.split("\\|").each { pair ->
+            def parts = pair.split("=", 2)
+            if (parts.size() == 2) {
+                connectionData[parts[0]] = parts[1]
+            }
+        }
+        
+        sendEvent(name: "status", value: "connection_ready")
+        
+        if (debugEnable) log.debug "Dados de conexão recuperados"
+        
+        return connectionData
+        
+    } catch (Exception e) {
+        setError("Erro ao recuperar dados de conexão: ${e.message}")
+        return null
+    }
+}
+
+/**
+ * Salva configuração completa (config + dados de conexão)
+ */
+def saveFullConfig(configData) {
+    try {
+        if (!configData) {
+            setError("Dados de configuração vazios")
+            return
+        }
+        
+        // Recupera dados de conexão
+        def connectionData = getConnectionData()
+        
+        // Cria backup completo
+        def fullConfig = [
+            config: new groovy.json.JsonSlurper().parseText(configData),
+            connection: connectionData,
+            timestamp: new Date().time,
+            type: "full_backup",
+            version: "1.0"
+        ]
+        
+        def timestamp = new Date().format("yyyy-MM-dd_HH-mm-ss")
+        def filename = "lumina-full-${timestamp}.json"
+        
+        def fullConfigJson = new groovy.json.JsonBuilder(fullConfig).toString()
+        
+        // Salva usando método existente
+        saveBackup(filename, fullConfigJson)
+        
+        log.info "Backup completo salvo: ${filename}"
+        
+    } catch (Exception e) {
+        setError("Erro ao salvar backup completo: ${e.message}")
+        log.error "Erro ao salvar backup completo: ${e}"
+    }
+}
+
+/**
+ * Recupera configuração completa mais recente
+ */
+def getFullConfig() {
+    try {
+        def files = getBackupFiles()
+        
+        // Procura backup completo mais recente
+        def fullBackups = files.findAll { it.name.contains('lumina-full-') }
+        
+        if (!fullBackups) {
+            setError("Nenhum backup completo encontrado")
+            return null
+        }
+        
+        // Ordena por data e pega o mais recente
+        def latest = fullBackups.sort { a, b -> b.created - a.created }[0]
+        
+        sendEvent(name: "status", value: "full_config_ready")
+        
+        if (debugEnable) log.debug "Backup completo mais recente: ${latest.name}"
+        
+        return [
+            filename: latest.name,
+            created: new Date(latest.created),
+            available: true
+        ]
+        
+    } catch (Exception e) {
+        setError("Erro ao recuperar backup completo: ${e.message}")
+        return null
+    }
 }

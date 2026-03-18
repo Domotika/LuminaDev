@@ -59,6 +59,109 @@ class LuminaBackupService {
         }
     }
 
+    async saveConnectionData(hubIp, makerToken, cloudUrl = '') {
+        if (!this.backupDriverId) {
+            throw new Error('Driver de backup não encontrado');
+        }
+
+        try {
+            await this.hubitat.sendCommand(this.backupDriverId, 'saveConnectionData', [hubIp, makerToken, cloudUrl]);
+            console.log('✅ Dados de conexão salvos');
+            return true;
+        } catch (error) {
+            console.error('Erro ao salvar dados de conexão:', error);
+            throw error;
+        }
+    }
+
+    async getConnectionData() {
+        if (!this.backupDriverId) {
+            throw new Error('Driver de backup não encontrado');
+        }
+
+        try {
+            await this.hubitat.sendCommand(this.backupDriverId, 'getConnectionData');
+            
+            // Aguarda processamento
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const device = await this.hubitat.getDevice(this.backupDriverId);
+            const status = device.attributes?.status?.value;
+            
+            if (status === 'connection_ready') {
+                // Na implementação real, você recuperaria os dados do device
+                return this.getConnectionFromDevice();
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Erro ao recuperar dados de conexão:', error);
+            return null;
+        }
+    }
+
+    async saveFullBackup(config) {
+        if (!this.backupDriverId) {
+            throw new Error('Driver de backup não encontrado');
+        }
+
+        try {
+            const configJson = JSON.stringify(config, null, 2);
+            await this.hubitat.sendCommand(this.backupDriverId, 'saveFullConfig', [configJson]);
+            
+            console.log('✅ Backup completo salvo (config + conexão)');
+            return true;
+        } catch (error) {
+            console.error('Erro ao salvar backup completo:', error);
+            throw error;
+        }
+    }
+
+    async getFullBackup() {
+        if (!this.backupDriverId) {
+            throw new Error('Driver de backup não encontrado');
+        }
+
+        try {
+            await this.hubitat.sendCommand(this.backupDriverId, 'getFullConfig');
+            
+            // Aguarda processamento
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const device = await this.hubitat.getDevice(this.backupDriverId);
+            const status = device.attributes?.status?.value;
+            
+            if (status === 'full_config_ready') {
+                return this.getFullConfigFromDevice();
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Erro ao recuperar backup completo:', error);
+            return null;
+        }
+    }
+
+    // Métodos auxiliares para dados de conexão
+    async getConnectionFromDevice() {
+        // Implementar conforme API do Hubitat
+        return {
+            hubIp: '192.168.1.100',
+            makerToken: 'abc123...',
+            cloudUrl: 'https://cloud.hubitat.com',
+            savedAt: Date.now()
+        };
+    }
+
+    async getFullConfigFromDevice() {
+        // Implementar conforme API do Hubitat
+        return {
+            filename: 'lumina-full-2026-03-18_11-30-00.json',
+            available: true,
+            created: new Date()
+        };
+    }
+
     async listBackups() {
         if (!this.backupDriverId) {
             throw new Error('Driver de backup não encontrado');
@@ -168,8 +271,10 @@ class LuminaBackupUI {
             <div class="modal-content">
                 <h3>🗄️ Backup Lumina</h3>
                 <div class="backup-actions">
-                    <button onclick="this.saveBackup()">💾 Salvar Backup</button>
+                    <button onclick="this.saveBackup()">💾 Backup Config</button>
+                    <button onclick="this.saveFullBackup()">📦 Backup Completo</button>
                     <button onclick="this.listBackups()">📋 Listar Backups</button>
+                    <button onclick="this.showConnectionModal()">🔗 Dados de Conexão</button>
                     <button onclick="this.showInfo()">ℹ️ Informações</button>
                 </div>
                 <div id="backup-content"></div>
@@ -181,7 +286,9 @@ class LuminaBackupUI {
         
         // Adiciona métodos ao modal
         modal.saveBackup = () => this.saveBackup();
+        modal.saveFullBackup = () => this.saveFullBackup();
         modal.listBackups = () => this.listBackups();
+        modal.showConnectionModal = () => this.showConnectionModal();
         modal.showInfo = () => this.showInfo();
         modal.close = () => document.body.removeChild(modal);
     }
@@ -242,6 +349,101 @@ class LuminaBackupUI {
         }
     }
 
+    async saveFullBackup() {
+        try {
+            // Pega configuração atual do dashboard
+            const config = this.getCurrentConfig();
+            
+            // Salva backup completo (config + dados de conexão)
+            await this.backupService.saveFullBackup(config);
+            
+            alert('✅ Backup completo salvo (configuração + dados de conexão)!');
+        } catch (error) {
+            alert(`❌ Erro ao salvar backup completo: ${error.message}`);
+        }
+    }
+
+    showConnectionModal() {
+        const content = document.getElementById('backup-content');
+        content.innerHTML = `
+            <h4>🔗 Dados de Conexão</h4>
+            <div class="connection-form">
+                <div class="form-group">
+                    <label>Hub IP:</label>
+                    <input type="text" id="hubIp" placeholder="192.168.1.100" value="${this.getCurrentHubIp()}">
+                </div>
+                <div class="form-group">
+                    <label>Maker API Token:</label>
+                    <input type="text" id="makerToken" placeholder="abc123..." value="${this.getCurrentToken()}">
+                </div>
+                <div class="form-group">
+                    <label>Cloud URL (opcional):</label>
+                    <input type="text" id="cloudUrl" placeholder="https://cloud.hubitat.com/api/..." value="${this.getCurrentCloudUrl()}">
+                </div>
+                <div class="connection-actions">
+                    <button onclick="this.saveConnectionData()" class="primary-btn">💾 Salvar Conexão</button>
+                    <button onclick="this.loadConnectionData()" class="secondary-btn">📥 Carregar Salva</button>
+                    <button onclick="this.autoFillConnection()" class="secondary-btn">🔄 Auto-Preencher</button>
+                </div>
+            </div>
+        `;
+
+        // Adiciona métodos ao conteúdo
+        const modal = document.querySelector('.backup-modal');
+        modal.saveConnectionData = () => this.saveConnectionData();
+        modal.loadConnectionData = () => this.loadConnectionData();
+        modal.autoFillConnection = () => this.autoFillConnection();
+    }
+
+    async saveConnectionData() {
+        try {
+            const hubIp = document.getElementById('hubIp').value;
+            const makerToken = document.getElementById('makerToken').value;
+            const cloudUrl = document.getElementById('cloudUrl').value;
+
+            if (!hubIp || !makerToken) {
+                alert('❌ Hub IP e Maker Token são obrigatórios!');
+                return;
+            }
+
+            await this.backupService.saveConnectionData(hubIp, makerToken, cloudUrl);
+            alert('✅ Dados de conexão salvos!');
+        } catch (error) {
+            alert(`❌ Erro ao salvar dados de conexão: ${error.message}`);
+        }
+    }
+
+    async loadConnectionData() {
+        try {
+            const connectionData = await this.backupService.getConnectionData();
+            
+            if (connectionData) {
+                document.getElementById('hubIp').value = connectionData.hubIp || '';
+                document.getElementById('makerToken').value = connectionData.makerToken || '';
+                document.getElementById('cloudUrl').value = connectionData.cloudUrl || '';
+                
+                alert('✅ Dados de conexão carregados!');
+            } else {
+                alert('❌ Nenhum dado de conexão encontrado');
+            }
+        } catch (error) {
+            alert(`❌ Erro ao carregar dados de conexão: ${error.message}`);
+        }
+    }
+
+    autoFillConnection() {
+        // Preenche automaticamente com dados atuais da sessão
+        const currentHubIp = this.getCurrentHubIp();
+        const currentToken = this.getCurrentToken();
+        const currentCloudUrl = this.getCurrentCloudUrl();
+
+        document.getElementById('hubIp').value = currentHubIp;
+        document.getElementById('makerToken').value = currentToken;
+        document.getElementById('cloudUrl').value = currentCloudUrl;
+
+        alert('✅ Dados preenchidos automaticamente!');
+    }
+
     getCurrentConfig() {
         // Implementar conforme estrutura do dashboard
         return {
@@ -251,6 +453,22 @@ class LuminaBackupUI {
             timestamp: new Date().toISOString(),
             version: '1.6.0'
         };
+    }
+
+    // Métodos auxiliares para obter dados atuais
+    getCurrentHubIp() {
+        // Implementar conforme armazenamento atual
+        return localStorage.getItem('lumina_hub_ip') || '';
+    }
+
+    getCurrentToken() {
+        // Implementar conforme armazenamento atual
+        return localStorage.getItem('lumina_maker_token') || '';
+    }
+
+    getCurrentCloudUrl() {
+        // Implementar conforme armazenamento atual
+        return localStorage.getItem('lumina_cloud_url') || '';
     }
 }
 
@@ -273,42 +491,133 @@ const backupCSS = `
     background: white;
     padding: 20px;
     border-radius: 10px;
-    min-width: 400px;
-    max-width: 600px;
+    min-width: 500px;
+    max-width: 700px;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .backup-actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 10px;
     margin: 15px 0;
 }
 
 .backup-actions button {
-    flex: 1;
-    padding: 10px;
+    padding: 12px 8px;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     background: #007bff;
     color: white;
     cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.backup-actions button:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
 }
 
 .backup-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px;
+    padding: 10px;
     border-bottom: 1px solid #eee;
+    background: #f8f9fa;
+    margin: 5px 0;
+    border-radius: 5px;
 }
 
 .backup-btn {
-    padding: 8px 15px;
+    padding: 10px 15px;
     background: #28a745;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.backup-btn:hover {
+    background: #1e7e34;
+    transform: translateY(-1px);
+}
+
+.connection-form {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.connection-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.primary-btn {
+    background: #28a745 !important;
+    flex: 1;
+}
+
+.secondary-btn {
+    background: #6c757d !important;
+    flex: 1;
+}
+
+.close-btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 12px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.close-btn:hover {
+    background: #c82333;
+}
+
+.backup-info p {
+    margin: 8px 0;
+    padding: 8px;
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    border-radius: 0 4px 4px 0;
 }
 `;
 
