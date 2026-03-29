@@ -69,7 +69,7 @@ Instala tudo automaticamente com um clique!
 2. **Instale o Lumina Installer:**
    - Apps → Add User App → + New App → Import:
    ```
-   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-apps/LuminaInstaller_PT.groovy
+   https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller_PT.groovy
    ```
 3. **Clique em "📥 Instalar Lumina Dashboard"** — Baixa automaticamente!
 4. **Clique em "🔧 Configurar Auto-Sync"** — Cria as Hub Variables
@@ -82,7 +82,7 @@ Use o Lumina dentro do app oficial do Hubitat com acesso remoto!
 
 1. **Instale o Driver da Tile:**
    ```
-   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-drivers/LuminaDashboardTile_PT.groovy
+   https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-drivers/LuminaDashboardTile_PT.groovy
    ```
 2. **Crie um dispositivo virtual** com tipo "Lumina Dashboard Tile (PT)"
 3. **Adicione na Dashboard** como tile Attribute (selecione "html")
