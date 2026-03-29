@@ -33,7 +33,7 @@
 2. Clique em **+ New App**
 3. Cole o código do Installer:
    ```
-   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-apps/LuminaInstaller_PT.groovy
+   https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller_PT.groovy
    ```
 4. Clique em **Import** → **Save**
 5. Volte em **Apps** → **Add User App** → selecione **Lumina Dashboard - Instalador**
@@ -94,7 +94,7 @@ Use o Lumina dentro do app oficial do Hubitat!
 1. No Hubitat, vá em **Drivers Code** → **+ New Driver**
 2. Clique em **Import** e cole:
    ```
-   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-drivers/LuminaDashboardTile_PT.groovy
+   https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-drivers/LuminaDashboardTile_PT.groovy
    ```
 3. Clique em **Import** → **Save**
 
@@ -144,8 +144,8 @@ Use o Lumina dentro do app oficial do Hubitat!
 ### Passo 1: Download do Arquivo
 
 Baixe o arquivo do GitHub:
-- **v1.5 Estável:** [LuminaHighline_v1.5.html](https://raw.githubusercontent.com/Domotika/LuminaDev/develop/LuminaHighline_v1.5.html)
-- **v1.6 Beta:** [LuminaHighline_v1.6-beta.html](https://raw.githubusercontent.com/Domotika/LuminaDev/develop/LuminaHighline_v1.6-beta.html)
+- **v1.5 Estável:** [LuminaHighline_v1.5.html](https://raw.githubusercontent.com/Domotika/LuminaDev/main/LuminaHighline_v1.5.html)
+- **v1.6 Beta:** [LuminaHighline_v1.6-beta.html](https://raw.githubusercontent.com/Domotika/LuminaDev/main/LuminaHighline_v1.6-beta.html)
 
 ### Passo 2: Upload para o Hubitat
 
@@ -224,7 +224,7 @@ http://[IP-DO-HUB]/local/LuminaHighline_v1.5.html
 2. Click **+ New App**
 3. Paste the Installer code:
    ```
-   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-apps/LuminaInstaller_EN.groovy
+   https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller_EN.groovy
    ```
 4. Click **Import** → **Save**
 5. Go back to **Apps** → **Add User App** → select **Lumina Dashboard Installer**
@@ -285,7 +285,7 @@ Use Lumina inside the official Hubitat app!
 1. In Hubitat, go to **Drivers Code** → **+ New Driver**
 2. Click **Import** and paste:
    ```
-   https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-drivers/LuminaDashboardTile_EN.groovy
+   https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-drivers/LuminaDashboardTile_EN.groovy
    ```
 3. Click **Import** → **Save**
 
@@ -335,8 +335,8 @@ Use Lumina inside the official Hubitat app!
 ### Step 1: Download the File
 
 Download from GitHub:
-- **v1.5 Stable:** [LuminaHighline_v1.5.html](https://raw.githubusercontent.com/Domotika/LuminaDev/develop/LuminaHighline_v1.5.html)
-- **v1.6 Beta:** [LuminaHighline_v1.6-beta.html](https://raw.githubusercontent.com/Domotika/LuminaDev/develop/LuminaHighline_v1.6-beta.html)
+- **v1.5 Stable:** [LuminaHighline_v1.5.html](https://raw.githubusercontent.com/Domotika/LuminaDev/main/LuminaHighline_v1.5.html)
+- **v1.6 Beta:** [LuminaHighline_v1.6-beta.html](https://raw.githubusercontent.com/Domotika/LuminaDev/main/LuminaHighline_v1.6-beta.html)
 
 ### Step 2: Upload to Hubitat
 
