@@ -39,7 +39,7 @@ preferences {
 //  CONFIGURAÇÃO
 // ═══════════════════════════════════════════════════════════════════════════
 
-@groovy.transform.Field static final String LUMINA_VERSION = "1.5.6"
+@groovy.transform.Field static final String LUMINA_VERSION = "1.5.7"
 @groovy.transform.Field static final String LUMINA_FILENAME = "LuminaHighline_v1.5.html"
 @groovy.transform.Field static final String GITHUB_RAW_URL = "https://raw.githubusercontent.com/Domotika/LuminaDev/main/LuminaHighline_v1.5.html"
 @groovy.transform.Field static final String GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Domotika/LuminaDev/main/version.txt"
@@ -282,16 +282,37 @@ def setupSyncPage() {
                         </ul>
                     </div>
                 """
-            } else {
+            } else if (result.created > 0) {
                 paragraph """
                     <div class="lumina-card" style="border-left-color: #ffc107;">
-                        <h3>⚠️ Criando Variáveis...</h3>
+                        <h3>⚠️ Algumas variáveis criadas</h3>
                         <p>${result.created} variáveis foram criadas.</p>
                         <hr>
                         <strong>Variáveis:</strong>
                         <ul>
                             ${result.variables.collect { "<li>${it.name}: ${it.status}</li>" }.join("")}
                         </ul>
+                    </div>
+                """
+            } else {
+                // Nenhuma criada automaticamente - mostrar instruções manuais
+                def missing = result.variables.findAll { it.status.contains("Falha") || it.status.contains("Erro") }
+                paragraph """
+                    <div class="lumina-card" style="border-left-color: #dc3545;">
+                        <h3>📝 Criação Manual Necessária</h3>
+                        <p>O Hubitat não permite criar Hub Variables automaticamente via apps.</p>
+                        <p><strong>Crie manualmente em:</strong> Settings → Hub Variables → Add Variable</p>
+                        <hr>
+                        <strong>Variáveis necessárias (Type: String):</strong>
+                        <ul>
+                            <li><code>LuminaData</code> (metadados)</li>
+                            <li><code>LuminaData_0</code> até <code>LuminaData_14</code> (15 chunks)</li>
+                        </ul>
+                        <p style="font-size:10px; color:#666; margin-top:8px;">
+                            Total: 16 variáveis. Suporta configs de até ~15KB.
+                        </p>
+                        <hr>
+                        <p style="font-size:12px;">⏱️ Leva ~30 segundos. Depois volte aqui para verificar.</p>
                     </div>
                 """
             }
@@ -319,35 +340,30 @@ def setupSyncPage() {
 
 def checkAndCreateVariables() {
     def variables = [
-        "LuminaConfig",
-        "LuminaConfig_0",
-        "LuminaConfig_1", 
-        "LuminaConfig_2",
-        "LuminaConfig_3",
-        "LuminaConfig_4"
+        "LuminaData",
+        "LuminaData_0", "LuminaData_1", "LuminaData_2", "LuminaData_3", "LuminaData_4",
+        "LuminaData_5", "LuminaData_6", "LuminaData_7", "LuminaData_8", "LuminaData_9",
+        "LuminaData_10", "LuminaData_11", "LuminaData_12", "LuminaData_13", "LuminaData_14"
     ]
     
     def results = []
     def created = 0
     def allExist = true
     
+    // Obter lista de variáveis existentes
+    def existingVars = getAllGlobalVars()?.keySet() ?: []
+    
     variables.each { varName ->
-        def exists = false
-        try {
-            def value = getGlobalVar(varName)
-            exists = (value != null)
-        } catch (e) {
-            exists = false
-        }
+        def exists = existingVars.contains(varName)
         
         if (!exists) {
             allExist = false
-            try {
-                setGlobalVar(varName, "")
+            def success = createHubVariable(varName)
+            if (success) {
                 results << [name: varName, status: "✅ Criada"]
                 created++
-            } catch (e) {
-                results << [name: varName, status: "❌ Erro: ${e.message}"]
+            } else {
+                results << [name: varName, status: "❌ Falha ao criar"]
             }
         } else {
             results << [name: varName, status: "✅ Existe"]
@@ -355,6 +371,12 @@ def checkAndCreateVariables() {
     }
     
     return [allExist: allExist, created: created, variables: results]
+}
+
+def createHubVariable(String varName) {
+    // Hubitat não expõe API para criar Hub Variables de dentro de apps
+    // Usuário precisa criar manualmente em Settings → Hub Variables
+    return false
 }
 
 def generateLinkPage() {
@@ -700,31 +722,23 @@ def setupHubVariables() {
     log.info "Configurando Hub Variables para Lumina Auto-Sync..."
     
     def variables = [
-        "LuminaConfig",
-        "LuminaConfig_0",
-        "LuminaConfig_1", 
-        "LuminaConfig_2",
-        "LuminaConfig_3",
-        "LuminaConfig_4"
+        "LuminaData",
+        "LuminaData_0", "LuminaData_1", "LuminaData_2", "LuminaData_3", "LuminaData_4",
+        "LuminaData_5", "LuminaData_6", "LuminaData_7", "LuminaData_8", "LuminaData_9",
+        "LuminaData_10", "LuminaData_11", "LuminaData_12", "LuminaData_13", "LuminaData_14"
     ]
+    
+    // Obter lista de variáveis existentes
+    def existingVars = getAllGlobalVars()?.keySet() ?: []
     
     def created = 0
     variables.each { varName ->
-        try {
-            def existing = getGlobalVar(varName)
-            if (existing == null) {
-                setGlobalVar(varName, "")
+        if (!existingVars.contains(varName)) {
+            if (createHubVariable(varName)) {
                 created++
                 log.info "Hub Variable criada: ${varName}"
-            }
-        } catch (e) {
-            // Variável não existe, criar
-            try {
-                setGlobalVar(varName, "")
-                created++
-                log.info "Hub Variable criada: ${varName}"
-            } catch (e2) {
-                log.warn "Não foi possível criar variável ${varName}: ${e2.message}"
+            } else {
+                log.warn "Não foi possível criar variável ${varName}"
             }
         }
     }

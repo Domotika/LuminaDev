@@ -3,7 +3,7 @@
         "id": "lumina-dashboard",
         "name": "Lumina Dashboard",
         "category": "Convenience",
-        "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/packageManifest.json",
+        "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/develop/packageManifest.json",
         "description": "Professional glassmorphism dashboard for Hubitat Elevation. Features include: multi-room organization, scenes, climate control, media remotes, security sensors, and more. Single-file HTML that runs 100% locally on your hub. Commercial software - license required."
     }
 ]

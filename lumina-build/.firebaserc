@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "lumina-cloud-c8d21"
+  },
+  "targets": {
+    "lumina-cloud-c8d21": {
+      "hosting": {
+        "beta": ["lumina-pro-beta"]
+      }
+    }
+  }
+}

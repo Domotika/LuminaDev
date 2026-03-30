@@ -12,7 +12,7 @@
             "id": "lumina-api",
             "name": "Lumina Dashboard API",
             "namespace": "domotika",
-            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaDashboardAPI.groovy",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-apps/LuminaDashboardAPI.groovy",
             "required": true,
             "primary": true,
             "oauth": true
@@ -21,7 +21,7 @@
             "id": "lumina-installer-pt",
             "name": "Lumina Installer (Português)",
             "namespace": "domotika",
-            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller_PT.groovy",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-apps/LuminaInstaller_PT.groovy",
             "required": false,
             "oauth": false
         },
@@ -29,7 +29,7 @@
             "id": "lumina-installer-en",
             "name": "Lumina Installer (English)",
             "namespace": "domotika",
-            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaInstaller_EN.groovy",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-apps/LuminaInstaller_EN.groovy",
             "required": false,
             "oauth": false
         },
@@ -37,7 +37,7 @@
             "id": "lumina-server",
             "name": "Lumina Dashboard Server",
             "namespace": "domotika",
-            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-apps/LuminaServer.groovy",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-apps/LuminaServer.groovy",
             "required": false,
             "oauth": true
         }
@@ -47,14 +47,14 @@
             "id": "lumina-tile-pt",
             "name": "Lumina Dashboard Tile (PT)",
             "namespace": "domotika",
-            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-drivers/LuminaDashboardTile_PT.groovy",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-drivers/LuminaDashboardTile_PT.groovy",
             "required": false
         },
         {
             "id": "lumina-tile-en",
             "name": "Lumina Dashboard Tile (EN)",
             "namespace": "domotika",
-            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/main/hubitat-drivers/LuminaDashboardTile_EN.groovy",
+            "location": "https://raw.githubusercontent.com/Domotika/LuminaDev/develop/hubitat-drivers/LuminaDashboardTile_EN.groovy",
             "required": false
         }
     ]

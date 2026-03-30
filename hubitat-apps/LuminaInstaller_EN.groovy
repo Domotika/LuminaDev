@@ -39,7 +39,7 @@ preferences {
 //  CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════
 
-@groovy.transform.Field static final String LUMINA_VERSION = "1.5.6"
+@groovy.transform.Field static final String LUMINA_VERSION = "1.5.7"
 @groovy.transform.Field static final String LUMINA_FILENAME = "LuminaHighline_v1.5.html"
 @groovy.transform.Field static final String GITHUB_RAW_URL = "https://raw.githubusercontent.com/Domotika/LuminaDev/main/LuminaHighline_v1.5.html"
 @groovy.transform.Field static final String GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Domotika/LuminaDev/main/version.txt"
@@ -331,19 +331,17 @@ def checkAndCreateVariables() {
     def created = 0
     def allExist = true
     
+    // Get list of existing variables
+    def existingVars = getAllGlobalVars()?.keySet() ?: []
+    
     variables.each { varName ->
-        def exists = false
-        try {
-            def value = getGlobalVar(varName)
-            exists = (value != null)
-        } catch (e) {
-            exists = false
-        }
+        def exists = existingVars.contains(varName)
         
         if (!exists) {
             allExist = false
             try {
-                setGlobalVar(varName, "")
+                // addGlobalVariable CREATES the variable (setGlobalVar only updates existing ones!)
+                addGlobalVariable(varName, "", "string")
                 results << [name: varName, status: "✅ Created"]
                 created++
             } catch (e) {
@@ -702,23 +700,19 @@ def setupHubVariables() {
         "LuminaConfig_4"
     ]
     
+    // Get list of existing variables
+    def existingVars = getAllGlobalVars()?.keySet() ?: []
+    
     def created = 0
     variables.each { varName ->
-        try {
-            def existing = getGlobalVar(varName)
-            if (existing == null) {
-                setGlobalVar(varName, "")
-                created++
-                log.info "Created Hub Variable: ${varName}"
-            }
-        } catch (e) {
-            // Variable doesn't exist, create it
+        if (!existingVars.contains(varName)) {
             try {
-                setGlobalVar(varName, "")
+                // addGlobalVariable CREATES the variable (setGlobalVar only updates existing ones!)
+                addGlobalVariable(varName, "", "string")
                 created++
                 log.info "Created Hub Variable: ${varName}"
-            } catch (e2) {
-                log.warn "Could not create variable ${varName}: ${e2.message}"
+            } catch (e) {
+                log.warn "Could not create variable ${varName}: ${e.message}"
             }
         }
     }
