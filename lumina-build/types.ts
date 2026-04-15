@@ -20,6 +20,14 @@ export enum DeviceType {
   CAMERA = 'CAMERA',          // IP Camera with snapshot/stream
   ENERGY = 'ENERGY',          // Energy meter (power, consumption)
   SOUNDSMART = 'SOUNDSMART',  // Molsmart/SoundSmart Multiroom Audio Player
+  // ═══ NOVOS TIPOS v1.6.1 ═══════════════════════════════════════════════════
+  SIREN = 'SIREN',            // Tuya Smart Siren Zigbee (alarm, chime, tone)
+  MATTER_SENSOR = 'MATTER_SENSOR', // Matter Advanced Bridge sensors (contact, temp, humidity)
+  CONTACT = 'CONTACT',        // Contact sensors (door/window)
+  HUMIDITY = 'HUMIDITY',      // Humidity sensors
+  TEMPERATURE = 'TEMPERATURE', // Temperature sensors (standalone)
+  ILLUMINANCE = 'ILLUMINANCE', // Light sensors / Luximeters (Matter, Aqara, etc)
+  RGB_CCT = 'RGB_CCT',         // RGB + CCT lights (Gledopto, RGBCCT strips, etc)
 }
 
 export interface HubitatCommand {
@@ -116,6 +124,27 @@ export interface Device {
     current?: number; // Amperes
     energyToday?: number; // kWh hoje
     energyCost?: number; // Custo estimado
+
+    // ═══ NOVOS CAMPOS v1.6.1 - Siren/Alarm ═════════════════════════════════
+    alarm?: string; // off, siren, strobe, both
+    alarmState?: string; // Alarm Sound, Alarm Light, Alarm Sound and Light, No Alarm
+    chimeStatus?: string; // playing, stopped
+    soundName?: string; // Melody name
+    duration?: number; // seconds
+    tamperAlarm?: string; // clear, detected
+    solarCharging?: string; // not charging, charging
+
+    // ═══ NOVOS CAMPOS v1.6.1 - Matter/Contact Sensors ══════════════════════
+    contact?: string; // open, closed
+    humidity?: number; // % (para sensores de umidade)
+
+    // ═══ NOVOS CAMPOS v1.6.1 - RGB/CCT Lights ════════════════════════════════
+    hue?: number; // 0-360 (or 0-100 depending on driver)
+    saturation?: number; // 0-100%
+    colorTemperature?: number; // Kelvin (2700-6500K typical)
+    colorMode?: string; // RGB, CT, CCT
+    colorName?: string; // Red, Blue, Warm White, etc
+    RGB?: string; // hex color #RRGGBB
   };
 }
 

@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "lumina-cloud-c8d21",
+    "e92b2": "lumina-cloud-e92b2",
+    "dev-br": "luminadashboards-dev-br"
+  }
+}
