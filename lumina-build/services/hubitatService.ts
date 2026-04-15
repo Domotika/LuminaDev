@@ -2,399 +2,8 @@ import { HubitatCommand, HubitatConfig, Device, DeviceType, Room, Favorite, Noti
 import { MOCK_DEVICES } from '../constants';
 
 // ============================================================
-// LUMINA BACKUP SYSTEM - Integração direta no dashboard
+// LUMINA BACKUP SYSTEM - MOVIDO PARA App.tsx (menu Ajustes)
 // ============================================================
-class LuminaBackupService {
-  private hubitatService: HubitatService | null = null;
-  private backupDriverId: string | null = null;
-
-  constructor() {
-    this.init();
-  }
-
-  async init() {
-    // Aguarda a inicialização do DOM
-    setTimeout(() => {
-      this.findBackupDriver();
-    }, 2000);
-  }
-
-  // Implementação simples de sendCommand usando fetch direto
-  async sendCommand(deviceId: string, command: string, ...parameters: any[]) {
-    try {
-      const config = getConfig();
-      if (!config || !config.hubIP || !config.accessToken) {
-        throw new Error('Configuração do Hubitat não encontrada');
-      }
-
-      const baseUrl = config.cloudUrl || `http://${config.hubIP}/apps/api/`;
-      const params = parameters.length > 0 ? `/${parameters.join('/')}` : '';
-      const url = `${baseUrl}${config.appId}/devices/${deviceId}/${command}${params}?access_token=${config.accessToken}`;
-
-      const response = await fetch(url, { method: 'GET' });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Erro no sendCommand:', error);
-      throw error;
-    }
-  }
-
-  async findBackupDriver() {
-    try {
-      const devices = await this.getDevices();
-      const backupDriver = devices.find((d: any) => 
-        d.name?.toLowerCase().includes('lumina backup') ||
-        d.label?.toLowerCase().includes('lumina backup')
-      );
-      
-      if (backupDriver) {
-        this.backupDriverId = backupDriver.id;
-        console.log('✅ Lumina Backup Driver encontrado:', backupDriver.id);
-        this.addBackupButton();
-      } else {
-        console.log('⚠️ Lumina Backup Driver não encontrado - funcionalidade desabilitada');
-      }
-    } catch (error) {
-      console.warn('Erro ao procurar backup driver:', error);
-    }
-  }
-
-  // Função para obter devices usando fetch direto
-  async getDevices() {
-    try {
-      const config = getConfig();
-      if (!config || !config.hubIP || !config.accessToken) {
-        throw new Error('Configuração do Hubitat não encontrada');
-      }
-
-      const baseUrl = config.cloudUrl || `http://${config.hubIP}/apps/api/`;
-      const url = `${baseUrl}${config.appId}/devices/all?access_token=${config.accessToken}`;
-
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Erro ao obter devices:', error);
-      return [];
-    }
-  }
-
-  private addBackupButton() {
-    // Aguarda DOM carregar
-    setTimeout(() => {
-      const backupBtn = document.createElement('button');
-      backupBtn.innerHTML = '💾 Backup';
-      backupBtn.className = 'lumina-backup-btn';
-      backupBtn.onclick = () => this.showBackupModal();
-      backupBtn.title = 'Backup completo da configuração';
-      
-      // Adiciona CSS inline
-      const style = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        padding: 10px 15px;
-        background: #28a745;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 500;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        transition: all 0.2s;
-      `;
-      backupBtn.style.cssText = style;
-      
-      // Hover effect
-      backupBtn.onmouseenter = () => {
-        backupBtn.style.background = '#1e7e34';
-        backupBtn.style.transform = 'translateY(-1px)';
-      };
-      backupBtn.onmouseleave = () => {
-        backupBtn.style.background = '#28a745';
-        backupBtn.style.transform = 'translateY(0)';
-      };
-      
-      document.body.appendChild(backupBtn);
-    }, 3000);
-  }
-
-  private showBackupModal() {
-    const modal = document.createElement('div');
-    modal.className = 'lumina-backup-modal';
-    modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>🗄️ Backup Lumina Dashboard</h3>
-          <button class="close-btn" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
-        </div>
-        <div class="backup-actions">
-          <button class="action-btn primary" onclick="window.luminaBackup.saveConfigBackup()">
-            💾 Backup Configuração
-          </button>
-          <button class="action-btn success" onclick="window.luminaBackup.saveFullBackup()">
-            📦 Backup Completo
-          </button>
-          <button class="action-btn info" onclick="window.luminaBackup.showConnectionForm()">
-            🔗 Dados de Conexão
-          </button>
-          <button class="action-btn secondary" onclick="window.luminaBackup.showInfo()">
-            ℹ️ Informações
-          </button>
-        </div>
-        <div id="backup-content"></div>
-      </div>
-    `;
-
-    // CSS inline para o modal
-    const modalStyle = document.createElement('style');
-    modalStyle.textContent = `
-      .lumina-backup-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-      }
-      .lumina-backup-modal .modal-content {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        min-width: 500px;
-        max-width: 600px;
-        max-height: 80vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      }
-      .lumina-backup-modal .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #f0f0f0;
-        padding-bottom: 15px;
-      }
-      .lumina-backup-modal h3 {
-        margin: 0;
-        color: #333;
-      }
-      .lumina-backup-modal .close-btn {
-        background: #dc3545;
-        color: white;
-        border: none;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 18px;
-        line-height: 1;
-      }
-      .lumina-backup-modal .backup-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        margin-bottom: 20px;
-      }
-      .lumina-backup-modal .action-btn {
-        padding: 12px 16px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        transition: all 0.2s;
-      }
-      .lumina-backup-modal .action-btn.primary { background: #007bff; color: white; }
-      .lumina-backup-modal .action-btn.success { background: #28a745; color: white; }
-      .lumina-backup-modal .action-btn.info { background: #17a2b8; color: white; }
-      .lumina-backup-modal .action-btn.secondary { background: #6c757d; color: white; }
-      .lumina-backup-modal .action-btn:hover { transform: translateY(-1px); opacity: 0.9; }
-      #backup-content {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 15px;
-      }
-    `;
-    document.head.appendChild(modalStyle);
-    document.body.appendChild(modal);
-
-    // Registra métodos globais
-    (window as any).luminaBackup = this;
-  }
-
-  async saveConfigBackup() {
-    try {
-      if (!this.backupDriverId) {
-        alert('❌ Driver de backup não disponível');
-        return;
-      }
-
-      const config = this.getCurrentConfig();
-      const configJson = JSON.stringify(config, null, 2);
-      
-      await this.sendCommand(this.backupDriverId, 'saveConfig', configJson);
-      alert('✅ Backup da configuração salvo com sucesso!');
-      
-    } catch (error) {
-      console.error('Erro ao salvar backup:', error);
-      alert('❌ Erro ao salvar backup: ' + (error as Error).message);
-    }
-  }
-
-  async saveFullBackup() {
-    try {
-      if (!this.backupDriverId) {
-        alert('❌ Driver de backup não disponível');
-        return;
-      }
-
-      const config = this.getCurrentConfig();
-      const configJson = JSON.stringify(config, null, 2);
-      
-      await this.sendCommand(this.backupDriverId, 'saveFullConfig', configJson);
-      alert('✅ Backup completo salvo (configuração + dados de conexão)!');
-      
-    } catch (error) {
-      console.error('Erro ao salvar backup completo:', error);
-      alert('❌ Erro ao salvar backup completo: ' + (error as Error).message);
-    }
-  }
-
-  showConnectionForm() {
-    const content = document.getElementById('backup-content');
-    if (!content) return;
-
-    content.innerHTML = `
-      <h4 style="margin-top: 0;">🔗 Gerenciar Dados de Conexão</h4>
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Hub IP:</label>
-        <input type="text" id="hubIp" placeholder="192.168.1.100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${this.getCurrentHubIp()}">
-      </div>
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Maker API Token:</label>
-        <input type="text" id="makerToken" placeholder="abc123..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${this.getCurrentToken()}">
-      </div>
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Cloud URL (opcional):</label>
-        <input type="text" id="cloudUrl" placeholder="https://cloud.hubitat.com/api/..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${this.getCurrentCloudUrl()}">
-      </div>
-      <div style="display: flex; gap: 10px;">
-        <button onclick="window.luminaBackup.saveConnectionData()" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">💾 Salvar</button>
-        <button onclick="window.luminaBackup.loadConnectionData()" style="flex: 1; padding: 10px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;">📥 Carregar</button>
-      </div>
-    `;
-  }
-
-  async saveConnectionData() {
-    try {
-      if (!this.backupDriverId) {
-        alert('❌ Driver de backup não disponível');
-        return;
-      }
-
-      const hubIp = (document.getElementById('hubIp') as HTMLInputElement)?.value;
-      const makerToken = (document.getElementById('makerToken') as HTMLInputElement)?.value;
-      const cloudUrl = (document.getElementById('cloudUrl') as HTMLInputElement)?.value || '';
-
-      if (!hubIp || !makerToken) {
-        alert('❌ Hub IP e Maker Token são obrigatórios!');
-        return;
-      }
-
-      await this.sendCommand(this.backupDriverId, 'saveConnectionData', hubIp, makerToken, cloudUrl);
-      alert('✅ Dados de conexão salvos!');
-      
-    } catch (error) {
-      console.error('Erro ao salvar dados de conexão:', error);
-      alert('❌ Erro ao salvar: ' + (error as Error).message);
-    }
-  }
-
-  async loadConnectionData() {
-    try {
-      if (!this.backupDriverId) {
-        alert('❌ Driver de backup não disponível');
-        return;
-      }
-
-      await this.sendCommand(this.backupDriverId, 'getConnectionData');
-      
-      // Simula carregamento (na implementação real, recuperaria do device)
-      setTimeout(() => {
-        alert('✅ Use o "Re-detect Types" nas configurações para carregar os dados salvos');
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      alert('❌ Erro ao carregar: ' + (error as Error).message);
-    }
-  }
-
-  showInfo() {
-    const content = document.getElementById('backup-content');
-    if (!content) return;
-
-    content.innerHTML = `
-      <h4 style="margin-top: 0;">ℹ️ Informações do Sistema de Backup</h4>
-      <div style="padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #007bff;">
-        <p><strong>📦 Driver:</strong> ${this.backupDriverId ? 'Conectado ✅' : 'Não encontrado ❌'}</p>
-        <p><strong>💾 Funcionalidades:</strong></p>
-        <ul style="margin: 10px 0; padding-left: 20px;">
-          <li>Backup de configuração (rooms, devices, settings)</li>
-          <li>Backup completo (configuração + dados de conexão)</li>
-          <li>Dados de conexão salvos permanentemente</li>
-          <li>Arquivos salvos no File Manager do Hubitat</li>
-          <li>Limpeza automática de backups antigos</li>
-        </ul>
-        <p><strong>📁 Localização:</strong> Hubitat → Settings → File Manager</p>
-        <p><strong>🔧 Instalação:</strong> Instale o driver "Lumina Backup Driver" e adicione à Maker API</p>
-      </div>
-    `;
-  }
-
-  private getCurrentConfig() {
-    return {
-      rooms: (window as any).rooms || [],
-      settings: (window as any).settings || {},
-      devices: (window as any).devices || [],
-      favorites: (window as any).favorites || [],
-      timestamp: new Date().toISOString(),
-      version: '1.6.0',
-      hubitatConfig: getConfig() || {}
-    };
-  }
-
-  private getCurrentHubIp(): string {
-    return localStorage.getItem('lumina_hub_ip') || (window as any).hubIP || '';
-  }
-
-  private getCurrentToken(): string {
-    return localStorage.getItem('lumina_maker_token') || (window as any).makerToken || '';
-  }
-
-  private getCurrentCloudUrl(): string {
-    return localStorage.getItem('lumina_cloud_url') || (window as any).cloudUrl || '';
-  }
-}
-
-// Inicializa sistema de backup
-const luminaBackup = new LuminaBackupService();
-(window as any).luminaBackup = luminaBackup;
 // ============================================================
 
 // ============================================================
@@ -741,7 +350,14 @@ export const exportFullConfig = (): string => {
             hubIp: hubConfig.hubIp,
             appId: hubConfig.appId,
             accessToken: hubConfig.accessToken
-        } : null
+        } : null,
+        // v2.1 - Backup App Config
+        backupApp: {
+            url: localStorage.getItem('lumina_backup_app_url') || '',
+            token: localStorage.getItem('lumina_backup_app_token') || '',
+            autoBackup: localStorage.getItem('lumina_auto_backup') === 'true',
+            maxBackups: parseInt(localStorage.getItem('lumina_max_backups') || '10')
+        }
     };
     return JSON.stringify(data);
 };
@@ -790,6 +406,13 @@ export const importFullConfig = (jsonString: string): boolean => {
                 appId: data.hub.appId,
                 accessToken: data.hub.accessToken
             });
+        }
+        // v2.1 - Backup App Config
+        if (data.backupApp) {
+            if (data.backupApp.url) localStorage.setItem('lumina_backup_app_url', data.backupApp.url);
+            if (data.backupApp.token) localStorage.setItem('lumina_backup_app_token', data.backupApp.token);
+            if (data.backupApp.autoBackup !== undefined) localStorage.setItem('lumina_auto_backup', data.backupApp.autoBackup.toString());
+            if (data.backupApp.maxBackups) localStorage.setItem('lumina_max_backups', data.backupApp.maxBackups.toString());
         }
         return true;
     } catch (e) {
@@ -999,6 +622,35 @@ const processAttribute = (state: Device['state'], name: string, value: any) => {
   if (name === 'voltage') state.voltage = typeof value === 'number' ? value : parseFloat(value);
   if (name === 'amperage' || name === 'current') state.current = typeof value === 'number' ? value : parseFloat(value);
   if (name === 'energyToday') state.energyToday = typeof value === 'number' ? value : parseFloat(value);
+
+  // ═══ NOVOS v1.6.1 - Siren/Alarm (Tuya Smart Siren) ═══════════════════════
+  if (name === 'alarm') {
+    state.alarm = valStr;
+    state.isOn = !['off', 'inactive'].includes(valStr);
+  }
+  if (name === 'alarmState') state.alarmState = value;
+  if (name === 'status' && (valStr === 'playing' || valStr === 'stopped')) {
+    state.chimeStatus = valStr;
+  }
+  if (name === 'soundName') state.soundName = value;
+  if (name === 'duration') state.duration = typeof value === 'number' ? value : parseInt(value);
+  if (name === 'tamperAlarm') state.tamperAlarm = valStr;
+  if (name === 'solarCharging') state.solarCharging = valStr;
+
+  // ═══ NOVOS v1.6.1 - Contact/Matter Sensors ═══════════════════════════════
+  if (name === 'contact') {
+    state.contact = valStr;
+    state.isOn = valStr === 'open';
+  }
+  if (name === 'humidity') state.humidity = typeof value === 'number' ? value : parseFloat(value);
+
+  // ═══ NOVOS v1.6.1 - RGB/CCT Lights ═══════════════════════════════════════
+  if (name === 'hue') state.hue = typeof value === 'number' ? value : parseFloat(value);
+  if (name === 'saturation') state.saturation = typeof value === 'number' ? value : parseFloat(value);
+  if (name === 'colorTemperature') state.colorTemperature = typeof value === 'number' ? value : parseInt(value);
+  if (name === 'colorMode') state.colorMode = value;
+  if (name === 'colorName') state.colorName = value;
+  if (name === 'RGB' || name === 'color') state.RGB = value;
 };
 
 /**
@@ -1041,15 +693,26 @@ export const mapHubitatTypeToAppType = (capabilities: string[] | string, name: s
   const isMolsmart = lowerName.includes('molsmart') || lowerName.includes('gw8') || lowerName.includes('gw3');
   const isIrRemote = lowerName.includes('ir ') || lowerName.includes(' ir') || lowerName.includes('(irweb)') || lowerName.includes('infravermelho');
   
-  // Child buttons from Molsmart (TV - Power On, TV - Mute, Cortina - Subir, etc)
+  // Children de persianas/cortinas: "Subir Cortina X", "Parar Cortina X", "Descer Cortina X"
+  // IMPORTANTE: Retorna SWITCH para que apareçam no mapeamento do card de persianas
+  const isBlindChildSwitch = (
+    (lowerName.startsWith('subir ') || lowerName.startsWith('parar ') || lowerName.startsWith('descer ')) &&
+    (lowerName.includes('cortina') || lowerName.includes('persiana') || lowerName.includes('blind'))
+  ) || (
+    caps.includes('switch') && !caps.includes('switchlevel') && (
+      lowerName.startsWith('cortina -') || lowerName.startsWith('persiana -') || lowerName.startsWith('blind -') ||
+      lowerName.includes('- subir') || lowerName.includes('- parar') || lowerName.includes('- descer') ||
+      lowerName.includes('- up') || lowerName.includes('- stop') || lowerName.includes('- down')
+    ) && (lowerName.includes('cortina') || lowerName.includes('persiana') || lowerName.includes('blind'))
+  );
+  if (isBlindChildSwitch && caps.includes('switch')) return DeviceType.SWITCH;
+
+  // Child buttons from Molsmart (TV - Power On, TV - Mute, etc) - NÃO inclui persianas
   if (caps.includes('switch') && !caps.includes('switchlevel') && (
     lowerName.startsWith('tv -') || lowerName.startsWith('ac -') || lowerName.startsWith('audio -') ||
-    lowerName.startsWith('cortina -') || lowerName.startsWith('persiana -') || lowerName.startsWith('blind -') ||
     lowerName.includes('- power') || lowerName.includes('- mute') || lowerName.includes('- volume') ||
     lowerName.includes('- channel') || lowerName.includes('- hdmi') || lowerName.includes('- netflix') ||
-    lowerName.includes('- youtube') || lowerName.includes('- amazon') || lowerName.includes('- ir') ||
-    lowerName.includes('- subir') || lowerName.includes('- parar') || lowerName.includes('- descer') ||
-    lowerName.includes('- up') || lowerName.includes('- stop') || lowerName.includes('- down')
+    lowerName.includes('- youtube') || lowerName.includes('- amazon') || lowerName.includes('- ir')
   )) return DeviceType.BUTTON;
 
   // Parent IR Remote devices (Molsmart GW8)
@@ -1076,10 +739,58 @@ export const mapHubitatTypeToAppType = (capabilities: string[] | string, name: s
   if (caps.includes('smokedetector') || caps.includes('smokesensor') || caps.includes('carbonmonoxidedetector') || caps.includes('carbondioxidesensor')) return DeviceType.SMOKE;
   if (caps.includes('lock')) return DeviceType.LOCK;
 
+  // ═══ NOVOS v1.6.1 - Siren/Alarm (Tuya Smart Siren Zigbee) ════════════════
+  // Driver kkossev: capabilities = Alarm, Tone, Chime, AudioVolume, Battery
+  if (caps.includes('alarm') && (caps.includes('tone') || caps.includes('chime'))) return DeviceType.SIREN;
+  if (caps.includes('alarm') && lowerName.includes('siren')) return DeviceType.SIREN;
+  if (lowerName.includes('siren') || lowerName.includes('sirene') || lowerName.includes('alarme sonoro')) return DeviceType.SIREN;
+
+  // ═══ NOVOS v1.6.1 - Matter Advanced Bridge / Contact Sensors ═════════════
+  // Matter sensors vindos de bridges (Aqara, Tuya, Hue via Matter)
+  if (caps.includes('contactsensor') || caps.includes('contact sensor')) return DeviceType.CONTACT;
+  if (lowerName.includes('contact') || lowerName.includes('door') || lowerName.includes('window') || lowerName.includes('porta') || lowerName.includes('janela')) {
+    if (caps.includes('sensor') || attrs.some((a: string) => a.includes('contact'))) return DeviceType.CONTACT;
+  }
+
+  // Humidity sensors (standalone, não parte de outro device)
+  if (caps.includes('relativehumiditymeasurement') || caps.includes('relative humidity measurement')) {
+    // Se não tem outras capabilities principais, é sensor de umidade standalone
+    if (!caps.includes('thermostat') && !caps.includes('switch')) return DeviceType.HUMIDITY;
+  }
+
+  // Temperature sensors (standalone)
+  if (caps.includes('temperaturemeasurement') || caps.includes('temperature measurement')) {
+    // Se não tem outras capabilities principais, é sensor de temperatura standalone
+    if (!caps.includes('thermostat') && !caps.includes('switch') && !caps.includes('motionsensor')) return DeviceType.TEMPERATURE;
+  }
+
+  // Illuminance sensors / Luximeters (standalone)
+  if (caps.includes('illuminancemeasurement') || caps.includes('illuminance measurement')) {
+    // Se não tem motion/presence, é luxímetro standalone
+    if (!caps.includes('motionsensor') && !caps.includes('presencesensor')) return DeviceType.ILLUMINANCE;
+  }
+  // Detectar por nome também
+  if (lowerName.includes('lux') || lowerName.includes('light sensor') || lowerName.includes('sensor de luz') || lowerName.includes('luminosidade')) {
+    return DeviceType.ILLUMINANCE;
+  }
+
+  // Matter Bridge generic sensor (fallback para sensores Matter não específicos)
+  if (manufacturer && (manufacturer.toLowerCase().includes('matter') || manufacturer.toLowerCase().includes('aqara') || manufacturer.toLowerCase().includes('tuya'))) {
+    if (caps.includes('sensor') || attrs.some((a: string) => a.includes('temperature') || a.includes('humidity') || a.includes('contact'))) {
+      return DeviceType.MATTER_SENSOR;
+    }
+  }
+
   // 3. CORTINAS/PERSIANAS (ANTES de TV/AC/SCENE para evitar conflitos)
-  if (caps.includes('windowshade') || caps.includes('windowblind') || caps.includes('window shade') || caps.includes('window blind')) return DeviceType.BLIND;
-  // Também detectar por nome se tiver capability de switch/level
-  if ((caps.includes('switchlevel') || caps.includes('switch')) && (lowerName.includes('persiana') || lowerName.includes('cortina') || lowerName.includes('blind') || lowerName.includes('shade'))) return DeviceType.BLIND;
+  // IMPORTANTE: Excluir children buttons (Subir/Parar/Descer Cortina X) que já foram detectados acima
+  const isBlindChildPattern = (
+    lowerName.startsWith('subir ') || lowerName.startsWith('parar ') || lowerName.startsWith('descer ') ||
+    lowerName.includes('- subir') || lowerName.includes('- parar') || lowerName.includes('- descer') ||
+    lowerName.includes('- up') || lowerName.includes('- stop') || lowerName.includes('- down')
+  );
+  if (!isBlindChildPattern && (caps.includes('windowshade') || caps.includes('windowblind') || caps.includes('window shade') || caps.includes('window blind'))) return DeviceType.BLIND;
+  // Também detectar por nome se tiver capability de switch/level (mas NÃO se for child button)
+  if (!isBlindChildPattern && (caps.includes('switchlevel') || caps.includes('switch')) && (lowerName.includes('persiana') || lowerName.includes('cortina') || lowerName.includes('blind') || lowerName.includes('shade'))) return DeviceType.BLIND;
 
   // 4. MULTIMÍDIA - TV (ANTES de AC, pois TVs podem ter sensores de temperatura)
   // IMPORTANTE: Só detectar como TV se tiver capability de TV ou audiovolume
@@ -1108,7 +819,9 @@ export const mapHubitatTypeToAppType = (capabilities: string[] | string, name: s
   // Detectar por capabilities OU atributos
   if (caps.includes('thermostat') || caps.includes('thermostatmode') || caps.includes('thermostatcooling') || caps.includes('thermostatheating') || caps.includes('thermostatsetpoint') || caps.includes('thermostatfanmode') || hasThermostatAttrs) return DeviceType.AC;
   // Detectar AC por nome + Temperature Measurement (drivers GW3 v2.3+ não têm Switch)
-  if ((lowerName.includes('ar ') || lowerName.includes(' ar') || lowerName.includes('ar-') || lowerName.includes('clima') || lowerName.includes('split') || lowerName.includes('ac ') || lowerName.includes(' ac')) && 
+  // IMPORTANTE: Usar word boundaries para evitar falsos positivos (ex: "armario" contém "ar")
+  const isAcByName = /\b(ar|ac)\b/.test(lowerName) || lowerName.includes('clima') || lowerName.includes('split');
+  if (isAcByName && 
       (caps.includes('switch') || caps.includes('temperaturemeasurement') || caps.includes('temperature measurement') || attrs.includes('temperature'))) return DeviceType.AC;
 
   // 7. Sensores de Movimento/Presença
@@ -1116,12 +829,48 @@ export const mapHubitatTypeToAppType = (capabilities: string[] | string, name: s
   if (caps.includes('motionsensor') || caps.includes('motion sensor')) return DeviceType.MOTION;
 
   // 8. Iluminação
+  // ═══ NOVO v1.6.1 - RGB+CCT Lights (Gledopto, fitas RGBCCT) ═══════════════
+  
+  // PRIMEIRO: Detectar por nome (mais confiável)
+  const nameHasRgb = lowerName.includes('rgb');
+  const nameHasCct = lowerName.includes('cct');
+  const nameHasRgbw = lowerName.includes('rgbw');
+  const nameHasRgbww = lowerName.includes('rgbww');
+  
+  // Se o nome tem RGB E CCT (em qualquer ordem), ou RGBW/RGBWW - RETORNAR IMEDIATAMENTE
+  if ((nameHasRgb && nameHasCct) || nameHasRgbw || nameHasRgbww) {
+    return DeviceType.RGB_CCT;
+  }
+  
+  // Detectar luzes que têm AMBOS RGB e CCT por capabilities
+  const hasColorControl = caps.includes('colorcontrol') || caps.includes('color control');
+  const hasColorTemp = caps.includes('colortemperature') || caps.includes('color temperature');
+  const hasColorMode = caps.includes('colormode') || attrs.some((a: string) => a.includes('colormode'));
+  
+  // RGB+CCT: tem controle de cor E temperatura de cor (por caps)
+  if ((hasColorControl && hasColorTemp) || hasColorMode) return DeviceType.RGB_CCT;
+  
+  // Detecção por atributos específicos de RGB/CCT
+  const hasColorTempAttr = attrs.some((a: string) => a.includes('colortemperature'));
+  const hasHueSatAttrs = attrs.some((a: string) => a.includes('hue') || a.includes('saturation'));
+  
+  // Se tem atributos de temperatura de cor E hue/saturation
+  if (hasColorTempAttr && hasHueSatAttrs) return DeviceType.RGB_CCT;
+  
+  // Gledopto específico
+  if (lowerName.includes('gledopto')) return DeviceType.RGB_CCT;
+  
+  // Se nome tem CCT E tem switch/level, é pelo menos um CCT (tratar como RGB_CCT)
+  if (nameHasCct && (caps.includes('switch') || caps.includes('switchlevel'))) {
+    return DeviceType.RGB_CCT;
+  }
+  
   // Dimmers - detectar por capabilities OU atributo level
   if (caps.includes('switchlevel') || caps.includes('changelevel') || hasLevelAttr) return DeviceType.DIMMER;
   // Detecção por nome para child devices de dimmer
   if (caps.includes('switch') && lowerName.includes('dimmer')) return DeviceType.DIMMER;
-  // Luzes RGB/CCT
-  if (caps.includes('colorcontrol') || caps.includes('colortemperature')) return DeviceType.LIGHT;
+  // Luzes RGB/CCT (apenas um dos dois, não ambos)
+  if (hasColorControl || hasColorTemp) return DeviceType.LIGHT;
   // Luzes por nome
   if (caps.includes('switch') && (lowerName.includes('luz') || lowerName.includes('led') || lowerName.includes('abajur') || lowerName.includes('light') || lowerName.includes('lustre') || lowerName.includes('arandela') || lowerName.includes('spot') || lowerName.includes('lamp'))) return DeviceType.LIGHT;
 

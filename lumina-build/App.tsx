@@ -47,7 +47,9 @@ import {
   getWeather, searchCity, getSavedWeatherConfig, saveWeatherConfig, getWeatherInfo, getDayName,
   WeatherConfig, WeatherData 
 } from './services/weatherService';
-import { ArrowLeft, Home, Grid, Settings, Zap, Shield, Thermometer, Save, X, LayoutDashboard, CloudSun, Droplets, Wind, Sun, CheckCircle, AlertTriangle, Wifi, Globe, Lock, WifiOff, Copy, Sliders, EyeOff, ChevronRight, ChevronUp, ChevronDown, Image as ImageIcon, Trash2, Upload, PenLine, Camera, Plus, LayoutTemplate, RefreshCcw, Cloud, Download, Terminal, MapPin, Search, Ban, Tv, Blinds, Layout, Layers, Bell, Star, Palette } from 'lucide-react';
+import { ArrowLeft, Home, Grid, Settings, Zap, Shield, Thermometer, Save, X, LayoutDashboard, CloudSun, Droplets, Wind, Sun, CheckCircle, AlertTriangle, Wifi, Globe, Lock, WifiOff, Copy, Sliders, EyeOff, ChevronRight, ChevronUp, ChevronDown, Image as ImageIcon, Trash2, Upload, PenLine, Camera, Plus, LayoutTemplate, RefreshCcw, Cloud, Download, Terminal, MapPin, Search, Ban, Tv, Blinds, Layout, Layers, Bell, Star, Palette, Database, Box } from 'lucide-react';
+import HouseViewer3D from './components/3d/HouseViewer3D';
+import { getActiveModel, getModelUrl } from './services/model3dService';
 import { getIconForDevice } from './components/Icons';
 import { ThemeSelector } from './components/ThemeSelector';
 import { SidebarLayout } from './components/SidebarLayout';
@@ -58,7 +60,7 @@ import { FEATURES, IS_PRO, VERSION } from './features';
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 // Updated Tab Type: Removed individual tabs, added 'devices'
-type Tab = 'home' | 'rooms' | 'scenes' | 'devices' | 'media' | 'settings';
+type Tab = 'home' | 'rooms' | 'scenes' | 'devices' | 'media' | 'settings' | '3d';
 
 const App = () => {
   // --- CONFIGURAÇÃO DE BLOQUEIO ---
@@ -106,6 +108,24 @@ const App = () => {
   const pollingPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lockedDevices = useRef<Set<string>>(new Set());
   const cloudSyncDone = useRef(false);
+  const manualRestoreInProgress = useRef(false); // Bloqueia auto-sync após restore manual
+  
+  // Flag permanente: se true, auto-sync do Hubitat está desabilitado
+  // Isso é setado quando: 1) usuário faz restore manual, 2) sync pro Hubitat falha
+  // É resetado quando: usuário clica em "Sincronizar com Nuvem" manualmente
+  const isAutoSyncDisabled = () => {
+    return localStorage.getItem('lumina_auto_sync_disabled') === 'true';
+  };
+  
+  const disableAutoSync = () => {
+    localStorage.setItem('lumina_auto_sync_disabled', 'true');
+    console.log('[Lumina] Auto-sync desabilitado (dados locais têm prioridade)');
+  };
+  
+  const enableAutoSync = () => {
+    localStorage.removeItem('lumina_auto_sync_disabled');
+    console.log('[Lumina] Auto-sync reabilitado');
+  };
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Settings State
@@ -123,9 +143,31 @@ const App = () => {
   const [syncStatus, setSyncStatus] = useState<string>('');
   const [backupJson, setBackupJson] = useState<string>('');
   const [showBackupModal, setShowBackupModal] = useState(false);
+  
+  // Backup App State
+  const [backupAppUrl, setBackupAppUrl] = useState<string>(() => {
+    try { return localStorage.getItem('lumina_backup_app_url') || ''; } catch { return ''; }
+  });
+  const [backupAppToken, setBackupAppToken] = useState<string>(() => {
+    try { return localStorage.getItem('lumina_backup_app_token') || ''; } catch { return ''; }
+  });
+  const [backupAppStatus, setBackupAppStatus] = useState<string>('');
+  const [backupsList, setBackupsList] = useState<any[]>([]);
+  
+  // Auto-backup State
+  const [autoBackupEnabled, setAutoBackupEnabled] = useState<boolean>(() => {
+    try { return localStorage.getItem('lumina_auto_backup') === 'true'; } catch { return false; }
+  });
+  const [maxBackups, setMaxBackups] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('lumina_max_backups') || '10'); } catch { return 10; }
+  });
+  const autoBackupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastConfigHash = useRef<string>('');
 
   // --- Weather State ---
   const [weatherConfig, setWeatherConfig] = useState<WeatherConfig | null>(null);
+  const [activeModel3D, setActiveModel3D] = useState<string>('lumina_apartamento.glb');
+  const [model3DDeviceId, setModel3DDeviceId] = useState<string>(''); // Device ID for 3D Model Manager
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [showWeatherSettings, setShowWeatherSettings] = useState(false);
   const [citySearchQuery, setCitySearchQuery] = useState('');
@@ -163,6 +205,12 @@ const App = () => {
   useEffect(() => {
     initTheme();
   }, []);
+  
+  // Apply theme when currentTheme changes
+  useEffect(() => {
+    const theme = getTheme(currentTheme);
+    applyTheme(theme);
+  }, [currentTheme]);
   
   useEffect(() => {
     // Check Protocol and Origin
@@ -302,12 +350,33 @@ const App = () => {
   useEffect(() => {
     const autoLoadFromCloud = async () => {
       if (cloudSyncDone.current) return;
+      if (manualRestoreInProgress.current) {
+        console.log('[Lumina] Auto-sync: Skipped - manual restore in progress');
+        cloudSyncDone.current = true;
+        return;
+      }
+      
+      // IMPORTANTE: Se auto-sync está desabilitado, usar dados locais
+      // Isso evita sobrescrever o localStorage após restore manual
+      if (isAutoSyncDisabled()) {
+        console.log('[Lumina] Auto-sync: Disabled - using local data (manual restore or sync failure)');
+        cloudSyncDone.current = true;
+        return;
+      }
+      
       const config = getConfig();
       if (!config || !config.accessToken) return;
       
       // Try to load from Hubitat
       console.log('[Lumina] Auto-sync: Loading config from Hubitat...');
       const result = await syncFromHubitat('LuminaData');
+      
+      // Verificar novamente após o await (restore pode ter acontecido durante o download)
+      if (manualRestoreInProgress.current || isAutoSyncDisabled()) {
+        console.log('[Lumina] Auto-sync: Discarding downloaded data - manual restore detected');
+        cloudSyncDone.current = true;
+        return;
+      }
       
       if (result.success) {
         console.log('[Lumina] Auto-sync: Config loaded from Hubitat!');
@@ -340,6 +409,12 @@ const App = () => {
         console.log('[Lumina] Auto-sync: Config saved!');
       }
     }, 5000); // 5 seconds debounce
+    
+    // Também agenda auto-backup pro File Manager (se habilitado)
+    // scheduleAutoBackup é definido mais abaixo, mas é hoisted
+    if (typeof scheduleAutoBackup === 'function') {
+      scheduleAutoBackup();
+    }
   };
 
   // v1.6 Premium: Previous sensor states for comparison
@@ -576,6 +651,8 @@ const App = () => {
 
   const handleCloudDownload = async () => {
       setSyncStatus('Baixando...');
+      // Usuário está baixando manualmente - reabilitar auto-sync
+      enableAutoSync();
       const result = await syncFromHubitat('LuminaData');
       setSyncStatus(result.message);
       if (result.success) {
@@ -594,21 +671,286 @@ const App = () => {
       setShowBackupModal(true);
   };
 
-  const handleImportBackup = () => {
+  const handleImportBackup = async () => {
       if (!backupJson) return;
+      
+      // CRÍTICO: Setar flags ANTES de importar para bloquear auto-sync em andamento
+      manualRestoreInProgress.current = true;
+      cloudSyncDone.current = true;
+      disableAutoSync(); // Desabilita auto-sync permanentemente até usuário reativar
+      console.log('[Lumina] Manual restore: Auto-sync disabled...');
+      
       const success = importFullConfig(backupJson);
       if (success) {
-          alert('Backup restaurado com sucesso!');
-          setShowBackupModal(false);
           // Reload State
           setState(prev => ({ ...prev, rooms: getSavedRooms() || MOCK_ROOMS }));
           setCustomBackgrounds(getBackgroundMapping());
           setCustomRoomImages(getRoomImageMapping());
           setLayouts(getLayouts());
+          setFavorites(getFavorites());
+          setCameras(getCameras());
+          
+          // Enviar imediatamente pro Hubitat (não usar debounce)
+          // para garantir que os dados estão salvos antes de recarregar a página
+          if (configForm.accessToken) {
+            console.log('[Lumina] Backup restaurado - salvando no Hubitat imediatamente...');
+            const syncResult = await syncToHubitat('LuminaData');
+            if (syncResult.success) {
+              console.log('[Lumina] Backup sincronizado com Hubitat!');
+            }
+          }
+          
           loadRealDevices();
+          alert('Backup restaurado com sucesso!');
+          setShowBackupModal(false);
       } else {
+          manualRestoreInProgress.current = false; // Reset se falhou
           alert('Erro ao restaurar backup. Verifique o formato do JSON.');
       }
+  };
+
+  // ========== BACKUP APP FUNCTIONS ==========
+  const saveBackupAppConfig = () => {
+    if (!backupAppUrl || !backupAppToken) {
+      alert('URL e Token são obrigatórios!');
+      return;
+    }
+    localStorage.setItem('lumina_backup_app_url', backupAppUrl);
+    localStorage.setItem('lumina_backup_app_token', backupAppToken);
+    setBackupAppStatus('✅ Configuração salva!');
+    setTimeout(() => setBackupAppStatus(''), 3000);
+  };
+
+  const isBackupAppConfigured = () => {
+    return !!(backupAppUrl && backupAppToken);
+  };
+
+  // Helper para fazer fetch com proxy CORS quando necessário
+  const BACKUP_PROXY_URL = 'https://lumina-proxy-nine.vercel.app/api/hubitat';
+  
+  const backupFetch = async (endpoint: string, options?: RequestInit) => {
+    // Se é URL do cloud.hubitat.com, usa proxy
+    if (backupAppUrl.includes('cloud.hubitat.com')) {
+      try {
+        // Extrai UUID da URL cloud: https://cloud.hubitat.com/api/{uuid}/apps/{appId}
+        const urlObj = new URL(backupAppUrl);
+        const pathParts = urlObj.pathname.split('/').filter(p => p);
+        // pathParts = ['api', 'uuid', 'apps', 'appId']
+        const uuid = pathParts[1];
+        const basePath = pathParts.slice(2).join('/'); // 'apps/104'
+        const fullPath = `${basePath}${endpoint}`; // 'apps/104/backup'
+        
+        const proxyUrl = `${BACKUP_PROXY_URL}?uuid=${uuid}&path=${encodeURIComponent(fullPath)}&token=${encodeURIComponent(backupAppToken)}`;
+        
+        // Para POST com body grande, usa método POST real no proxy
+        if (options?.method === 'POST' && options?.body) {
+          return await fetch(proxyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: options.body
+          });
+        }
+        
+        return await fetch(proxyUrl);
+      } catch (e) {
+        console.error('Erro no proxy:', e);
+        throw e;
+      }
+    }
+    
+    // URL local - fetch direto
+    const url = `${backupAppUrl}${endpoint}?access_token=${backupAppToken}`;
+    return await fetch(url, options);
+  };
+
+  const handleBackupAppSave = async () => {
+    if (!isBackupAppConfigured()) {
+      alert('Configure a URL e Token do Backup App primeiro!');
+      return;
+    }
+    
+    setBackupAppStatus('Salvando...');
+    
+    try {
+      const config = JSON.parse(exportFullConfig());
+      
+      const response = await backupFetch('/backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config })
+      });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setBackupAppStatus(`✅ Salvo: ${result.filename}`);
+      } else {
+        throw new Error(result.error || 'Erro desconhecido');
+      }
+    } catch (error: any) {
+      setBackupAppStatus(`❌ Erro: ${error.message}`);
+    }
+    
+    setTimeout(() => setBackupAppStatus(''), 5000);
+  };
+
+  const handleBackupAppList = async () => {
+    if (!isBackupAppConfigured()) return;
+    
+    try {
+      const response = await backupFetch('/backup/list');
+      const result = await response.json();
+      
+      if (result.success) {
+        setBackupsList(result.backups || []);
+      }
+    } catch (error) {
+      console.error('Erro ao listar backups:', error);
+    }
+  };
+
+  const handleBackupAppRestore = async (filename: string) => {
+    if (!confirm(`Restaurar backup "${filename}"?\n\nIsso substituirá a configuração atual.`)) return;
+    
+    setBackupAppStatus('Restaurando...');
+    
+    try {
+      const response = await backupFetch(`/backup/load/${encodeURIComponent(filename)}`);
+      const result = await response.json();
+      
+      if (result.success && result.config) {
+        // Bloqueia auto-sync
+        manualRestoreInProgress.current = true;
+        cloudSyncDone.current = true;
+        disableAutoSync();
+        
+        // Importa
+        const success = importFullConfig(JSON.stringify(result.config));
+        if (success) {
+          setState(prev => ({ ...prev, rooms: getSavedRooms() || MOCK_ROOMS }));
+          setCustomBackgrounds(getBackgroundMapping());
+          setCustomRoomImages(getRoomImageMapping());
+          setLayouts(getLayouts());
+          setBackupAppStatus('✅ Restaurado! Recarregue a página.');
+        }
+      } else {
+        throw new Error(result.error || 'Erro ao carregar');
+      }
+    } catch (error: any) {
+      setBackupAppStatus(`❌ ${error.message}`);
+    }
+  };
+
+  // ========== AUTO-BACKUP FUNCTIONS ==========
+  
+  // Gera hash simples da config pra detectar mudanças
+  const getConfigHash = () => {
+    const config = exportFullConfig();
+    let hash = 0;
+    for (let i = 0; i < config.length; i++) {
+      const char = config.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash.toString();
+  };
+
+  // Deleta backups antigos mantendo apenas os N mais recentes
+  const cleanupOldBackups = async (backups: any[], keepCount: number) => {
+    if (backups.length <= keepCount) return;
+    
+    // Ordena por data (mais recente primeiro)
+    const sorted = [...backups].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
+    // Deleta os excedentes
+    const toDelete = sorted.slice(keepCount);
+    for (const backup of toDelete) {
+      try {
+        await backupFetch(`/backup/delete/${encodeURIComponent(backup.name)}`, { method: 'DELETE' });
+        console.log(`[Lumina] Auto-backup: deleted old backup ${backup.name}`);
+      } catch (e) {
+        console.warn(`[Lumina] Failed to delete old backup ${backup.name}`, e);
+      }
+    }
+  };
+
+  // Executa auto-backup se houver mudanças
+  const performAutoBackup = async () => {
+    if (!isBackupAppConfigured() || !autoBackupEnabled) return;
+    
+    const currentHash = getConfigHash();
+    if (currentHash === lastConfigHash.current) {
+      console.log('[Lumina] Auto-backup: no changes detected');
+      return;
+    }
+    
+    console.log('[Lumina] Auto-backup: changes detected, saving...');
+    
+    try {
+      const config = JSON.parse(exportFullConfig());
+      const response = await backupFetch('/backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config })
+      });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const result = await response.json();
+      if (result.success) {
+        lastConfigHash.current = currentHash;
+        console.log(`[Lumina] Auto-backup: saved ${result.filename}`);
+        
+        // Cleanup old backups
+        const listResponse = await backupFetch('/backup/list');
+        const listResult = await listResponse.json();
+        if (listResult.success && listResult.backups) {
+          await cleanupOldBackups(listResult.backups, maxBackups);
+          setBackupsList(listResult.backups.slice(0, maxBackups));
+        }
+      }
+    } catch (error) {
+      console.error('[Lumina] Auto-backup error:', error);
+    }
+  };
+
+  // Agenda auto-backup com debounce de 5 minutos
+  const scheduleAutoBackup = () => {
+    if (!autoBackupEnabled || !isBackupAppConfigured()) return;
+    
+    if (autoBackupTimer.current) {
+      clearTimeout(autoBackupTimer.current);
+    }
+    
+    autoBackupTimer.current = setTimeout(() => {
+      performAutoBackup();
+    }, 5 * 60 * 1000); // 5 minutos
+  };
+
+  // Toggle auto-backup
+  const toggleAutoBackup = (enabled: boolean) => {
+    setAutoBackupEnabled(enabled);
+    localStorage.setItem('lumina_auto_backup', enabled.toString());
+    
+    if (enabled) {
+      lastConfigHash.current = getConfigHash(); // Marca config atual como baseline
+      console.log('[Lumina] Auto-backup enabled');
+    } else {
+      if (autoBackupTimer.current) {
+        clearTimeout(autoBackupTimer.current);
+      }
+      console.log('[Lumina] Auto-backup disabled');
+    }
+  };
+
+  // Atualiza limite de backups
+  const updateMaxBackups = (count: number) => {
+    setMaxBackups(count);
+    localStorage.setItem('lumina_max_backups', count.toString());
   };
 
   // Grid Layout Handler - Modified to support Sections
@@ -627,14 +969,58 @@ const App = () => {
       triggerAutoSave();
   };
 
-  const generateDefaultLayout = (devices: any[], keyPrefix: string) => {
-      return devices.map((d, index) => ({
-          i: d.id || `${keyPrefix}_${index}`,
-          x: (index % 4) * 1, // Standard 4 columns
-          y: Math.floor(index / 4),
-          w: 1,
-          h: (d.type === DeviceType.AC || d.type === DeviceType.AVR || d.type === DeviceType.TV || d.type === DeviceType.IR_REMOTE || d.type === DeviceType.DIMMER || d.type === DeviceType.SOUNDSMART) ? 2 : 1 // Remotes are taller
-      }));
+  const generateDefaultLayout = (devices: any[], keyPrefix: string, cols: number = 4) => {
+      // Usa um array para rastrear a altura máxima ocupada em cada coluna
+      const columnHeights: number[] = new Array(cols).fill(0);
+      
+      return devices.map((d, index) => {
+          const isTall = d.type === DeviceType.AC || d.type === DeviceType.AVR || d.type === DeviceType.TV || d.type === DeviceType.IR_REMOTE || d.type === DeviceType.DIMMER || d.type === DeviceType.SOUNDSMART;
+          const h = isTall ? 2 : 1;
+          const w = 1;
+          
+          // Encontra a coluna com menor altura (para colocar o próximo item)
+          let minHeight = Infinity;
+          let bestCol = 0;
+          for (let c = 0; c <= cols - w; c++) {
+              // Verifica a altura máxima nas colunas que o item vai ocupar
+              let maxHeightInRange = 0;
+              for (let i = c; i < c + w; i++) {
+                  maxHeightInRange = Math.max(maxHeightInRange, columnHeights[i]);
+              }
+              if (maxHeightInRange < minHeight) {
+                  minHeight = maxHeightInRange;
+                  bestCol = c;
+              }
+          }
+          
+          const item = {
+              i: d.id || `${keyPrefix}_${index}`,
+              x: bestCol,
+              y: minHeight,
+              w: w,
+              h: h,
+              minW: 1,
+              minH: 1
+          };
+          
+          // Atualiza as alturas das colunas ocupadas
+          for (let i = bestCol; i < bestCol + w; i++) {
+              columnHeights[i] = minHeight + h;
+          }
+          
+          return item;
+      });
+  };
+  
+  // Gera layouts responsivos para cada breakpoint
+  const generateResponsiveLayouts = (devices: any[], keyPrefix: string) => {
+      return {
+          lg: generateDefaultLayout(devices, keyPrefix, 4),
+          md: generateDefaultLayout(devices, keyPrefix, 3),
+          sm: generateDefaultLayout(devices, keyPrefix, 2),
+          xs: generateDefaultLayout(devices, keyPrefix, 1),
+          xxs: generateDefaultLayout(devices, keyPrefix, 1)
+      };
   };
 
   const handleRoomAssignmentChange = (deviceId: string, newRoomId: string) => {
@@ -1100,14 +1486,27 @@ const App = () => {
       
       // Force default layout if saved layout is empty or doesn't match device count
       let currentLayout = layouts[layoutKey];
+      let responsiveLayouts: Record<string, any[]>;
+      
       if (!currentLayout || currentLayout.length === 0 || currentLayout.length < devices.length) {
-          currentLayout = generateDefaultLayout(devices, layoutKey);
+          // Gera layouts responsivos para todos os breakpoints
+          responsiveLayouts = generateResponsiveLayouts(devices, layoutKey);
+          currentLayout = responsiveLayouts.lg;
+      } else {
+          // Usa o layout salvo, mas adapta para breakpoints menores
+          responsiveLayouts = {
+              lg: currentLayout,
+              md: currentLayout,
+              sm: currentLayout.map(item => ({ ...item, x: item.x % 2, w: Math.min(item.w, 2) })),
+              xs: currentLayout.map(item => ({ ...item, x: 0, w: 1 })),
+              xxs: currentLayout.map(item => ({ ...item, x: 0, w: 1 }))
+          };
       }
 
       return (
           <ResponsiveGridLayout
               className="layout"
-              layouts={{ lg: currentLayout, md: currentLayout, sm: currentLayout }}
+              layouts={responsiveLayouts}
               breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
               cols={{ lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
               rowHeight={180} 
@@ -1115,6 +1514,8 @@ const App = () => {
               isResizable={isEditMode}
               onLayoutChange={(layout) => handleLayoutChange(layout, sectionKey)}
               margin={[16, 16]}
+              compactType="vertical"
+              preventCollision={false}
           >
               {devices.map(device => {
                   return (
@@ -1223,6 +1624,36 @@ const App = () => {
   };
 
   // --- Views Helpers ---
+  // Helper function to map device to 3D coordinates
+  const getDevicePosition = (device: Device): [number, number, number] => {
+    // For now, use simple room-based positioning
+    // TODO: Allow users to customize device positions in 3D space
+    const roomPositions: { [key: string]: [number, number, number] } = {
+      'sala': [2, 1, 2],
+      'cozinha': [-2, 1, 2],
+      'quarto': [2, 1, -2],
+      'banheiro': [-2, 1, -2],
+      'varanda': [0, 1, 3],
+      'entrada': [0, 1, 0]
+    };
+    
+    const roomKey = device.room?.toLowerCase() || 'sala';
+    const basePosition = roomPositions[roomKey] || [0, 1, 0];
+    
+    // Add some randomness to avoid overlapping
+    const randomOffset = [
+      (Math.random() - 0.5) * 1.5,
+      0,
+      (Math.random() - 0.5) * 1.5
+    ];
+    
+    return [
+      basePosition[0] + randomOffset[0],
+      basePosition[1],
+      basePosition[2] + randomOffset[2]
+    ];
+  };
+
   const renderHeader = (title: string, subtitle?: string, actions?: React.ReactNode) => (
     <div className="flex justify-between items-end mb-8">
         <div>
@@ -1861,7 +2292,59 @@ const App = () => {
         );
     }
 
-    // 6. Settings View (No Grid needed)
+    // 6. 3D House View (New in v2.1)
+    if (activeTab === '3d') {
+        const deviceMarkers = allDevices
+            .filter(d => d.room) // Only devices with room assigned
+            .map(device => ({
+                id: device.id,
+                name: device.name,
+                type: device.type,
+                status: device.state.switch || device.state.contact || 'online',
+                value: device.state.level ? `${device.state.level}%` : undefined,
+                position: getDevicePosition(device) // Function to map device to 3D coords
+            }));
+
+        return (
+            <div className="animate-in fade-in duration-500 h-full">
+                {renderHeader("Visualização 3D", "Casa interativa em tempo real")}
+                <div className="px-4 pb-20">
+                    <HouseViewer3D 
+                        className="w-full h-[600px] mb-6"
+                        hubIp={config.hubIP}
+                        modelFileName={activeModel3D}
+                        onDeviceClick={(deviceId) => {
+                            const device = allDevices.find(d => d.id === deviceId);
+                            if (device) {
+                                // Toggle device or open control modal
+                                handleDeviceUpdate(deviceId, {
+                                    command: device.state.switch === 'on' ? 'off' : 'on'
+                                });
+                            }
+                        }}
+                    />
+                    
+                    {/* 3D Controls */}
+                    <div className="flex gap-4 justify-center">
+                        <button 
+                            onClick={() => setActiveTab('rooms')}
+                            className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-200 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            Ver Ambientes
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('devices')}
+                            className="px-4 py-2 bg-green-600/20 hover:bg-green-600/40 border border-green-500/30 text-green-200 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            Gerenciar Dispositivos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // 8. Settings View (No Grid needed)
     if (activeTab === 'settings') {
         // ... (Keep existing Settings Logic) ...
         // Device Manager Sub-View
@@ -2015,14 +2498,129 @@ const App = () => {
                         </div>
                         <div className="space-y-4 mb-8 border-b border-white/10 pb-8">
                             <h2 className="text-xl font-light flex items-center gap-2"><Cloud size={20} /> Nuvem & Backup</h2>
-                            <p className="text-[10px] text-white/60 leading-relaxed">
-                                Para sincronizar, instale o <strong>Lumina Installer</strong> no Hubitat e clique em <strong>"🔧 Configurar Auto-Sync"</strong> para criar as variáveis automaticamente.
-                            </p>
-                            <div className="flex gap-2 mt-3">
-                                <button onClick={handleCloudUpload} className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-200 border border-blue-500/20 p-3 rounded-lg flex flex-col items-center gap-1 transition-colors"><Upload size={16} /><span className="text-[9px] uppercase font-bold">Enviar p/ Hub</span></button>
-                                <button onClick={handleCloudDownload} className="flex-1 bg-green-500/10 hover:bg-green-500/20 text-green-200 border border-green-500/20 p-3 rounded-lg flex flex-col items-center gap-1 transition-colors"><Download size={16} /><span className="text-[9px] uppercase font-bold">Baixar do Hub</span></button>
-                                <button onClick={handleGenerateBackup} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 p-3 rounded-lg flex flex-col items-center gap-1 transition-colors"><Settings size={16} /><span className="text-[9px] uppercase font-bold">Manual</span></button>
+                            
+                            {/* Backup App Section */}
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium flex items-center gap-2">
+                                        <Database size={16} className="text-blue-400" /> Lumina Backup App
+                                    </span>
+                                    {isBackupAppConfigured() ? (
+                                        <span className="text-[10px] px-2 py-1 bg-green-500/20 text-green-300 rounded-full">Conectado</span>
+                                    ) : (
+                                        <span className="text-[10px] px-2 py-1 bg-orange-500/20 text-orange-300 rounded-full">Não configurado</span>
+                                    )}
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <input 
+                                        type="text" 
+                                        value={backupAppUrl} 
+                                        onChange={(e) => setBackupAppUrl(e.target.value)}
+                                        placeholder="URL do App (ex: http://192.168.1.100/apps/api/123)"
+                                        className="w-full bg-black/30 border border-white/10 rounded-lg p-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                                    />
+                                    <input 
+                                        type="text" 
+                                        value={backupAppToken} 
+                                        onChange={(e) => setBackupAppToken(e.target.value)}
+                                        placeholder="Access Token"
+                                        className="w-full bg-black/30 border border-white/10 rounded-lg p-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                                    />
+                                    <button 
+                                        onClick={saveBackupAppConfig}
+                                        className="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-200 border border-blue-500/30 p-2 rounded-lg text-xs font-medium transition-colors"
+                                    >
+                                        💾 Salvar Configuração
+                                    </button>
+                                </div>
+                                
+                                {isBackupAppConfigured() && (
+                                    <div className="flex gap-2 pt-2 border-t border-white/10">
+                                        <button 
+                                            onClick={handleBackupAppSave}
+                                            className="flex-1 bg-green-600/20 hover:bg-green-600/30 text-green-200 border border-green-500/30 p-2 rounded-lg text-xs font-medium transition-colors"
+                                        >
+                                            📤 Salvar Backup
+                                        </button>
+                                        <button 
+                                            onClick={handleBackupAppList}
+                                            className="flex-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-200 border border-purple-500/30 p-2 rounded-lg text-xs font-medium transition-colors"
+                                        >
+                                            📋 Listar Backups
+                                        </button>
+                                    </div>
+                                )}
+                                
+                                {backupAppStatus && (
+                                    <p className="text-xs text-center text-white/80 animate-pulse">{backupAppStatus}</p>
+                                )}
+                                
+                                {backupsList.length > 0 && (
+                                    <div className="max-h-40 overflow-y-auto custom-scrollbar space-y-1 pt-2 border-t border-white/10">
+                                        <p className="text-[10px] text-white/40 uppercase">Backups Disponíveis</p>
+                                        {backupsList.map((b: any) => (
+                                            <div key={b.name} className="flex items-center justify-between p-2 bg-black/20 rounded-lg">
+                                                <div>
+                                                    <p className="text-xs text-white/80">{b.name}</p>
+                                                    <p className="text-[10px] text-white/40">{b.date}</p>
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleBackupAppRestore(b.name)}
+                                                    className="px-2 py-1 bg-blue-500/20 text-blue-200 rounded text-[10px] hover:bg-blue-500/30"
+                                                >
+                                                    Restaurar
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                
+                                {/* Auto-backup Settings */}
+                                {isBackupAppConfigured() && (
+                                    <div className="pt-3 border-t border-white/10 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium">🔄 Backup Automático</p>
+                                                <p className="text-[10px] text-white/40">Salva automaticamente após mudanças</p>
+                                            </div>
+                                            <button
+                                                onClick={() => toggleAutoBackup(!autoBackupEnabled)}
+                                                className={`w-12 h-6 rounded-full transition-colors ${autoBackupEnabled ? 'bg-green-500' : 'bg-white/20'}`}
+                                            >
+                                                <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${autoBackupEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                                            </button>
+                                        </div>
+                                        
+                                        {autoBackupEnabled && (
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs text-white/60">Manter últimos:</span>
+                                                <select
+                                                    value={maxBackups}
+                                                    onChange={(e) => updateMaxBackups(parseInt(e.target.value))}
+                                                    className="bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
+                                                >
+                                                    <option value="5">5 backups</option>
+                                                    <option value="10">10 backups</option>
+                                                    <option value="20">20 backups</option>
+                                                    <option value="50">50 backups</option>
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
+                            
+                            {/* Legacy Sync Section */}
+                            <p className="text-[10px] text-white/40 leading-relaxed mt-4">
+                                Sync via Hub Variables (legado):
+                            </p>
+                            <div className="flex gap-2">
+                                <button onClick={handleCloudUpload} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 p-2 rounded-lg flex flex-col items-center gap-1 transition-colors text-white/60 hover:text-white"><Upload size={14} /><span className="text-[8px] uppercase">Enviar</span></button>
+                                <button onClick={handleCloudDownload} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 p-2 rounded-lg flex flex-col items-center gap-1 transition-colors text-white/60 hover:text-white"><Download size={14} /><span className="text-[8px] uppercase">Baixar</span></button>
+                                <button onClick={handleGenerateBackup} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 p-2 rounded-lg flex flex-col items-center gap-1 transition-colors text-white/60 hover:text-white"><Settings size={14} /><span className="text-[8px] uppercase">Manual</span></button>
+                            </div>
+                            
                             <button onClick={() => { clearDeviceTypeCache(); alert('Cache de tipos limpo! Clique em "Atualizar" para re-detectar os dispositivos.'); }} className="w-full mt-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-200 border border-orange-500/20 p-3 rounded-lg flex items-center justify-center gap-2 transition-colors"><RefreshCcw size={16} /><span className="text-xs font-medium">Re-detectar Tipos de Dispositivos</span></button>
                             {syncStatus && <p className="text-center text-xs text-white/80 animate-pulse mt-2">{syncStatus}</p>}
                         </div>
@@ -2463,6 +3061,7 @@ const App = () => {
             <button onClick={() => setActiveTab('devices')} className={`flex flex-col items-center gap-1 group transition-all duration-300 ${activeTab === 'devices' ? 'text-white scale-110 drop-shadow-lg' : 'text-white/60 hover:text-white'}`}><Layers size={24} strokeWidth={activeTab === 'devices' ? 2 : 1.5} /><span className={`text-[8px] uppercase tracking-wider transition-opacity font-semibold ${activeTab === 'devices' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>Dispositivos</span></button>
             
             <button onClick={() => setActiveTab('media')} className={`flex flex-col items-center gap-1 group transition-all duration-300 ${activeTab === 'media' ? 'text-white scale-110 drop-shadow-lg' : 'text-white/60 hover:text-white'}`}><Tv size={24} strokeWidth={activeTab === 'media' ? 2 : 1.5} /><span className={`text-[8px] uppercase tracking-wider transition-opacity font-semibold ${activeTab === 'media' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>Mídia</span></button>
+            <button onClick={() => setActiveTab('3d')} className={`flex flex-col items-center gap-1 group transition-all duration-300 ${activeTab === '3d' ? 'text-white scale-110 drop-shadow-lg' : 'text-white/60 hover:text-white'}`}><Box size={24} strokeWidth={activeTab === '3d' ? 2 : 1.5} /><span className={`text-[8px] uppercase tracking-wider transition-opacity font-semibold ${activeTab === '3d' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>3D</span></button>
             <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center gap-1 group transition-all duration-300 ${activeTab === 'settings' ? 'text-white scale-110 drop-shadow-lg' : 'text-white/60 hover:text-white'}`}><Settings size={24} strokeWidth={activeTab === 'settings' ? 2 : 1.5} /><span className={`text-[8px] uppercase tracking-wider transition-opacity font-semibold ${activeTab === 'settings' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>Ajustes</span></button>
         </div>
       </div>
